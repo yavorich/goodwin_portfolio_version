@@ -11,7 +11,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-RUN chmod +x /app/docker/backend/entrypoint.dev.sh
-RUN chmod +x /app/docker/backend/celery-entrypoint.sh
+RUN chmod +x /app/docker/entrypoint.sh
 
 ENV LC_TIME ru_RU.UTF-8

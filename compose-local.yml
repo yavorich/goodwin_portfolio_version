@@ -1,0 +1,55 @@
+version: "3"
+
+services:
+  backend:
+    container_name: goodwin_backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: ./docker/entrypoint.sh
+    restart: always
+    volumes:
+      - .:/app
+      - ./backend/static/:/app/backend/static/
+      - ./backend/media/:/app/backend/media/
+    expose:
+      - 8000
+    env_file:
+      - .env
+    depends_on:
+      - db
+    networks:
+      - goodwin_back_default
+
+  db:
+    container_name: goodwin_db
+    image: postgres:14.5-alpine
+    restart: always
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+      - ./backend/static/:/app/backend/static/
+      - ./backend/media/:/app/backend/media/
+    env_file:
+      - .env
+    ports:
+      - 5432:5432
+    networks:
+      - goodwin_back_default
+
+  nginx:
+    container_name: goodwin_nginx
+    build: ./docker/nginx
+    volumes:
+      - ./docker/nginx/conf/:/etc/nginx/conf.d/
+      - ./backend/static/:/app/backend/static/
+      - ./backend/media/:/app/backend/media/
+    ports:
+      - 8000:80
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - goodwin_back_default
+
+networks:
+  goodwin_back_default:
