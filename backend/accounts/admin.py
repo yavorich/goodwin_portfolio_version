@@ -1,3 +1,20 @@
 from django.contrib import admin
 
-# Register your models here.
+from . import models
+
+
+@admin.register(models.Region)
+class RegionAdmin(admin.ModelAdmin):
+    list_display = ["name"]
+
+
+@admin.register(models.User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = [
+        "first_name",
+        "last_name",
+        "email",
+        "region",
+        "is_active",
+        "is_staff",
+    ]
