@@ -40,11 +40,13 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(_("Email address"), unique=True)
     email_is_confirmed = models.BooleanField(default=False)
+    agreement_applied = models.BooleanField(default=False)
     region = models.ForeignKey(
         Region,
         verbose_name=_("Region"),
         related_name="users",
         on_delete=models.CASCADE,
+        null=True,
     )
 
     objects = UserManager()

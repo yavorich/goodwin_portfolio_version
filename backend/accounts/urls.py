@@ -1,9 +1,9 @@
 from django.urls import path
-# from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter
 from . import views
 
-# router = DefaultRouter()
-# router.register("auth", views.AuthViewSet, basename="auth")
+router = DefaultRouter()
+router.register("docs", views.DocsViewSet, basename="docs")
 
 urlpatterns = [
     path("register/", views.RegisterAPIView.as_view(), name="register"),
@@ -19,4 +19,4 @@ urlpatterns = [
         name="recover-password",
     ),
     path("confirm_email/", views.EmailConfirmAPIView.as_view(), name="confirm-email"),
-]  # + router.urls
+] + router.urls

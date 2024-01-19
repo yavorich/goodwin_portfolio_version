@@ -18,3 +18,8 @@ class UserAdmin(admin.ModelAdmin):
         "is_active",
         "is_staff",
     ]
+
+
+@admin.register(models.Docs)
+class DocsAdmin(admin.ModelAdmin):
+    list_display = ["document_type", "file"]
