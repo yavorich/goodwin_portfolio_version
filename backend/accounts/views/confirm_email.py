@@ -26,4 +26,7 @@ class EmailConfirmAPIView(GenericAPIView):
         user.email_is_confirmed = True
         user.save()
 
-        return Response(status=status.HTTP_200_OK)
+        return Response(
+            data={"agreement_applied": user.agreement_applied},
+            status=status.HTTP_200_OK,
+        )

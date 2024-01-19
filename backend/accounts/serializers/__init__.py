@@ -8,3 +8,4 @@ from .recover_password import (
     RecoverPasswordSerializer,
 )
 from .confirm_email import UserEmailConfirmSerializer
+from .docs import DocsSerializer
