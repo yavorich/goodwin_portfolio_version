@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.base_user import BaseUserManager
 
+from core.utils import blank_and_null
 from .region import Region
 
 
@@ -38,15 +39,41 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField(_("Email address"), unique=True)
+    email_is_confirmed = models.BooleanField(default=False)
     region = models.ForeignKey(
         Region,
         verbose_name=_("Region"),
         related_name="users",
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
     )
 
     objects = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    @property
+    def full_name(self):
+        return f"{self.first_name.capitalize()} {self.last_name.capitalize()}"
+
+
+class TempData(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="temp")
+
+    email_verify_code = models.CharField(
+        "Код для подтверждения почты", **blank_and_null
+    )
+    email_verify_code_expires = models.DateTimeField(**blank_and_null)
+    email_last_sending_code = models.DateTimeField(**blank_and_null)
+
+    changing_password_code = models.UUIDField("Код для смены пароля", **blank_and_null)
+    changing_password_code_expires = models.DateTimeField(
+        "Время истечения кода", **blank_and_null
+    )
+
+    class Meta:
+        verbose_name = "Коды подтверждения пользователя"
+        verbose_name_plural = "Коды подтверждения пользователей"
+
+    def __str__(self):
+        return f"{self.user}"

@@ -1,4 +1,8 @@
-from rest_framework.serializers import ModelSerializer, EmailField, CharField
+from rest_framework.serializers import (
+    ModelSerializer,
+    EmailField,
+    CharField,
+)
 from rest_framework.validators import UniqueValidator
 from rest_framework.exceptions import ValidationError
 from accounts.models import User
@@ -11,6 +15,7 @@ class RegisterUserSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = [
+            "id",
             "first_name",
             "last_name",
             "email",
@@ -32,29 +37,3 @@ class RegisterUserSerializer(ModelSerializer):
         if password != password2:
             raise ValidationError("Passwords do not match")
         return data
-
-
-class LoginUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "email",
-            "password",
-        ]
-
-
-class PasswordRecoverUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "email",
-        ]
-
-
-class EmailConfirmUserSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "email",
-            "confirmation_code",
-        ]

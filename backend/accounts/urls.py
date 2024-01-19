@@ -1,8 +1,22 @@
 from django.urls import path
-from rest_framework.routers import DefaultRouter
+# from rest_framework.routers import DefaultRouter
 from . import views
 
-router = DefaultRouter()
-router.register("auth", views.AuthViewSet, basename="auth")
+# router = DefaultRouter()
+# router.register("auth", views.AuthViewSet, basename="auth")
 
-urlpatterns = [] + router.urls
+urlpatterns = [
+    path("register/", views.RegisterAPIView.as_view(), name="register"),
+    path("login/", views.LoginAPIView.as_view(), name="login"),
+    path(
+        "recover_password/send/",
+        views.ResetPasswordAPIView.as_view(),
+        name="reset-password",
+    ),
+    path(
+        "recover_password/confirm/<token>/",
+        views.RecoverPasswordAPIView.as_view(),
+        name="recover-password",
+    ),
+    path("confirm_email/", views.EmailConfirmAPIView.as_view(), name="confirm-email"),
+]  # + router.urls
