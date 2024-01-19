@@ -50,6 +50,43 @@ services:
       - backend
     networks:
       - goodwin_back_default
+    
+  celery:
+    container_name: goodwin_celery
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    entrypoint: ./docker/celery-entrypoint.sh
+    depends_on:
+      - backend
+      - db
+      - rabbit
+    networks:
+      - goodwin_back_default
+
+  rabbit:
+    container_name: goodwin_rabbit
+    restart: always
+    image: rabbitmq:3.10-management
+    hostname: rabbitmq
+    expose:
+      - 5672
+      - 15672
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+      - rmqdata:/var/lib/rabbitmq
+    networks:
+      - goodwin_back_default
 
 networks:
   goodwin_back_default:
+
+volumes:
+  rmqdata:
