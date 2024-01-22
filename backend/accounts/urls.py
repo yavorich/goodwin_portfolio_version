@@ -19,6 +19,7 @@ urlpatterns = [
         name="recover-password",
     ),
     path("confirm_email/", views.EmailConfirmAPIView.as_view(), name="confirm-email"),
+    path("profile/", views.ProfileAPIView.as_view(), name="profile"),
     path(
         "profile/verification/",
         views.VerificationAPIView.as_view(),
