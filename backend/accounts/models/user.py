@@ -68,10 +68,9 @@ def get_addr_doc_upload_path(instance, filename):
 
 
 class VerificationStatus(models.TextChoices):
-    WAITING = "waiting", "Ожидается"
-    CHECK = "check", "Проверка"
-    DONE = "done", "Пройдена"
-    FAILED = "failed", "Отклонена"
+    CHECK = "check", _("Check")
+    APPROVED = "approved", _("Approved")
+    REJECTED = "rejected", _("Rejected")
 
 
 class PersonalVerification(models.Model):
@@ -80,11 +79,16 @@ class PersonalVerification(models.Model):
         ID_CARD = "id_card", _("ID card")
         RESIDENCE_PERMIT = "residence_permit", _("Residence permit")
 
+    class Gender(models.TextChoices):
+        MALE = "male", _("Male")
+        FEMALE = "female", _("Female")
+
     user = models.OneToOneField(
         User, related_name="personal_verification", on_delete=models.CASCADE
     )
     first_name = models.CharField(_("First name"), max_length=255)
     last_name = models.CharField(_("Last name"), max_length=255)
+    gender = models.CharField(_("Gender"), choices=Gender.choices)
     date_of_birth = models.DateField(_("Date of birth"))
     document_type = models.CharField(_("Document type"), choices=DocumentType.choices)
     document_issue_date = models.DateField(_("Document issue date"))
