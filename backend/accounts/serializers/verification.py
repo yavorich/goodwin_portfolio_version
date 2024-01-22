@@ -12,6 +12,7 @@ class PersonalVerificationSerializer(ModelSerializer):
             "date_of_birth",
             "document_type",
             "document_issue_date",
+            "document_issue_region",
             "file",
         ]
         extra_kwargs = {f: {"required": True} for f in fields}

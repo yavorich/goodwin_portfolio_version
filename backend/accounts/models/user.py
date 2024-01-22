@@ -92,6 +92,9 @@ class PersonalVerification(models.Model):
     date_of_birth = models.DateField(_("Date of birth"))
     document_type = models.CharField(_("Document type"), choices=DocumentType.choices)
     document_issue_date = models.DateField(_("Document issue date"))
+    document_issue_region = models.CharField(
+        _("Document issue region/country"), max_length=255
+    )
     file = models.FileField(_("File"), upload_to=get_id_doc_upload_path)
     status = models.CharField(
         _("Status"),
