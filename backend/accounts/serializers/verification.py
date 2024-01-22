@@ -1,8 +1,16 @@
-from rest_framework.serializers import ModelSerializer
-from accounts.models import PersonalVerification, AddressVerification
+from rest_framework.serializers import ModelSerializer, FileField
+from accounts.models import (
+    PersonalVerification,
+    AddressVerification,
+    VerificationStatus,
+)
+
+from core.utils import validate_file_size
 
 
 class PersonalVerificationSerializer(ModelSerializer):
+    file = FileField(validators=[validate_file_size])
+
     class Meta:
         model = PersonalVerification
         fields = [
@@ -19,10 +27,15 @@ class PersonalVerificationSerializer(ModelSerializer):
 
     def create(self, validated_data):
         validated_data["user"] = self.context.get("user")
-        return super().create(validated_data)
+        instance = PersonalVerification.objects.get_or_create(
+            **validated_data, defaults={"status": VerificationStatus.CHECK}
+        )
+        return instance
 
 
 class AddressVerificationSerializer(ModelSerializer):
+    file = FileField(validators=[validate_file_size])
+
     class Meta:
         model = AddressVerification
         fields = [
@@ -36,4 +49,7 @@ class AddressVerificationSerializer(ModelSerializer):
 
     def create(self, validated_data):
         validated_data["user"] = self.context.get("user")
-        return super().create(validated_data)
+        instance = AddressVerification.objects.get_or_create(
+            **validated_data, defaults={"status": VerificationStatus.CHECK}
+        )
+        return instance
