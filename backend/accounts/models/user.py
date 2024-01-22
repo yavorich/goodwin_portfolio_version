@@ -77,6 +77,7 @@ class PersonalVerification(models.Model):
     class DocumentType(models.TextChoices):
         PASSPORT = "passport", _("Passport")
         ID_CARD = "id_card", _("ID card")
+        DRIVER_LICENSE = "driver_license", _("Driver's license")
         RESIDENCE_PERMIT = "residence_permit", _("Residence permit")
 
     class Gender(models.TextChoices):
