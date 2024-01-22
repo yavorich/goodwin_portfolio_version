@@ -9,5 +9,13 @@ from .recover_password import (
 )
 from .confirm_email import UserEmailConfirmSerializer
 from .docs import DocsSerializer
-from .verification import PersonalVerificationSerializer, AddressVerificationSerializer
-from .profile import ProfileRetrieveSerializer, ProfileUpdateSerializer
+from .verification import (
+    PersonalVerificationSerializer,
+    AddressVerificationSerializer,
+    VerificationStatusSerializer,
+)
+from .profile import (
+    ProfileRetrieveSerializer,
+    ProfileUpdateSerializer,
+    PasswordChangeSerializer,
+)
