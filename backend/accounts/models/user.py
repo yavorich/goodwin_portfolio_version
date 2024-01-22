@@ -1,3 +1,4 @@
+import os
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
@@ -48,7 +49,6 @@ class User(AbstractUser):
         on_delete=models.CASCADE,
         null=True,
     )
-
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -57,6 +57,65 @@ class User(AbstractUser):
     @property
     def full_name(self):
         return f"{self.first_name.capitalize()} {self.last_name.capitalize()}"
+
+
+def get_id_doc_upload_path(instance, filename):
+    return os.path.join("users", "id", str(instance.user.pk), filename)
+
+
+def get_addr_doc_upload_path(instance, filename):
+    return os.path.join("users", "address", str(instance.user.pk), filename)
+
+
+class VerificationStatus(models.TextChoices):
+    WAITING = "waiting", "Ожидается"
+    CHECK = "check", "Проверка"
+    DONE = "done", "Пройдена"
+    FAILED = "failed", "Отклонена"
+
+
+class PersonalVerification(models.Model):
+    class DocumentType(models.TextChoices):
+        PASSPORT = "passport", _("Passport")
+        ID_CARD = "id_card", _("ID card")
+        RESIDENCE_PERMIT = "residence_permit", _("Residence permit")
+
+    user = models.OneToOneField(
+        User, related_name="personal_verification", on_delete=models.CASCADE
+    )
+    first_name = models.CharField(_("First name"), max_length=255)
+    last_name = models.CharField(_("Last name"), max_length=255)
+    date_of_birth = models.DateField(_("Date of birth"))
+    document_type = models.CharField(_("Document type"), choices=DocumentType.choices)
+    document_issue_date = models.DateField(_("Document issue date"))
+    file = models.FileField(_("File"), upload_to=get_id_doc_upload_path)
+    status = models.CharField(
+        _("Status"),
+        choices=VerificationStatus.choices,
+        default=VerificationStatus.WAITING,
+    )
+
+
+class AddressVerification(models.Model):
+    class DocumentType(models.TextChoices):
+        REGISTRATION = "registration", _("Passport registration")
+        UTILITY_BILL = "utility_bill", _("Utility bill")
+        BANK_STATEMENT = "bank_statement", _("Bank statement")
+        OTHER = "other", _("Other document")
+
+    user = models.OneToOneField(
+        User, related_name="address_verification", on_delete=models.CASCADE
+    )
+    country = models.CharField(_("Country"), max_length=255)
+    city = models.CharField(_("City"), max_length=255)
+    address = models.CharField(_("Address"), max_length=255)
+    postal_code = models.CharField(_("Postal code"), max_length=20)
+    file = models.FileField(_("File"), upload_to=get_addr_doc_upload_path)
+    status = models.CharField(
+        _("Status"),
+        choices=VerificationStatus.choices,
+        default=VerificationStatus.WAITING,
+    )
 
 
 class TempData(models.Model):
