@@ -9,3 +9,4 @@ from .recover_password import (
 )
 from .confirm_email import UserEmailConfirmSerializer
 from .docs import DocsSerializer
+from .verification import PersonalVerificationSerializer, AddressVerificationSerializer

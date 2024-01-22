@@ -19,4 +19,9 @@ urlpatterns = [
         name="recover-password",
     ),
     path("confirm_email/", views.EmailConfirmAPIView.as_view(), name="confirm-email"),
+    path(
+        "profile/verification/",
+        views.VerificationAPIView.as_view(),
+        name="verification",
+    ),
 ] + router.urls
