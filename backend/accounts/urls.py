@@ -25,4 +25,9 @@ urlpatterns = [
         views.VerificationAPIView.as_view(),
         name="verification",
     ),
+    path(
+        "profile/change_password/",
+        views.PasswordChangeAPIView.as_view(),
+        name="change-password",
+    ),
 ] + router.urls

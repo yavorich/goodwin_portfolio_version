@@ -6,4 +6,4 @@ from .recover_password import RecoverPasswordAPIView, ResetPasswordAPIView
 from .confirm_email import EmailConfirmAPIView
 from .docs import DocsViewSet
 from .verification import VerificationAPIView
-from .profile import ProfileAPIView
+from .profile import ProfileAPIView, PasswordChangeAPIView

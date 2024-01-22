@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, CharField
+from rest_framework.serializers import ModelSerializer, CharField, Serializer
 from rest_framework.exceptions import ValidationError
 
 from accounts.models import User, Settings
@@ -86,3 +86,17 @@ class ProfileUpdateSerializer(ModelSerializer):
         instance.save()
 
         return instance
+
+
+class PasswordChangeSerializer(Serializer):
+    old_password = CharField()
+    new_password = CharField()
+    new_password2 = CharField()
+
+    def validate(self, attrs):
+        user: User = self.context["user"]
+        if not user.check_password(attrs["old_password"]):
+            raise ValidationError("Old password is incorrect")
+        if attrs["new_password"] != attrs["new_password2"]:
+            raise ValidationError("Password mismatch")
+        return attrs
