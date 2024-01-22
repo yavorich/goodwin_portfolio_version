@@ -8,6 +8,7 @@ class PersonalVerificationSerializer(ModelSerializer):
         fields = [
             "first_name",
             "last_name",
+            "gender",
             "date_of_birth",
             "document_type",
             "document_issue_date",
