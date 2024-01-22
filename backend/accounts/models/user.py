@@ -23,7 +23,9 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
-        return self._create_user(email, password, **extra_fields)
+        user = self._create_user(email, password, **extra_fields)
+        Settings.objects.create(user=user)
+        return user
 
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("is_staff", True)
@@ -47,6 +49,14 @@ class User(AbstractUser):
         verbose_name=_("Region"),
         related_name="users",
         on_delete=models.CASCADE,
+    )
+    telegram = models.CharField(_("Telegram"), max_length=127, blank=True, null=True)
+    inviter = models.ForeignKey(
+        "User",
+        verbose_name=_("Inviter"),
+        related_name="invited_users",
+        on_delete=models.SET_NULL,
+        blank=True,
         null=True,
     )
     objects = UserManager()
@@ -59,6 +69,14 @@ class User(AbstractUser):
         return f"{self.first_name.capitalize()} {self.last_name.capitalize()}"
 
 
+class Settings(models.Model):
+    user = models.OneToOneField(User, related_name="settings", on_delete=models.CASCADE)
+    email_request_code_on_auth = models.BooleanField(default=True)
+    email_request_code_on_withdrawal = models.BooleanField(default=True)
+    telegram_request_code_on_auth = models.BooleanField(default=True)
+    telegram_request_code_on_withdrawal = models.BooleanField(default=False)
+
+
 def get_id_doc_upload_path(instance, filename):
     return os.path.join("users", "id", str(instance.user.pk), filename)
 
@@ -68,6 +86,7 @@ def get_addr_doc_upload_path(instance, filename):
 
 
 class VerificationStatus(models.TextChoices):
+    NO_DATA = "no_data", _("No data")
     CHECK = "check", _("Check")
     APPROVED = "approved", _("Approved")
     REJECTED = "rejected", _("Rejected")
@@ -100,7 +119,7 @@ class PersonalVerification(models.Model):
     status = models.CharField(
         _("Status"),
         choices=VerificationStatus.choices,
-        default=VerificationStatus.CHECK,
+        default=VerificationStatus.NO_DATA,
     )
 
 
@@ -122,7 +141,7 @@ class AddressVerification(models.Model):
     status = models.CharField(
         _("Status"),
         choices=VerificationStatus.choices,
-        default=VerificationStatus.CHECK,
+        default=VerificationStatus.NO_DATA,
     )
 
 
