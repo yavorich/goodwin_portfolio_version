@@ -92,7 +92,7 @@ class PersonalVerification(models.Model):
     status = models.CharField(
         _("Status"),
         choices=VerificationStatus.choices,
-        default=VerificationStatus.WAITING,
+        default=VerificationStatus.CHECK,
     )
 
 
@@ -114,7 +114,7 @@ class AddressVerification(models.Model):
     status = models.CharField(
         _("Status"),
         choices=VerificationStatus.choices,
-        default=VerificationStatus.WAITING,
+        default=VerificationStatus.CHECK,
     )
 
 

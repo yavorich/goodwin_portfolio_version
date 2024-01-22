@@ -8,6 +8,14 @@ class RegionAdmin(admin.ModelAdmin):
     list_display = ["name"]
 
 
+class PersonalVerificationInline(admin.StackedInline):
+    model = models.PersonalVerification
+
+
+class AddressVerificationInline(admin.StackedInline):
+    model = models.AddressVerification
+
+
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
     list_display = [
@@ -18,6 +26,7 @@ class UserAdmin(admin.ModelAdmin):
         "is_active",
         "is_staff",
     ]
+    inlines = [PersonalVerificationInline, AddressVerificationInline]
 
 
 @admin.register(models.Docs)
