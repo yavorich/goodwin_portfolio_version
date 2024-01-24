@@ -37,8 +37,8 @@ restart-loc:
 	docker-compose -f docker-compose.yml up -d $(loc_containers)
 
 makemigrations:
-	docker exec -it goodwin_backend python3 backend/manage.py makemigrations
+	docker exec -it goodwin_backend python3 manage.py makemigrations
 migrate:
-	docker exec -it goodwin_backend python3 backend/manage.py migrate
+	docker exec -it goodwin_backend python3 manage.py migrate
 collectstatic:
-	docker exec -it goodwin_backend python3 backend/manage.py collectstatic
+	docker exec -it goodwin_backend python3 manage.py collectstatic

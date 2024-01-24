@@ -7,4 +7,4 @@ class AccountsConfig(AppConfig):
 
     def ready(self) -> None:
         # flake8: noqa: F401
-        import accounts.signals  
+        import accounts.signals
