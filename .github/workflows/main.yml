@@ -25,11 +25,11 @@ jobs:
           docker-compose up --build -d
 
       - name: Linter check (Black)
-        run: docker exec -t backend black --check --exclude '^.*\b(migrations)\b.*$' .
+        run: docker exec -t goodwin_backend black --check --exclude '^.*\b(migrations)\b.*$' .
 
   database:
     runs-on: [ self-hosted ]
     needs: deploy
     steps:
       - name: Migrations
-        run: docker exec -t backend python3 manage.py migrate --no-input
+        run: docker exec -t goodwin_backend python3 manage.py migrate --no-input
