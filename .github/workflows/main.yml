@@ -1,0 +1,35 @@
+name: Backend CI/CD
+
+on:
+  workflow_dispatch:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: [ self-hosted ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 'Create env file'
+        run: |
+          echo "${{ secrets.ENV_FILE }}" > .env
+
+      - name: Build and run
+        run: |
+          docker-compose down
+          docker-compose up --build -d
+
+      - name: Linter check (Black)
+        run: docker exec -t backend black --check --exclude '^.*\b(migrations)\b.*$' .
+
+  database:
+    runs-on: [ self-hosted ]
+    needs: deploy
+    steps:
+      - name: Migrations
+        run: docker exec -t backend python3 manage.py migrate --no-input
