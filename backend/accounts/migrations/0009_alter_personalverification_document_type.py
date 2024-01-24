@@ -4,15 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0008_personalverification_document_issue_region'),
+        ("accounts", "0008_personalverification_document_issue_region"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='personalverification',
-            name='document_type',
-            field=models.CharField(choices=[('passport', 'Passport'), ('id_card', 'ID card'), ('driver_license', "Driver's license"), ('residence_permit', 'Residence permit')], verbose_name='Document type'),
+            model_name="personalverification",
+            name="document_type",
+            field=models.CharField(
+                choices=[
+                    ("passport", "Passport"),
+                    ("id_card", "ID card"),
+                    ("driver_license", "Driver's license"),
+                    ("residence_permit", "Residence permit"),
+                ],
+                verbose_name="Document type",
+            ),
         ),
     ]

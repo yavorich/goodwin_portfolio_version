@@ -4,16 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0004_alter_addressverification_status_and_more'),
+        ("accounts", "0004_alter_addressverification_status_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='personalverification',
-            name='gender',
-            field=models.CharField(choices=[('male', 'Male'), ('female', 'Female')], default='male', verbose_name='Gender'),
+            model_name="personalverification",
+            name="gender",
+            field=models.CharField(
+                choices=[("male", "Male"), ("female", "Female")],
+                default="male",
+                verbose_name="Gender",
+            ),
             preserve_default=False,
         ),
     ]
