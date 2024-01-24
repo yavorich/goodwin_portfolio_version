@@ -4,20 +4,37 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0003_alter_docs_options_addressverification_and_more'),
+        ("accounts", "0003_alter_docs_options_addressverification_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='addressverification',
-            name='status',
-            field=models.CharField(choices=[('waiting', 'Ожидается'), ('check', 'Проверка'), ('done', 'Пройдена'), ('failed', 'Отклонена')], default='check', verbose_name='Status'),
+            model_name="addressverification",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("waiting", "Ожидается"),
+                    ("check", "Проверка"),
+                    ("done", "Пройдена"),
+                    ("failed", "Отклонена"),
+                ],
+                default="check",
+                verbose_name="Status",
+            ),
         ),
         migrations.AlterField(
-            model_name='personalverification',
-            name='status',
-            field=models.CharField(choices=[('waiting', 'Ожидается'), ('check', 'Проверка'), ('done', 'Пройдена'), ('failed', 'Отклонена')], default='check', verbose_name='Status'),
+            model_name="personalverification",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("waiting", "Ожидается"),
+                    ("check", "Проверка"),
+                    ("done", "Пройдена"),
+                    ("failed", "Отклонена"),
+                ],
+                default="check",
+                verbose_name="Status",
+            ),
         ),
     ]
