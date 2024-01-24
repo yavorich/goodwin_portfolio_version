@@ -1,7 +1,9 @@
+black==23.12.1
 celery==5.3.6
 Django==4.2.7
-djangorestframework-simplejwt==5.3.1
 djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
 gunicorn==21.2.0
+pre-commit==3.6.0
 psycopg2-binary==2.9.9
 uvicorn[standard]==0.24.0.post1
