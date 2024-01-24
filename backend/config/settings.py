@@ -37,6 +37,10 @@ CSRF_TRUSTED_ORIGINS = ["http://" + host + ":8000" for host in ALLOWED_HOSTS] + 
     "https://" + host for host in ALLOWED_HOSTS
 ]
 
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000").split(
+    ","
+)
+
 FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
 
 # Application definition
@@ -46,6 +50,7 @@ LOCAL_APPS = [
 
 THIRD_PARTY_APPS = [
     "rest_framework",
+    "corsheaders",
 ]
 
 INSTALLED_APPS = (
