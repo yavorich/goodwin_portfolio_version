@@ -49,7 +49,7 @@ class User(AbstractUser):
         verbose_name=_("Region"),
         related_name="users",
         on_delete=models.CASCADE,
-        **blank_and_null
+        **blank_and_null,
     )
     telegram = models.CharField(_("Telegram"), max_length=127, blank=True, null=True)
     inviter = models.ForeignKey(

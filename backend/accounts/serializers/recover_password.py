@@ -26,8 +26,6 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate(self, attrs):
         user = User.objects.filter(email=attrs["email"]).first()
         if user is None:
-            raise ValidationError(
-                {"email": "Пользователя с таким email не существует"}
-            )
+            raise ValidationError({"email": "Пользователя с таким email не существует"})
         attrs["user"] = user
         return attrs

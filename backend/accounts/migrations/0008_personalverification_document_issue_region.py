@@ -4,16 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0007_alter_addressverification_status_and_more'),
+        ("accounts", "0007_alter_addressverification_status_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='personalverification',
-            name='document_issue_region',
-            field=models.CharField(default='Russia', max_length=255, verbose_name='Document issue region/country'),
+            model_name="personalverification",
+            name="document_issue_region",
+            field=models.CharField(
+                default="Russia",
+                max_length=255,
+                verbose_name="Document issue region/country",
+            ),
             preserve_default=False,
         ),
     ]

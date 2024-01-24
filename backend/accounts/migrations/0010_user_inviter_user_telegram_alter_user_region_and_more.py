@@ -6,37 +6,69 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0009_alter_personalverification_document_type'),
+        ("accounts", "0009_alter_personalverification_document_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='user',
-            name='inviter',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='invited_users', to=settings.AUTH_USER_MODEL, verbose_name='Inviter'),
+            model_name="user",
+            name="inviter",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="invited_users",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Inviter",
+            ),
         ),
         migrations.AddField(
-            model_name='user',
-            name='telegram',
-            field=models.CharField(blank=True, max_length=127, null=True, verbose_name='Telegram'),
+            model_name="user",
+            name="telegram",
+            field=models.CharField(
+                blank=True, max_length=127, null=True, verbose_name="Telegram"
+            ),
         ),
         migrations.AlterField(
-            model_name='user',
-            name='region',
-            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, related_name='users', to='accounts.region', verbose_name='Region'),
+            model_name="user",
+            name="region",
+            field=models.ForeignKey(
+                default=1,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="users",
+                to="accounts.region",
+                verbose_name="Region",
+            ),
             preserve_default=False,
         ),
         migrations.CreateModel(
-            name='Settings',
+            name="Settings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('email_request_code_on_auth', models.BooleanField(default=True)),
-                ('email_request_code_on_withdrawal', models.BooleanField(default=True)),
-                ('telegram_request_code_on_auth', models.BooleanField(default=True)),
-                ('telegram_request_code_on_withdrawal', models.BooleanField(default=False)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='settings', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("email_request_code_on_auth", models.BooleanField(default=True)),
+                ("email_request_code_on_withdrawal", models.BooleanField(default=True)),
+                ("telegram_request_code_on_auth", models.BooleanField(default=True)),
+                (
+                    "telegram_request_code_on_withdrawal",
+                    models.BooleanField(default=False),
+                ),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="settings",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]
