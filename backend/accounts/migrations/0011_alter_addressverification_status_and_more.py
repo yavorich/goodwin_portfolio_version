@@ -4,20 +4,37 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('accounts', '0010_user_inviter_user_telegram_alter_user_region_and_more'),
+        ("accounts", "0010_user_inviter_user_telegram_alter_user_region_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='addressverification',
-            name='status',
-            field=models.CharField(choices=[('no_data', 'No data'), ('check', 'Check'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='no_data', verbose_name='Status'),
+            model_name="addressverification",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("no_data", "No data"),
+                    ("check", "Check"),
+                    ("approved", "Approved"),
+                    ("rejected", "Rejected"),
+                ],
+                default="no_data",
+                verbose_name="Status",
+            ),
         ),
         migrations.AlterField(
-            model_name='personalverification',
-            name='status',
-            field=models.CharField(choices=[('no_data', 'No data'), ('check', 'Check'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='no_data', verbose_name='Status'),
+            model_name="personalverification",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("no_data", "No data"),
+                    ("check", "Check"),
+                    ("approved", "Approved"),
+                    ("rejected", "Rejected"),
+                ],
+                default="no_data",
+                verbose_name="Status",
+            ),
         ),
     ]
