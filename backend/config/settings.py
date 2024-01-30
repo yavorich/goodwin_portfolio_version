@@ -58,8 +58,8 @@ INSTALLED_APPS = (
         "django.contrib.messages",
         "django.contrib.staticfiles",
     ]
-    + LOCAL_APPS
     + THIRD_PARTY_APPS
+    + LOCAL_APPS
 )
 
 MIDDLEWARE = [
