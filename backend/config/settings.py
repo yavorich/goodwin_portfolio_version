@@ -41,7 +41,8 @@ FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
 
 # Application definition
 LOCAL_APPS = [
-    "accounts",
+    "apps.accounts",
+    "apps.information",
 ]
 
 THIRD_PARTY_APPS = [
