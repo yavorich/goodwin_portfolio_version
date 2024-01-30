@@ -37,8 +37,6 @@ CSRF_TRUSTED_ORIGINS = ["http://" + host + ":8000" for host in ALLOWED_HOSTS] + 
     "https://" + host for host in ALLOWED_HOSTS
 ]
 
-FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
-
 # Application definition
 LOCAL_APPS = [
     "apps.accounts",
@@ -184,7 +182,7 @@ CELERY_BROKER_URL = (
 )
 
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
-FRONT_URL = os.environ.get("FRONT_URL", "")
+FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
 RECOVER_PASSWORD_CODE_EXPIRES = timedelta(minutes=5)
 
 REST_FRAMEWORK = {
