@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class InformationConfig(AppConfig):
+class FaqConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.information"
+    name = "apps.faq"
