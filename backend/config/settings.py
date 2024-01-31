@@ -29,6 +29,8 @@ LOCAL_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "psqlextra",
+    "localized_fields",
     "rest_framework",
     "django_filters",
 ]
@@ -85,7 +87,8 @@ ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "ENGINE": "psqlextra.backend",
+        # "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": os.environ.get("POSTGRES_DB", "postgres"),
         "USER": os.environ.get("POSTGRES_USER", "postgres"),
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "postgres"),
