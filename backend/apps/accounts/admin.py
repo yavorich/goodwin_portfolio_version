@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.forms import ModelForm, CharField
 
 from . import models
 
@@ -20,8 +21,25 @@ class AddressVerificationInline(admin.StackedInline):
     model = models.AddressVerification
 
 
+class UserForm(ModelForm):
+    set_password = CharField(
+        help_text="Поле для установки пароля администратора.",
+        label="Установить пароль",
+        required=False,
+    )
+
+    def save(self, commit=True):
+        password = self.cleaned_data.get("set_password", None)
+        user = super().save(commit=commit)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+
+
 @admin.register(models.User)
 class UserAdmin(admin.ModelAdmin):
+    form = UserForm
     list_display = [
         "first_name",
         "last_name",
