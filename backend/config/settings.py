@@ -26,6 +26,7 @@ CSRF_TRUSTED_ORIGINS = ["http://" + host + ":8000" for host in ALLOWED_HOSTS] + 
 LOCAL_APPS = [
     "apps.accounts",
     "apps.information",
+    "apps.faq",
 ]
 
 THIRD_PARTY_APPS = [
