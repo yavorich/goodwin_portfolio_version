@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", True)
+DEBUG = bool(os.environ.get("DEBUG", True))
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
     ","
@@ -37,20 +37,14 @@ CSRF_TRUSTED_ORIGINS = ["http://" + host + ":8000" for host in ALLOWED_HOSTS] + 
     "https://" + host for host in ALLOWED_HOSTS
 ]
 
-CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000").split(
-    ","
-)
-
-FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
-
 # Application definition
 LOCAL_APPS = [
-    "accounts",
+    "apps.accounts",
+    "apps.information",
 ]
 
 THIRD_PARTY_APPS = [
     "rest_framework",
-    "corsheaders",
 ]
 
 INSTALLED_APPS = (
@@ -62,8 +56,8 @@ INSTALLED_APPS = (
         "django.contrib.messages",
         "django.contrib.staticfiles",
     ]
-    + LOCAL_APPS
     + THIRD_PARTY_APPS
+    + LOCAL_APPS
 )
 
 MIDDLEWARE = [
@@ -188,7 +182,7 @@ CELERY_BROKER_URL = (
 )
 
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
-FRONT_URL = os.environ.get("FRONT_URL", "")
+FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
 RECOVER_PASSWORD_CODE_EXPIRES = timedelta(minutes=5)
 
 REST_FRAMEWORK = {
