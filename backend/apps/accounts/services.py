@@ -1,0 +1,61 @@
+import random
+from uuid import uuid4
+from django.utils import timezone
+from django.urls import reverse
+from django.template.loader import render_to_string
+from config.settings import (
+    RECOVER_PASSWORD_CODE_EXPIRES,
+)
+from apps.accounts.tasks import send_email_msg
+
+
+def send_email_confirmation(user):
+    if user.temp.email_last_sending_code is None:
+        pass
+    elif (
+        user.temp.email_last_sending_code + timezone.timedelta(minutes=5)
+        < timezone.now()
+    ):
+        return
+
+    code = "".join([str(random.randint(0, 9)) for _ in range(6)])
+    user.temp.email_verify_code = code
+    user.temp.email_last_sending_code = timezone.now()
+    user.temp.save()
+    message = "Здравствуйте!\n" + f"Ваш код подтверждения: {code}"
+    send_email_msg.delay(
+        user.email,
+        "GOODWIN - Подтверждение электронной почты",
+        message,
+        from_email=None,
+        html=False,
+    )
+
+
+def send_email_change_password(user, request):
+    code = uuid4()
+    user.temp.changing_password_code = code
+    user.temp.changing_password_code_expires = (
+        timezone.now() + RECOVER_PASSWORD_CODE_EXPIRES
+    )
+    user.temp.save()
+
+    message_template_context = {
+        "confirmation_url": request.build_absolute_uri(
+            reverse("recover-password", kwargs={"token": code})
+        ),
+        "title": "Восстановление пароля",
+        "description": f"Здравствуйте, {user.full_name}!\n"
+        "Был отправлен запрос на сброс пароля для вашего аккаунта. "
+        "Если это сделали не вы, проигнорируйте данное сообщение "
+        "(Эта ссылка действует 1 раз и в течение 24 часов)",
+        "text_button": "Сбросить пароль",
+    }
+    html_message = render_to_string("email_message.html", message_template_context)
+    send_email_msg.delay(
+        user.email,
+        message_template_context["title"],
+        html_message,
+        from_email=None,
+        html=True,
+    )
