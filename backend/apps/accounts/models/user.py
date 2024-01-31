@@ -52,6 +52,7 @@ class User(AbstractUser):
         **blank_and_null,
     )
     telegram = models.CharField(_("Telegram"), max_length=127, blank=True, null=True)
+    telegram_id = models.IntegerField(**blank_and_null)
     inviter = models.ForeignKey(
         "User",
         verbose_name=_("Inviter"),

@@ -60,6 +60,20 @@ def send_email_change_password(user, request):
         user.email,
         message_template_context["title"],
         html_message,
-        from_email=None,
+        from_email="GOODWIN",
         html=True,
     )
+
+
+def send_email_login_confirmation(user, code):
+    send_email_msg.delay(
+        user.email,
+        _("Код подтверждения входа"),
+        _("Код подтверждения для входа в аккаунт") + f": {code}",
+        from_email="GOODWIN",
+        html=False,
+    )
+
+
+def send_telegram_login_confirmation(user, code):
+    pass
