@@ -1,7 +1,12 @@
 from celery import shared_task
+from celery.schedules import crontab
 from django.core.mail import send_mail
+from django.utils import timezone
 from django.utils.html import strip_tags
-from config.settings import EMAIL_HOST_USER
+
+from config import celery_app
+from config.settings import EMAIL_HOST_USER, PRE_AUTH_CODE_EXPIRES
+from apps.accounts.models import PreAuthToken
 
 
 @shared_task
@@ -23,3 +28,18 @@ def send_email_msg(email, subject, msg, from_email=None, html=False):
         msg_data["message"] = msg
 
     return send_mail(**msg_data)
+
+
+@celery_app.on_after_finalize.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(
+        crontab(hour=0, minute=10),
+        delete_confirm_codes.s(),
+    )
+
+
+@celery_app.task
+def delete_confirm_codes():
+    PreAuthToken.objects.filter(
+        created_at__lt=timezone.now() - PRE_AUTH_CODE_EXPIRES
+    ).delete()
