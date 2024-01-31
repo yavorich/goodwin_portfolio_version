@@ -4,6 +4,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /backend/
+
+RUN apt-get update -y && apt-get -y install locales-all && apt-get -y install gettext
+
 ADD backend /backend/
 ADD requirements.txt /backend/
 
