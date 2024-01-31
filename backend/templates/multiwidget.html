@@ -1,0 +1,10 @@
+{% with widget_id=widget.attrs.id %}
+<div class="localized-fields-widget" role="tabs" data-synctabs="translation">
+    {% for widget in widget.subwidgets %}
+    <div role="tabpanel" id="{{ widget_id }}_{{ widget.lang_code }}">
+        {% include widget.template_name %}
+        <label for="{{ widget_id }}_{{ widget.lang_code }}">{{ widget.lang_name }}</label>
+    </div>
+    {% endfor %}
+</div>
+{% endwith %}
