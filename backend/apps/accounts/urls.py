@@ -9,6 +9,11 @@ urlpatterns = [
     path("register/", views.RegisterAPIView.as_view(), name="register"),
     path("login/", views.LoginAPIView.as_view(), name="login"),
     path(
+        "login/confirm/<slug:service_type>/",
+        views.LoginConfirmView.as_view(),
+        name="login_confirm",
+    ),
+    path(
         "recover_password/send/",
         views.ResetPasswordAPIView.as_view(),
         name="reset-password",
