@@ -184,6 +184,7 @@ CELERY_BROKER_URL = (
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
 FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
 RECOVER_PASSWORD_CODE_EXPIRES = timedelta(minutes=5)
+PRE_AUTH_CODE_EXPIRES = timedelta(minutes=5)
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
