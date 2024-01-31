@@ -19,7 +19,6 @@ from rest_framework.exceptions import NotFound, ParseError
 
 from config.settings import PRE_AUTH_CODE_EXPIRES, DEBUG
 from .user import User
-from ..services import send_telegram_login_confirmation, send_email_login_confirmation
 
 
 class PreAuthTokenManager(Manager):
@@ -75,15 +74,19 @@ class PreAuthTokenManager(Manager):
             )
 
             if has_telegram_confirmation:
-                pre_auth_token.telegram_code = PreAuthToken.generate_code()
+                pre_auth_token.telegram_code = self.model.generate_code()
                 # сделать универсальным для других типов подтверждения
+                from apps.accounts.services import send_telegram_login_confirmation
+
                 send_telegram_login_confirmation(
                     pre_auth_token.user, pre_auth_token.telegram_code
                 )
                 confirmation_data["telegram"] = user.telegram
 
             if has_email_confirmation:
-                pre_auth_token.email_code = PreAuthToken.generate_code()
+                from apps.accounts.services import send_email_login_confirmation
+
+                pre_auth_token.email_code = self.model.generate_code()
                 # сделать универсальным для других типов подтверждения
                 send_email_login_confirmation(
                     pre_auth_token.user, pre_auth_token.email_code
