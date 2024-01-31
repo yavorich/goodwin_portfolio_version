@@ -1,0 +1,184 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-31 08:10+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: apps/accounts/models/user.py:44
+msgid "Email address"
+msgstr ""
+
+#: apps/accounts/models/user.py:49
+msgid "Region"
+msgstr ""
+
+#: apps/accounts/models/user.py:54
+msgid "Telegram"
+msgstr ""
+
+#: apps/accounts/models/user.py:57
+msgid "Inviter"
+msgstr ""
+
+#: apps/accounts/models/user.py:90
+msgid "No data"
+msgstr ""
+
+#: apps/accounts/models/user.py:91
+msgid "Check"
+msgstr ""
+
+#: apps/accounts/models/user.py:92
+msgid "Approved"
+msgstr ""
+
+#: apps/accounts/models/user.py:93
+msgid "Rejected"
+msgstr ""
+
+#: apps/accounts/models/user.py:98
+msgid "Passport"
+msgstr ""
+
+#: apps/accounts/models/user.py:99
+msgid "ID card"
+msgstr ""
+
+#: apps/accounts/models/user.py:100
+msgid "Driver's license"
+msgstr ""
+
+#: apps/accounts/models/user.py:101
+msgid "Residence permit"
+msgstr ""
+
+#: apps/accounts/models/user.py:104
+msgid "Male"
+msgstr ""
+
+#: apps/accounts/models/user.py:105
+msgid "Female"
+msgstr ""
+
+#: apps/accounts/models/user.py:110
+msgid "First name"
+msgstr ""
+
+#: apps/accounts/models/user.py:111
+msgid "Last name"
+msgstr ""
+
+#: apps/accounts/models/user.py:112
+msgid "Gender"
+msgstr ""
+
+#: apps/accounts/models/user.py:113
+msgid "Date of birth"
+msgstr ""
+
+#: apps/accounts/models/user.py:114
+msgid "Document type"
+msgstr ""
+
+#: apps/accounts/models/user.py:115
+msgid "Document issue date"
+msgstr ""
+
+#: apps/accounts/models/user.py:117
+msgid "Document issue region/country"
+msgstr ""
+
+#: apps/accounts/models/user.py:119 apps/accounts/models/user.py:141
+msgid "File"
+msgstr ""
+
+#: apps/accounts/models/user.py:121 apps/accounts/models/user.py:143
+msgid "Status"
+msgstr ""
+
+#: apps/accounts/models/user.py:129
+msgid "Passport registration"
+msgstr ""
+
+#: apps/accounts/models/user.py:130
+msgid "Utility bill"
+msgstr ""
+
+#: apps/accounts/models/user.py:131
+msgid "Bank statement"
+msgstr ""
+
+#: apps/accounts/models/user.py:132
+msgid "Other document"
+msgstr ""
+
+#: apps/accounts/models/user.py:137
+msgid "Country"
+msgstr ""
+
+#: apps/accounts/models/user.py:138
+msgid "City"
+msgstr ""
+
+#: apps/accounts/models/user.py:139
+msgid "Address"
+msgstr ""
+
+#: apps/accounts/models/user.py:140
+msgid "Postal code"
+msgstr ""
+
+#: apps/accounts/services.py:27
+msgid ""
+"Здравствуйте!\n"
+"Ваш код подтверждения"
+msgstr ""
+
+#: apps/accounts/services.py:30
+msgid "GOODWIN - Подтверждение электронной почты"
+msgstr ""
+
+#: apps/accounts/services.py:49
+msgid "Восстановление пароля"
+msgstr "找回密码"
+
+#: apps/accounts/services.py:51
+#, python-brace-format
+msgid ""
+"Здравствуйте, {full_name}!\n"
+"Был отправлен запрос на сброс пароля для вашего аккаунта. Если это сделали "
+"не вы, проигнорируйте данное сообщение (Эта ссылка действует 1 раз и в "
+"течение 24 часов)"
+msgstr ""
+"您好 {full_name}!\n"
+"已发送重置您帐户密码的请求."
+"如果您没有这样做，请忽略此消息（此链接一次有效，24 小时内有效）"
+
+#: apps/accounts/services.py:56
+msgid "Сбросить пароль"
+msgstr "重置密码"
+
+#: config/settings.py:123
+msgid "Russian"
+msgstr ""
+
+#: config/settings.py:124
+msgid "Kazakhstan"
+msgstr ""
+
+#: config/settings.py:125
+msgid "China"
+msgstr ""
