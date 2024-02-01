@@ -14,6 +14,7 @@ urlpatterns = [
                 path("", include("apps.accounts.urls")),
                 path("", include("apps.information.urls")),
                 path("", include("apps.faq.urls")),
+                path("telegram/", include("apps.telegram.urls")),
             ],
         ),
     ),
