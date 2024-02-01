@@ -1,5 +1,7 @@
 from pathlib import Path
 import os
+
+from aiogram import Bot
 from django.utils.timezone import timedelta
 from django.utils.translation import gettext_lazy as _
 
@@ -28,6 +30,7 @@ LOCAL_APPS = [
     "apps.accounts",
     "apps.information",
     "apps.faq",
+    "apps.telegram",
 ]
 
 THIRD_PARTY_APPS = [
@@ -201,3 +204,8 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
+
+# telegram bot settings
+TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_NAME")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", None)
+MAIN_BOT = Bot(TELEGRAM_BOT_TOKEN, parse_mode="HTML") if TELEGRAM_BOT_TOKEN else None
