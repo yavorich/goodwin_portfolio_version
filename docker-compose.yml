@@ -100,6 +100,19 @@ services:
     networks:
       - goodwin_back_default
 
+  telegram_bot:
+    command: python3 run_polling.py
+    container_name: goodwin_telegram_bot
+    env_file:
+      - .env
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - ./backend:/backend
+    networks:
+      - goodwin_back_default
+
 networks:
   goodwin_back_default:
 

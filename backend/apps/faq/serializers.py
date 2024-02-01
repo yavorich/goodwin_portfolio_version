@@ -1,10 +1,14 @@
-from rest_framework.fields import SerializerMethodField
+from django.conf import settings
+from rest_framework.fields import SerializerMethodField, CharField
 from rest_framework.serializers import ModelSerializer
+from django.utils import translation
 
 from apps.faq.models import Answer
 
 
 class AnswerSerializer(ModelSerializer):
+    title = CharField()
+    text = CharField()
     enclosure = SerializerMethodField()
 
     class Meta:
@@ -17,7 +21,8 @@ class AnswerSerializer(ModelSerializer):
         ]
 
     def get_enclosure(self, obj):
-        if obj.image:
+        language = translation.get_language() or settings.LANGUAGE_CODE
+        if obj.image.get(language):
             return self.context["request"].build_absolute_uri(obj.image.url)
-        elif obj.video:
-            return obj.video
+        elif obj.video.get(language):
+            return obj.video.translate()
