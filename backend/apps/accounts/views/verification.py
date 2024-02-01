@@ -1,4 +1,5 @@
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from django.http import Http404
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -11,7 +12,7 @@ from apps.accounts.serializers import (
 from apps.accounts.models import User
 
 
-class VerificationAPIView(RetrieveAPIView, CreateAPIView):
+class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = {
         "personal": PersonalVerificationSerializer,
@@ -36,8 +37,25 @@ class VerificationAPIView(RetrieveAPIView, CreateAPIView):
         return context
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = VerificationStatusSerializer(
-            instance, context={"user": request.user}
-        )
+        instance: User = self.get_object()
+        verification_type = self.request.query_params.get("type")
+
+        match verification_type:
+            case "personal":
+                try:
+                    serializer = self.get_serializer(
+                        instance.personal_verification,
+                    )
+                except User.personal_verification.RelatedObjectDoesNotExist:
+                    raise Http404
+            case "address":
+                try:
+                    serializer = self.get_serializer(instance.address_verification)
+                except User.address_verification.RelatedObjectDoesNotExist:
+                    raise Http404
+            case _:
+                serializer = VerificationStatusSerializer(
+                    instance, context={"user": request.user}
+                )
+
         return Response(serializer.data)
