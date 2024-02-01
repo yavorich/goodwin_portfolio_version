@@ -24,12 +24,14 @@ CSRF_TRUSTED_ORIGINS = ["http://" + host + ":8000" for host in ALLOWED_HOSTS] + 
 
 # Application definition
 LOCAL_APPS = [
+    "core",
     "apps.accounts",
     "apps.information",
     "apps.faq",
 ]
 
 THIRD_PARTY_APPS = [
+    "django.contrib.postgres",
     "psqlextra",
     "localized_fields",
     "rest_framework",
