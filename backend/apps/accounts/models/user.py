@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.base_user import BaseUserManager
+from rest_framework.exceptions import ValidationError
 
 from core.utils import blank_and_null
 from .region import Region
@@ -41,17 +42,21 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     username = None
-    email = models.EmailField(_("Email address"), unique=True)
+    email = models.EmailField(unique=True, verbose_name="Электронная почта")
     email_is_confirmed = models.BooleanField(default=False)
-    agreement_applied = models.BooleanField(default=False)
+    agreement_date = models.DateTimeField(
+        verbose_name="Дата и время принятия лицензионного соглашения", **blank_and_null
+    )
     region = models.ForeignKey(
         Region,
-        verbose_name=_("Region"),
+        verbose_name="Регион",
         related_name="users",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
-    telegram = models.CharField(_("Telegram"), max_length=127, blank=True, null=True)
+    telegram = models.CharField(
+        max_length=127, verbose_name="Телеграм", blank=True, null=True
+    )
     telegram_id = models.IntegerField(**blank_and_null)
     inviter = models.ForeignKey(
         "User",
@@ -96,10 +101,10 @@ class VerificationStatus(models.TextChoices):
 
 class PersonalVerification(models.Model):
     class DocumentType(models.TextChoices):
-        PASSPORT = "passport", _("Passport")
-        ID_CARD = "id_card", _("ID card")
-        DRIVER_LICENSE = "driver_license", _("Driver's license")
-        RESIDENCE_PERMIT = "residence_permit", _("Residence permit")
+        PASSPORT = "passport", "Паспорт"
+        ID_CARD = "id_card", "ID карта"
+        DRIVER_LICENSE = "driver_license", "Водительские права"
+        RESIDENCE_PERMIT = "residence_permit", "Вид на жительство"
 
     class Gender(models.TextChoices):
         MALE = "male", _("Male")
@@ -123,6 +128,27 @@ class PersonalVerification(models.Model):
         choices=VerificationStatus.choices,
         default=VerificationStatus.NO_DATA,
     )
+    reject_message = models.TextField(verbose_name="Причина отказа", blank=True)
+
+    class Meta:
+        verbose_name = "Документ, подтверждающий личность"
+        verbose_name_plural = "Документы, подтверждающие личность"
+
+    def __str__(self):
+        return (
+            f"{self.get_document_type_display()} "
+            f"- {self.first_name} {self.last_name}"
+        )
+
+    def save(self, *args, **kwargs):
+        if self.status == VerificationStatus.APPROVED and self.file:
+            file_path = self.file.path
+            os.remove(file_path)
+            self.file = None
+        elif self.status == VerificationStatus.REJECTED and self.reject_message == "":
+            raise ValidationError("Reject message is required for REJECTED status.")
+
+        super().save(*args, **kwargs)
 
 
 class AddressVerification(models.Model):
@@ -145,6 +171,24 @@ class AddressVerification(models.Model):
         choices=VerificationStatus.choices,
         default=VerificationStatus.NO_DATA,
     )
+    reject_message = models.TextField(verbose_name="Причина отказа", blank=True)
+
+    class Meta:
+        verbose_name = "Документ, подтверждающий адрес"
+        verbose_name_plural = "Документы, подтверждающие адрес"
+
+    def __str__(self):
+        return f"{self.country}, {self.city}, {self.address}"
+
+    def save(self, *args, **kwargs):
+        if self.status == VerificationStatus.APPROVED and self.file:
+            file_path = self.file.path
+            os.remove(file_path)
+            self.file = None
+        elif self.status == VerificationStatus.REJECTED and self.reject_message == "":
+            raise ValidationError("Reject message is required for REJECTED status.")
+
+        super().save(*args, **kwargs)
 
 
 class TempData(models.Model):

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import ListModelMixin
 from rest_framework.permissions import IsAuthenticated
@@ -26,6 +27,9 @@ class DocsViewSet(ListModelMixin, GenericViewSet):
     @action(methods=["post"], detail=False)
     def apply(self, request, *args, **kwargs):
         user = self.request.user
-        user.agreement_applied = True
-        user.save()
-        return Response(status=status.HTTP_200_OK)
+        if user.agreement_date is None:
+            user.agreement_date = timezone.now()
+            user.save()
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        return Response(status=status.HTTP_204_NO_CONTENT)
