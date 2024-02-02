@@ -1,38 +1,58 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
-from . import views
+
+from apps.accounts.views import (
+    DocsViewSet,
+    PasswordChangeAPIView,
+    ProfileAPIView,
+    EmailConfirmAPIView,
+    RecoverPasswordAPIView,
+    ResetPasswordAPIView,
+    LoginConfirmView,
+    LoginAPIView,
+    RegisterAPIView,
+)
+from apps.accounts.views.verification import (
+    VerificationAPIView,
+    VerificationStatusAPIView,
+)
 
 router = DefaultRouter()
-router.register("docs", views.DocsViewSet, basename="docs")
+router.register("docs", DocsViewSet, basename="docs")
 
 urlpatterns = [
-    path("register/", views.RegisterAPIView.as_view(), name="register"),
-    path("login/", views.LoginAPIView.as_view(), name="login"),
+    path("register/", RegisterAPIView.as_view(), name="register"),
+    path("login/", LoginAPIView.as_view(), name="login"),
     path(
         "login/confirm/<slug:service_type>/",
-        views.LoginConfirmView.as_view(),
+        LoginConfirmView.as_view(),
         name="login_confirm",
     ),
     path(
         "recover_password/send/",
-        views.ResetPasswordAPIView.as_view(),
+        ResetPasswordAPIView.as_view(),
         name="reset-password",
     ),
     path(
         "recover_password/confirm/<token>/",
-        views.RecoverPasswordAPIView.as_view(),
+        RecoverPasswordAPIView.as_view(),
         name="recover-password",
     ),
-    path("confirm_email/", views.EmailConfirmAPIView.as_view(), name="confirm-email"),
-    path("profile/", views.ProfileAPIView.as_view(), name="profile"),
+    path("confirm_email/", EmailConfirmAPIView.as_view(), name="confirm-email"),
+    path("profile/", ProfileAPIView.as_view(), name="profile"),
     path(
         "profile/verification/",
-        views.VerificationAPIView.as_view(),
+        VerificationStatusAPIView.as_view(),
+        name="verification_status",
+    ),
+    path(
+        "profile/verification/<verification_type>/",
+        VerificationAPIView.as_view(),
         name="verification",
     ),
     path(
         "profile/change_password/",
-        views.PasswordChangeAPIView.as_view(),
+        PasswordChangeAPIView.as_view(),
         name="change-password",
     ),
 ] + router.urls

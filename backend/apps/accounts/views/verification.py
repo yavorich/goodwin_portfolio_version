@@ -1,33 +1,49 @@
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
+from django.http import Http404
+from rest_framework.generics import (
+    CreateAPIView,
+    RetrieveUpdateAPIView,
+    RetrieveAPIView,
+)
 
+from apps.accounts.permissions import IsAuthenticatedAndAcceptedOfferAgreement
 from apps.accounts.serializers import (
     PersonalVerificationSerializer,
     AddressVerificationSerializer,
     VerificationStatusSerializer,
 )
-from apps.accounts.models import User
 
 
-class VerificationAPIView(RetrieveAPIView, CreateAPIView):
-    permission_classes = [IsAuthenticated]
+class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
+    permission_classes = [IsAuthenticatedAndAcceptedOfferAgreement]
     serializer_class = {
         "personal": PersonalVerificationSerializer,
         "address": AddressVerificationSerializer,
     }
 
+    def validate_verification_type(self):
+        verification_type = self.kwargs.get("verification_type")
+        if verification_type not in set(self.serializer_class.keys()):
+            raise Http404
+        return verification_type
+
     def get_object(self):
-        return get_object_or_404(User, pk=self.request.user.pk)
+        verification_type = self.kwargs.get("verification_type")
+        user = self.request.user
+        verification_object = None
+
+        match verification_type:
+            case "personal":
+                verification_object = getattr(user, "personal_verification", None)
+            case "address":
+                verification_object = getattr(user, "address_verification", None)
+
+        if verification_object is None:
+            raise Http404
+
+        return verification_object
 
     def get_serializer_class(self):
-        verification_type = self.request.query_params.get("type")
-        available_types = list(self.serializer_class.keys())
-        if self.request.method == "POST" and verification_type not in available_types:
-            raise ValueError(
-                f"Query parameter 'type' must be one of: {available_types}"
-            )
+        verification_type = self.kwargs.get("verification_type")
         return self.serializer_class[verification_type]
 
     def get_serializer_context(self):
@@ -36,8 +52,21 @@ class VerificationAPIView(RetrieveAPIView, CreateAPIView):
         return context
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = VerificationStatusSerializer(
-            instance, context={"user": request.user}
-        )
-        return Response(serializer.data)
+        self.validate_verification_type()
+        return super().retrieve(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        self.validate_verification_type()
+        return super().update(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        self.validate_verification_type()
+        return super().create(request, *args, **kwargs)
+
+
+class VerificationStatusAPIView(RetrieveAPIView):
+    permission_classes = [IsAuthenticatedAndAcceptedOfferAgreement]
+    serializer_class = VerificationStatusSerializer
+
+    def get_object(self):
+        return self.request.user
