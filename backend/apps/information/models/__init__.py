@@ -3,3 +3,4 @@
 from .operation import Operation
 from .program import Program, UserProgram
 from .wallet import Wallet
+from .frozen import FrozenItem
