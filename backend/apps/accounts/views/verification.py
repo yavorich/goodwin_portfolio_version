@@ -4,20 +4,17 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
     RetrieveAPIView,
 )
-from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-from rest_framework.response import Response
 
+from apps.accounts.permissions import IsAuthenticatedAndAcceptedOfferAgreement
 from apps.accounts.serializers import (
     PersonalVerificationSerializer,
     AddressVerificationSerializer,
     VerificationStatusSerializer,
 )
-from apps.accounts.models import User, PersonalVerification
 
 
 class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedAndAcceptedOfferAgreement]
     serializer_class = {
         "personal": PersonalVerificationSerializer,
         "address": AddressVerificationSerializer,
@@ -68,7 +65,7 @@ class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
 
 
 class VerificationStatusAPIView(RetrieveAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedAndAcceptedOfferAgreement]
     serializer_class = VerificationStatusSerializer
 
     def get_object(self):
