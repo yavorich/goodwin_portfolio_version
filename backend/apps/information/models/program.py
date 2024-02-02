@@ -3,7 +3,6 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, add_business_days
-from apps.accounts.models import User
 
 
 class Program(models.Model):
@@ -26,24 +25,29 @@ class Program(models.Model):
     max_risk = models.FloatField(_("Maximum risk"))
     success_fee = models.FloatField("Success fee")
     management_fee = models.FloatField("Management fee")
-    withdrawal_term = models.DurationField(_("Withdrawal term"))
+    withdrawal_terms = models.IntegerField(_("Withdrawal term (days)"))
 
 
 class UserProgram(models.Model):
     class Status(models.TextChoices):
-        RUNNING = "running"
-        START = "start"
-        REPLENISHMENT = "replenishment"
+        INITIAL = "initial", "Ожидает запуска"
+        RUNNING = "running", "Запущена"
+        REPLENISHMENT = "replenishment", "Ожидает пополнения"
+        EARLY_CLOSURE = "early_closure", "Завершена досрочно"
+        FINISHED = "finished", "Завершена"
 
-    user = models.ForeignKey(User, related_name="programs", on_delete=models.CASCADE)
+    name = models.CharField(max_length=31, **blank_and_null)
+    wallet = models.ForeignKey(
+        "Wallet", related_name="programs", on_delete=models.CASCADE
+    )
     program = models.ForeignKey(Program, related_name="users", on_delete=models.CASCADE)
     start_date = models.DateField(default=add_business_days(3))
-    funds = models.FloatField(_("Underlying funds"))
+    funds = models.FloatField(_("Underlying funds"), default=0.0)
+    force_closed = models.BooleanField(default=False)
+    last_replenishment = models.DateTimeField(**blank_and_null)
 
-    @property
-    def name(self):
-        count = self.objects.filter(user=self.user, program=self.program).count()
-        return self.program.name + f"/{count}"
+    def __str__(self):
+        return str(self.name)
 
     @property
     def end_date(self):
@@ -53,6 +57,26 @@ class UserProgram(models.Model):
 
     @property
     def status(self):
+        if self.force_closed:
+            return self.Status.EARLY_CLOSURE
+        if self.last_replenishment and now().date() < add_business_days(
+            days=3, start=self.last_replenishment.date()
+        ):
+            return self.Status.REPLENISHMENT
         if now().date() < self.start_date:
-            return self.Status.START
-        return self.Status.RUNNING  # добавить условие для replenishment
+            return self.Status.INITIAL
+        if self.end_date and now().date() >= self.end_date:
+            return self.Status.FINISHED
+        return self.Status.RUNNING
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            count = UserProgram.objects.filter(
+                wallet=self.wallet, program=self.program
+            ).count()
+            self.name = self.program.name + f"/{count + 1}"
+        super().save(*args, **kwargs)
+
+    def update_balance(self, amount):
+        self.funds += amount
+        self.save()
