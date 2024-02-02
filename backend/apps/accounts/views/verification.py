@@ -1,5 +1,9 @@
 from django.http import Http404
-from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import (
+    CreateAPIView,
+    RetrieveUpdateAPIView,
+    RetrieveAPIView,
+)
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -61,3 +65,11 @@ class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
     def create(self, request, *args, **kwargs):
         self.validate_verification_type()
         return super().create(request, *args, **kwargs)
+
+
+class VerificationStatusAPIView(RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = VerificationStatusSerializer
+
+    def get_object(self):
+        return self.request.user
