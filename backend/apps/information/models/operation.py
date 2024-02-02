@@ -61,60 +61,60 @@ class Operation(models.Model):
 
     def apply(self):
         with transaction.atomic():
-            getattr(self, f"apply_{self.type}")()
+            getattr(self, f"_apply_{self.type}")()
             self.done = True
             self.save()
 
-    def apply_replenishment(self):
+    def _apply_replenishment(self):
         self.wallet.update_balance(free=self.amount_free)
 
-    def apply_withdrawal(self):
+    def _apply_withdrawal(self):
         self.wallet.update_balance(free=-self.amount_free)
 
-    def apply_profit_bonus(self):
+    def _apply_profit_bonus(self):
         self.wallet.update_balance(free=self.amount_free)
 
-    def apply_partner_bonus(self):
+    def _apply_partner_bonus(self):
         self.wallet.update_balance(free=self.amount_free)
 
-    def apply_program_start(self):
-        self.transfer_wallet_to_program()
+    def _apply_program_start(self):
+        self._transfer_wallet_to_program()
 
-    def apply_program_early_closure(self):
-        self.transfer_program_to_wallet(freeze=True)
+    def _apply_program_early_closure(self):
+        self._transfer_program_to_wallet(freeze=True)
         self.program.force_closed = True
         self.program.save()
 
-    def apply_program_replenishment(self):
-        self.transfer_wallet_to_program()
+    def _apply_program_replenishment(self):
+        self._transfer_wallet_to_program()
         self.program.last_replenishment = now()
         self.program.save()
 
-    def apply_program_replenishment_cancel(self):
-        self.transfer_program_to_wallet(freeze=True)
+    def _apply_program_replenishment_cancel(self):
+        self._transfer_program_to_wallet(freeze=True)
 
-    def apply_extra_fee(self):
+    def _apply_extra_fee(self):
         self.wallet.update_balance(
             free=self.amount_frozen - self.amount_free,
             frozen=-self.amount_frozen,
         )
 
-    def apply_program_accrual(self):
-        self.transfer_program_to_wallet(freeze=False)
+    def _apply_program_accrual(self):
+        self._transfer_program_to_wallet(freeze=False)
 
-    def create_frozen_item(self):
+    def _create_frozen_item(self):
         FrozenItem.objects.create(
             operation=self,
             wallet=self.wallet,
             amount=self.amount_frozen,
         )
 
-    def transfer_wallet_to_program(self):
+    def _transfer_wallet_to_program(self):
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
         self.program.update_balance(amount=self.amount)
 
-    def transfer_program_to_wallet(self, freeze: bool):
+    def _transfer_program_to_wallet(self, freeze: bool):
         if freeze:
-            self.create_frozen_item()
+            self._create_frozen_item()
         self.wallet.update_balance(free=self.amount_free, frozen=self.amount_frozen)
         self.program.update_balance(amount=-self.amount)
