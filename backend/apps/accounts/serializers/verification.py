@@ -24,10 +24,11 @@ class PersonalVerificationSerializer(ModelSerializer):
             "document_issue_date",
             "document_issue_region",
             "file",
+            "status",
             "reject_message",
         ]
         extra_kwargs = {f: {"required": True} for f in fields}
-        read_only_fields = ["reject_message"]
+        read_only_fields = ["status", "reject_message"]
 
     def create(self, validated_data):
         validated_data["status"] = VerificationStatus.CHECK
@@ -55,8 +56,11 @@ class AddressVerificationSerializer(ModelSerializer):
             "address",
             "postal_code",
             "file",
+            "status",
+            "reject_message",
         ]
         extra_kwargs = {f: {"required": True} for f in fields}
+        read_only_fields = ["status", "reject_message"]
 
     def create(self, validated_data):
         validated_data["status"] = VerificationStatus.CHECK
