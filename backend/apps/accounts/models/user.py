@@ -140,16 +140,6 @@ class PersonalVerification(models.Model):
             f"- {self.first_name} {self.last_name}"
         )
 
-    def save(self, *args, **kwargs):
-        if self.status == VerificationStatus.APPROVED and self.file:
-            file_path = self.file.path
-            os.remove(file_path)
-            self.file = None
-        elif self.status == VerificationStatus.REJECTED and self.reject_message == "":
-            raise ValidationError("Reject message is required for REJECTED status.")
-
-        super().save(*args, **kwargs)
-
 
 class AddressVerification(models.Model):
     class DocumentType(models.TextChoices):
@@ -179,16 +169,6 @@ class AddressVerification(models.Model):
 
     def __str__(self):
         return f"{self.country}, {self.city}, {self.address}"
-
-    def save(self, *args, **kwargs):
-        if self.status == VerificationStatus.APPROVED and self.file:
-            file_path = self.file.path
-            os.remove(file_path)
-            self.file = None
-        elif self.status == VerificationStatus.REJECTED and self.reject_message == "":
-            raise ValidationError("Reject message is required for REJECTED status.")
-
-        super().save(*args, **kwargs)
 
 
 class TempData(models.Model):
