@@ -163,3 +163,5 @@ static/
 media/
 data/db/
 actions-runner/
+
+*.sqlite3
