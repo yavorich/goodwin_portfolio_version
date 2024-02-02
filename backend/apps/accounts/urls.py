@@ -16,7 +16,6 @@ from apps.accounts.views.verification import VerificationAPIView
 
 router = DefaultRouter()
 router.register("docs", DocsViewSet, basename="docs")
-# router.register("verification", VerificationViewSet, basename="verification")
 
 urlpatterns = [
     path("register/", RegisterAPIView.as_view(), name="register"),
@@ -39,7 +38,7 @@ urlpatterns = [
     path("confirm_email/", EmailConfirmAPIView.as_view(), name="confirm-email"),
     path("profile/", ProfileAPIView.as_view(), name="profile"),
     path(
-        "profile/verification/",
+        "profile/verification/<verification_type>/",
         VerificationAPIView.as_view(),
         name="verification",
     ),
