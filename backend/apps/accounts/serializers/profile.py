@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer, CharField, Serializer
 from rest_framework.exceptions import ValidationError
 
-from apps.accounts.models import User, Settings
+from apps.accounts.models import User, Settings, SettingsAuthCodes
 
 
 class ProfileSettingsSerializer(ModelSerializer):
@@ -100,3 +100,9 @@ class PasswordChangeSerializer(Serializer):
         if attrs["new_password"] != attrs["new_password2"]:
             raise ValidationError("Password mismatch")
         return attrs
+
+
+class SettingsAuthCodeSerializer(ModelSerializer):
+    class Meta:
+        model = SettingsAuthCodes
+        fields = ["id", "user", "token", "auth_code", "created_at", "request_body"]
