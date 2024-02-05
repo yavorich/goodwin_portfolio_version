@@ -11,7 +11,12 @@ from core.utils import validate_file_size
 
 
 class PersonalVerificationSerializer(ModelSerializer):
-    file = FileField(validators=[validate_file_size])
+    file = FileField(
+        validators=[validate_file_size],
+        required=True,
+        allow_null=False,
+        allow_empty_file=False,
+    )
 
     class Meta:
         model = PersonalVerification
