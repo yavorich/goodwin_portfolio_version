@@ -12,6 +12,7 @@ from apps.accounts.views import (
     LoginAPIView,
     RegisterAPIView,
 )
+from apps.accounts.views.profile import SettingsAPIView
 from apps.accounts.views.verification import (
     VerificationAPIView,
     VerificationStatusAPIView,
@@ -54,5 +55,10 @@ urlpatterns = [
         "profile/change_password/",
         PasswordChangeAPIView.as_view(),
         name="change-password",
+    ),
+    path(
+        "profile/settings/",
+        SettingsAPIView.as_view(),
+        name="settings",
     ),
 ] + router.urls

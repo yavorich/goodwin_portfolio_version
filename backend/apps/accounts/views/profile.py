@@ -1,14 +1,17 @@
+from django.http import Http404
 from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
 from apps.accounts.models import User
+from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers import (
     ProfileRetrieveSerializer,
     ProfileUpdateSerializer,
     PasswordChangeSerializer,
 )
+from apps.accounts.serializers.profile import ProfileSettingsSerializer
 
 
 class ProfileAPIView(RetrieveUpdateAPIView):
@@ -43,3 +46,15 @@ class PasswordChangeAPIView(GenericAPIView):
         request.user.set_password(serializer.data["new_password"])
         request.user.save()
         return Response({"success": "Пароль успешно обновлен"})
+
+
+class SettingsAPIView(RetrieveUpdateAPIView):
+    permission_classes = [IsAuthenticatedAndVerified]
+    serializer_class = ProfileSettingsSerializer
+
+    def get_object(self):
+        user = self.request.user
+        settings = getattr(user, "settings", None)
+        if settings is None:
+            raise Http404
+        return settings
