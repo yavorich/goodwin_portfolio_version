@@ -5,9 +5,7 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 
-from config.settings import (
-    RECOVER_PASSWORD_CODE_EXPIRES,
-)
+from config.settings import RECOVER_PASSWORD_CODE_EXPIRES
 from apps.accounts.tasks import send_email_msg
 
 
@@ -63,17 +61,3 @@ def send_email_change_password(user, request):
         from_email="GOODWIN",
         html=True,
     )
-
-
-def send_email_login_confirmation(user, code):
-    send_email_msg.delay(
-        user.email,
-        _("Код подтверждения входа"),
-        _("Код подтверждения для входа в аккаунт") + f": {code}",
-        from_email="GOODWIN",
-        html=False,
-    )
-
-
-def send_telegram_login_confirmation(user, code):
-    pass
