@@ -1,3 +1,4 @@
+from rest_framework.fields import UUIDField
 from rest_framework.serializers import ModelSerializer, CharField, Serializer
 from rest_framework.exceptions import ValidationError
 
@@ -103,6 +104,8 @@ class PasswordChangeSerializer(Serializer):
 
 
 class SettingsAuthCodeSerializer(ModelSerializer):
+    token = UUIDField(format="hex_verbose")
+
     class Meta:
         model = SettingsAuthCodes
         fields = ["id", "user", "token", "auth_code", "created_at", "request_body"]
