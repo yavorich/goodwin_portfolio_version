@@ -131,7 +131,7 @@ LANGUAGE_CODE = "ru"
 
 LANGUAGES = [
     ("ru", _("Russian")),
-    ("kz", _("Kazakhstan")),
+    ("en", _("English")),
     ("cn", _("China")),
 ]
 
