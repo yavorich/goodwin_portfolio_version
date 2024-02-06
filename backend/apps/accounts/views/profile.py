@@ -1,10 +1,11 @@
 from django.http import Http404
+from rest_framework import status
 from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 
-from apps.accounts.models import User
+from apps.accounts.models import User, SettingsAuthCodes
 from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers import (
     ProfileRetrieveSerializer,
@@ -58,3 +59,25 @@ class SettingsAPIView(RetrieveUpdateAPIView):
         if settings is None:
             raise Http404
         return settings
+
+    def update(self, request, *args, **kwargs):
+        current_settings_serializer = self.get_serializer(self.get_object())
+
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        new_auth_code = None
+        if current_settings_serializer.data != serializer.data:
+            new_auth_code = SettingsAuthCodes.objects.create(
+                user=request.user,
+                auth_code=SettingsAuthCodes.generate_code(),
+                request_body=serializer.data,
+            )
+
+        return Response(
+            {
+                "token": new_auth_code.token if new_auth_code else None,
+                "updated_data": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
