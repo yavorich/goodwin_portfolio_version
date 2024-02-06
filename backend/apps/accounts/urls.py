@@ -12,7 +12,7 @@ from apps.accounts.views import (
     LoginAPIView,
     RegisterAPIView,
 )
-from apps.accounts.views.profile import SettingsAPIView
+from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
     VerificationAPIView,
     VerificationStatusAPIView,
@@ -60,5 +60,10 @@ urlpatterns = [
         "profile/settings/",
         SettingsAPIView.as_view(),
         name="settings",
+    ),
+    path(
+        "profile/settings/confirm/",
+        SettingsConfirmCreateView.as_view(),
+        name="confirm-settings",
     ),
 ] + router.urls
