@@ -6,8 +6,10 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from sqlite3 import connect
 
+from django.utils import timezone
+
 from apps.accounts.models import User, Settings
-from apps.information.models import Program, UserProgram, Operation  # , FrozenItem
+from apps.information.models import Program, UserProgram, Operation, FrozenItem
 
 
 class Command(BaseCommand):
@@ -21,9 +23,9 @@ class Command(BaseCommand):
             create_user_settings(cursor)
             update_refer(cursor)
             update_wallet_free(cursor)
-            # update_wallet_frozen(cursor)
-            # create_programs(cursor)
-            # create_user_programs(cursor)
+            create_programs(cursor)
+            create_user_programs(cursor)
+            update_wallet_frozen(cursor)
 
         print("Success")
 
@@ -50,10 +52,12 @@ def create_users(cursor):
             "telegram": user_telegram[1:] if user_telegram is not None else None,
             "telegram_id": user_telegram_id,
             "is_staff": role == 1,
-            "agreement_applied": verified != 0,
+            "agreement_date": timezone.now() if verified != 0 else None,
         }
         if registration_at is not None:
-            update_data["date_joined"] = datetime.fromisoformat(registration_at)
+            update_data["date_joined"] = timezone.make_aware(
+                datetime.fromisoformat(registration_at)
+            )
 
         User.objects.update_or_create(email=email, defaults=update_data)
 
@@ -119,6 +123,7 @@ def update_wallet_frozen(cursor):
         "JOIN user_programs ON green_wallet_freeze.program_id = user_programs.id "
         "JOIN program ON user_programs.program_id = program.id"
     )
+    now = timezone.now()
     for (
         email,
         user_program_name,
@@ -130,40 +135,44 @@ def update_wallet_frozen(cursor):
         user = User.objects.get(email=email)
         wallet = user.wallet
 
-        match = re.search("[(]\d+[)]", user_program_name)
-        if match:
-            user_program_name = (
-                program_name + f"{user_program_name[match.start()+1:match.end()-1]}"
-            )
-        else:
-            user_program_name = program_name
-
-        user_program = UserProgram.objects.get(user=user, name=user_program_name)
-
-        operation_data = {
-            "type": Operation.Type.WITHDRAWAL,
-            "wallet": wallet,
-            "amount_free": 0,
-            "amount_frozen": amount,
-            "created_at": created,
-            "done": True,
-            "program": user_program,
-        }
-        operation = Operation.objects.filter(**operation_data).first()
-        if operation is None:
-            operation = Operation.objects.create(**operation_data)
+        # match = re.search("[(]\d+[)]", user_program_name)
+        # if match:
+        #     user_program_name = (
+        #         program_name + f"{user_program_name[match.start()+1:match.end()-1]}"
+        #     )
+        # else:
+        #     user_program_name = program_name
+        #
+        # user_program = UserProgram.objects.get(wallet=wallet, name=user_program_name)
+        #
+        # operation_data = {
+        #     "type": Operation.Type.WITHDRAWAL,
+        #     "wallet": wallet,
+        #     "amount_free": 0,
+        #     "amount_frozen": amount,
+        #     "created_at": created,
+        #     "done": True,
+        #     "program": user_program.program,
+        # }
+        # operation = Operation.objects.filter(**operation_data).first()
+        # if operation is None:
+        #     operation = Operation.objects.create(**operation_data)
 
         frozen_item_data = {
             "wallet": wallet,
             "amount": amount,
-            "operation": operation,
-            "until": expired,
+            # "operation": operation,
+            "defrost_date": timezone.make_aware(datetime.fromisoformat(expired)),
         }
-        # if FrozenItem.objects.filter(**frozen_item_data).exists():
-        #     continue
-        #
-        # FrozenItem.objects.create(**frozen_item_data)
-        # wallet.frozen += amount
+
+        frozen_item = FrozenItem.objects.filter(**frozen_item_data).first()
+        if frozen_item is None:
+            frozen_item = FrozenItem.objects.create(**frozen_item_data)
+            wallet.frozen += amount
+            wallet.save()
+
+        if not frozen_item.done and frozen_item.defrost_date <= now:
+            frozen_item.defrost()
 
 
 def create_programs(cursor):
@@ -190,10 +199,10 @@ def create_programs(cursor):
             "min_deposit": min_deposit,
             "accrual_type": Program.AccrualType.DAILY
             if p_type == 1
-            else Program.AccrualType.AFTER_END,
+            else Program.AccrualType.AFTER_FINISH,
             "withdrawal_type": Program.WithdrawalType.DAILY
             if p_type == 1
-            else Program.WithdrawalType.AFTER_END,
+            else Program.WithdrawalType.AFTER_FINISH,
             "max_risk": 0,
             "success_fee": success_fee,
             "management_fee": 0.004,  # TODO get from admin
@@ -211,7 +220,7 @@ def create_user_programs(cursor):
         "JOIN user ON user_programs.user_id = user.id "
         "JOIN program ON user_programs.program_id = program.id "
     )
-
+    now = timezone.now()
     for (
         name,
         status,
@@ -232,15 +241,27 @@ def create_user_programs(cursor):
         else:
             name = program.name
 
-        if UserProgram.objects.filter(
-            wallet=wallet, program=program, name=name
-        ).exists():
+        data = {
+            "name": name,
+            "wallet": wallet,
+            "program": program,
+            "start_date": timezone.make_aware(datetime.fromisoformat(start)),
+        }
+
+        if UserProgram.objects.filter(**data).exists():
             continue
 
-        UserProgram.objects.create(
-            name=name,
-            wallet=wallet,
-            program=program,
-            start_date=start,
-            # force_closed = False
+        end_date = (
+            timezone.make_aware(datetime.fromisoformat(finish)) if finish else None
         )
+        if end_date and end_date < now:
+            data["status"] = UserProgram.Status.FINISHED
+            data["end_date"] = end_date
+
+        elif data["start_date"] <= now:
+            data["status"] = UserProgram.Status.RUNNING
+
+        else:
+            data["status"] = UserProgram.Status.INITIAL
+
+        UserProgram.objects.create(**data)
