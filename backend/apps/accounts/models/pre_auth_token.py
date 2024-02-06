@@ -17,6 +17,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import NotFound, ParseError
 
+from apps.telegram.tasks import send_telegram_message_task
 from config.settings import PRE_AUTH_CODE_EXPIRES, DEBUG
 from .user import User
 
@@ -62,40 +63,14 @@ class PreAuthTokenManager(Manager):
         )
 
         if has_email_confirmation or has_telegram_confirmation:
-            confirmation_data = {
-                "telegram": None,
-                "email": None,
-            }
             pre_auth_token = self.model(
                 verify_type=verify_type,
                 user=user,
                 telegram_verify=(not has_telegram_confirmation),
                 email_verify=(not has_email_confirmation),
             )
-
-            if has_telegram_confirmation:
-                pre_auth_token.telegram_code = self.model.generate_code()
-                # сделать универсальным для других типов подтверждения
-                from apps.accounts.services import send_telegram_login_confirmation
-
-                send_telegram_login_confirmation(
-                    pre_auth_token.user, pre_auth_token.telegram_code
-                )
-                confirmation_data["telegram"] = user.telegram
-
-            if has_email_confirmation:
-                from apps.accounts.services import send_email_login_confirmation
-
-                pre_auth_token.email_code = self.model.generate_code()
-                # сделать универсальным для других типов подтверждения
-                send_email_login_confirmation(
-                    pre_auth_token.user, pre_auth_token.email_code
-                )
-                confirmation_data["email"] = user.email
-
-            pre_auth_token.save()
-            confirmation_data["token"] = pre_auth_token.token
-            return False, confirmation_data
+            pre_auth_token.send()
+            return False, pre_auth_token.confirmation_data
 
         return True, {}
 
@@ -128,3 +103,57 @@ class PreAuthToken(Model):
     @staticmethod
     def generate_code():
         return "".join((choice(digits) for i in range(10)))
+
+    @property
+    def confirmation_data(self):
+        return {
+            "token": self.token,
+            "telegram": self._confirmation_telegram(),
+            "email": self._confirmation_email(),
+        }
+
+    def _confirmation_telegram(self):
+        if not self.telegram_verify:
+            return self.user.telegram
+
+    def _confirmation_email(self):
+        if not self.email_verify:
+            return self.user.email
+
+    def send(self):
+        if not self.telegram_verify:
+            from apps.accounts.tasks import send_email_msg
+
+            self.telegram_code = self.generate_code()
+            email_data = PRE_AUTH_TOKEN_EMAIL_DATA[self.verify_type]
+            send_email_msg.delay(
+                self.user.email,
+                email_data["title"],
+                email_data["description"].format(code=self.telegram_code),
+                "GOODWIN",
+            )
+
+        if not self.email_verify:
+            self.email_code = self.generate_code()
+            text = PRE_AUTH_TOKEN_TELEGRAM_TEXT[self.verify_type].format(
+                code=self.email_code
+            )
+            send_telegram_message_task.delay(self.user.telegram_id, text)
+
+        self.save()
+
+
+# данные email сообщений для всех типов подтверждения
+PRE_AUTH_TOKEN_EMAIL_DATA = {
+    PreAuthToken.VerifyType.AUTHORIZATION: {
+        "title": _("Код подтверждения входа"),
+        "description": _("Код подтверждения для входа в аккаунт: {code}"),
+    },
+}
+
+# тексты telegram сообщений для всех типов подтверждения
+PRE_AUTH_TOKEN_TELEGRAM_TEXT = {
+    PreAuthToken.VerifyType.AUTHORIZATION: _(
+        "Код подтверждения для входа в аккаунт: {code}"
+    ),
+}
