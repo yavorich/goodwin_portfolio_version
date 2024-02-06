@@ -5,8 +5,7 @@ from django.utils.timezone import now
 
 from core.utils import blank_and_null
 
-from .program import UserProgram
-from .frozen import FrozenItem
+from .program import Program, UserProgram, UserProgramReplenishment
 from .wallet import Wallet
 
 
@@ -27,22 +26,31 @@ class Operation(models.Model):
     wallet = models.ForeignKey(
         Wallet, related_name="operations", on_delete=models.CASCADE
     )
-    amount_free = models.FloatField()
-    amount_frozen = models.FloatField()
+    amount = models.FloatField(default=0.0)
+    amount_free = models.FloatField(default=0.0)
+    amount_frozen = models.FloatField(default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
     done = models.BooleanField(default=False)
 
     program = models.ForeignKey(
+        Program,
+        related_name="operations",
+        on_delete=models.CASCADE,
+        **blank_and_null,
+    )
+    user_program = models.ForeignKey(
         UserProgram,
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
-
-    @property
-    def amount(self):
-        return self.amount_free + self.amount_frozen
+    replenishment = models.ForeignKey(
+        UserProgramReplenishment,
+        related_name="operations",
+        on_delete=models.CASCADE,
+        **blank_and_null,
+    )
 
     def clean_program(self, value):
         if not value and self.type.startswith("program"):
@@ -66,32 +74,42 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):
-        self.wallet.update_balance(free=self.amount_free)
+        self.wallet.update_balance(free=self.amount)
 
     def _apply_withdrawal(self):
-        self.wallet.update_balance(free=-self.amount_free)
+        self.wallet.update_balance(free=-self.amount)
 
     def _apply_profit_bonus(self):
-        self.wallet.update_balance(free=self.amount_free)
+        self.wallet.update_balance(free=self.amount)
 
     def _apply_partner_bonus(self):
-        self.wallet.update_balance(free=self.amount_free)
+        self.wallet.update_balance(free=self.amount)
 
     def _apply_program_start(self):
+        self.user_program = UserProgram.objects.create(
+            wallet=self.wallet,
+            program=self.program,
+        )
         self._transfer_wallet_to_program()
 
     def _apply_program_early_closure(self):
+        self.amount = self.user_program.funds
         self._transfer_program_to_wallet(freeze=True)
-        self.program.force_closed = True
-        self.program.save()
+        self.user_program.close(force=True)
 
     def _apply_program_replenishment(self):
-        self._transfer_wallet_to_program()
-        self.program.last_replenishment = now()
-        self.program.save()
+        self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
+        self.user_program.replenishments.create(
+            amount=self.amount_free + self.amount_frozen
+        )
 
     def _apply_program_replenishment_cancel(self):
-        self._transfer_program_to_wallet(freeze=True)
+        self.replenishment.cancel(self.amount)
+        if self.replenishment.status == UserProgramReplenishment.Status.CANCELED:
+            self.amount = self.replenishment.amount
+            self.save()
+        self._create_frozen_item()
+        self.wallet.update_balance(frozen=self.amount)
 
     def _apply_extra_fee(self):
         self.wallet.update_balance(
@@ -100,21 +118,24 @@ class Operation(models.Model):
         )
 
     def _apply_program_accrual(self):
-        self._transfer_program_to_wallet(freeze=False)
+        # начисление в актив программы
+        withdrawal_type = self.user_program.program.withdrawal_type
+        self.user_program.update_balance(self.amount)
 
-    def _create_frozen_item(self):
-        FrozenItem.objects.create(
-            operation=self,
-            wallet=self.wallet,
-            amount=self.amount_frozen,
-        )
+        # начисление в кошелек
+        if withdrawal_type == Program.WithdrawalType.AFTER_FINISH:
+            if self.user_program.end_date == now().date():
+                self.user_program.close(force=False)
+        elif withdrawal_type == Program.WithdrawalType.DAILY:
+            self._transfer_program_to_wallet(freeze=False)
 
     def _transfer_wallet_to_program(self):
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
-        self.program.update_balance(amount=self.amount)
+        self.user_program.update_balance(amount=self.amount_free + self.amount_frozen)
 
     def _transfer_program_to_wallet(self, freeze: bool):
         if freeze:
-            self._create_frozen_item()
-        self.wallet.update_balance(free=self.amount_free, frozen=self.amount_frozen)
-        self.program.update_balance(amount=-self.amount)
+            self.wallet.update_balance(frozen=self.amount)
+        else:
+            self.wallet.update_balance(free=self.amount)
+        self.user_program.update_balance(amount=-self.amount)
