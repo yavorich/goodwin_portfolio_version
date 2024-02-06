@@ -13,8 +13,8 @@ def send_email_confirmation(user):
     if user.temp.email_last_sending_code is None:
         pass
     elif (
-        user.temp.email_last_sending_code + timezone.timedelta(minutes=5)
-        < timezone.now()
+        user.temp.email_last_sending_code + timezone.timedelta(minutes=1)
+        > timezone.now()
     ):
         return
 
