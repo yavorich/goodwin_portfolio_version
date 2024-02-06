@@ -1,14 +1,77 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import (
+    ModelSerializer,
+)
+from rest_framework.exceptions import ValidationError
 
-from apps.information.models import Operation
+from apps.information.models import Operation, Wallet
 
 
-class OperationListSerializer(ModelSerializer):
+class OperationSerializer(ModelSerializer):
+
     class Meta:
         model = Operation
         fields = [
+            "id",
             "type",
             "amount",
             "created_at",
             "program",
         ]
+
+
+class OperationCreateSerializer(ModelSerializer):
+
+    class Meta:
+        model = Operation
+        fields = [
+            "id",
+            "type",
+            "wallet",
+            "program",
+            "user_program",
+            "replenishment",
+            "amount",
+            "amount_free",
+            "amount_frozen",
+            "confirmed",
+        ]
+
+    def _validate_wallet(self, wallet: Wallet, free=0.0, frozen=0.0):
+        if wallet.free < free:
+            raise ValidationError("Insufficient free funds.")
+        if wallet.frozen < frozen:
+            raise ValidationError("Insufficient frozen funds.")
+
+    def validate(self, attrs):
+        wallet: Wallet = attrs["wallet"]
+        program = attrs.get("program")
+        replenishment = attrs.get("replenishment")
+        amount = attrs.get("amount")
+        free = attrs.get("amount_free")
+        frozen = attrs.get("amount_frozen")
+        _type: Operation.Type = attrs["type"]
+
+        types = Operation.Type
+
+        if _type == types.PROGRAM_START:
+            self._validate_wallet(wallet, free=free, frozen=frozen)
+            if free + frozen < program.min_deposit:
+                raise ValidationError(
+                    f"Minimum program deposit = {program.min_deposit}"
+                )
+
+        if _type == types.PROGRAM_REPLENISHMENT:
+            self._validate_wallet(wallet, free=free, frozen=frozen)
+            if free + frozen < 100:
+                raise ValidationError(f"Minimum program replenishment = {100}")
+
+        if _type == types.PROGRAM_REPLENISHMENT_CANCEL:
+            if replenishment.amount < amount:
+                raise ValidationError(
+                    "The cancellation amount exceeds the replenishment amount"
+                )
+
+        return attrs
+
+    def create(self, validated_data):
+        return super().create(validated_data)

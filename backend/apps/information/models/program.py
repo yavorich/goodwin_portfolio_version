@@ -1,19 +1,18 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import timedelta
 
 from core.utils import blank_and_null, add_business_days
-from apps.accounts.models import User
 
 
 class Program(models.Model):
     class AccrualType(models.TextChoices):
         DAILY = "daily", _("Daily")
-        AFTER_END = "after_end", _("After end")
+        AFTER_FINISH = "after_end", _("After end")
 
     class WithdrawalType(models.TextChoices):
         DAILY = "daily", _("Daily")
-        AFTER_END = "after_end", _("After end")
+        AFTER_FINISH = "after_end", _("After end")
 
     name = models.CharField(_("Program name"), max_length=31)
     duration = models.IntegerField(_("Duration (months)"), **blank_and_null)
@@ -26,33 +25,97 @@ class Program(models.Model):
     max_risk = models.FloatField(_("Maximum risk"))
     success_fee = models.FloatField("Success fee")
     management_fee = models.FloatField("Management fee")
-    withdrawal_term = models.DurationField(_("Withdrawal term"))
+    withdrawal_terms = models.IntegerField(_("Withdrawal term (days)"))
+
+
+class ProgramResult(models.Model):
+    program = models.ForeignKey(
+        Program, related_name="results", on_delete=models.CASCADE
+    )
+    result = models.FloatField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        get_latest_by = "created_at"
+        ordering = ["-created_at"]
 
 
 class UserProgram(models.Model):
     class Status(models.TextChoices):
-        RUNNING = "running"
-        START = "start"
-        REPLENISHMENT = "replenishment"
+        INITIAL = "initial", "Ожидает запуска"
+        RUNNING = "running", "Запущена"
+        FINISHED = "finished", "Завершена"
 
-    user = models.ForeignKey(User, related_name="programs", on_delete=models.CASCADE)
+    name = models.CharField(max_length=31, **blank_and_null)
+    wallet = models.ForeignKey(
+        "Wallet", related_name="programs", on_delete=models.CASCADE
+    )
     program = models.ForeignKey(Program, related_name="users", on_delete=models.CASCADE)
     start_date = models.DateField(default=add_business_days(3))
-    funds = models.FloatField(_("Underlying funds"))
+    end_date = models.DateField(**blank_and_null)
+    status = models.CharField(choices=Status.choices, default=Status.INITIAL)
+    funds = models.FloatField(_("Underlying funds"), default=0.0)
+    force_closed = models.BooleanField(default=False)
 
-    @property
-    def name(self):
-        count = self.objects.filter(user=self.user, program=self.program).count()
-        return self.program.name + f"/{count}"
+    def __str__(self):
+        return str(self.name)
 
-    @property
-    def end_date(self):
-        duration = self.program.duration
-        if duration:
-            return self.start_date + timedelta(months=duration)
+    def _set_name(self):
+        if not self.name:
+            count = UserProgram.objects.filter(
+                wallet=self.wallet, program=self.program
+            ).count()
+            self.name = self.program.name + f"/{count + 1}"
 
-    @property
-    def status(self):
-        if now().date() < self.start_date:
-            return self.Status.START
-        return self.Status.RUNNING  # добавить условие для replenishment
+    def _set_end_date(self):
+        if not self.end_date and (duration := self.program.duration):
+            self.end_date = self.start_date + timedelta(months=duration)
+
+    def save(self, *args, **kwargs):
+        self._set_name()
+        self._set_end_date()
+
+        super().save(*args, **kwargs)
+
+    def start(self):
+        self.status = self.Status.RUNNING
+        self.save()
+
+    def close(self, force: bool = False):
+        self.status = self.Status.FINISHED
+        self.force_closed = force
+        self.wallet.update_balance(frozen=self.funds)
+        self.update_balance(-self.funds)
+        self.save()
+
+    def update_balance(self, amount):
+        self.funds += amount
+        self.save()
+
+
+class UserProgramReplenishment(models.Model):
+    class Status(models.TextChoices):
+        INITIAL = "initial", "Ожидает исполнения"
+        DONE = "done", "Исполнено"
+        CANCELED = "canceled", "Отменено"
+
+    program = models.ForeignKey(
+        UserProgram, related_name="replenishments", on_delete=models.CASCADE
+    )
+    amount = models.FloatField()
+    status = models.CharField(choices=Status.choices, default=Status.INITIAL)
+    apply_date = models.DateField(default=add_business_days(3))
+
+    def apply(self):
+        self.program.funds += self.amount
+        self.program.save()
+
+        self.status = self.Status.DONE
+        self.save()
+
+    def cancel(self, amount):
+        if self.amount - amount < 100:
+            self.status = self.Status.CANCELED
+        else:
+            self.amount -= amount
+        self.save()

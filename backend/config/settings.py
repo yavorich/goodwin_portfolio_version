@@ -131,7 +131,7 @@ LANGUAGE_CODE = "ru"
 
 LANGUAGES = [
     ("ru", _("Russian")),
-    ("kz", _("Kazakhstan")),
+    ("en", _("English")),
     ("cn", _("China")),
 ]
 
@@ -166,6 +166,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "accounts.User"
+
+ATOMIC_REQUESTS = True
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.environ.get("EMAIL_HOST")
