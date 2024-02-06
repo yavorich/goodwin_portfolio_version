@@ -4,7 +4,12 @@ from rest_framework.serializers import (
 )
 from rest_framework.exceptions import ValidationError
 
-from apps.information.models import Program, UserProgram, Wallet
+from apps.information.models import (
+    Program,
+    UserProgram,
+    Wallet,
+    UserProgramReplenishment,
+)
 
 
 class ProgramSerializer(ModelSerializer):
@@ -26,7 +31,7 @@ class ProgramSerializer(ModelSerializer):
         ]
 
 
-class UserProgramListSerializer(ModelSerializer):
+class UserProgramSerializer(ModelSerializer):
     class Meta:
         model = UserProgram
         fields = [
@@ -63,3 +68,16 @@ class UserProgramCreateSerializer(ModelSerializer):
         validated_data.pop("amount_free")
         validated_data.pop("amount_frozen")
         return super().create(validated_data)
+
+
+class UserProgramReplenishmentSerializer(ModelSerializer):
+    program = UserProgramSerializer()
+
+    class Meta:
+        model = UserProgramReplenishment
+        fields = [
+            "id",
+            "program",
+            "amount",
+            "apply_date",
+        ]
