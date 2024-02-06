@@ -11,6 +11,12 @@ class WalletAdmin(admin.ModelAdmin):
     ]
 
 
+class ProgramResultInline(admin.TabularInline):
+    model = models.ProgramResult
+    fields = ["result"]
+    extra = 0
+
+
 @admin.register(models.Program)
 class ProgramAdmin(admin.ModelAdmin):
     list_display = [
@@ -25,6 +31,13 @@ class ProgramAdmin(admin.ModelAdmin):
         "management_fee",
         "withdrawal_terms",
     ]
+    inlines = [ProgramResultInline]
+
+
+class UserProgramReplenishmentInline(admin.TabularInline):
+    model = models.UserProgramReplenishment
+    fields = ["amount", "status", "apply_date"]
+    extra = 0
 
 
 @admin.register(models.UserProgram)
@@ -37,6 +50,7 @@ class UserProgramAdmin(admin.ModelAdmin):
         "funds",
         "status",
     ]
+    inlines = [UserProgramReplenishmentInline]
 
 
 @admin.register(models.Operation)
@@ -54,6 +68,5 @@ class FrozenItemAdmin(admin.ModelAdmin):
     list_display = [
         "wallet",
         "amount",
-        "operation",
-        "until",
+        "defrost_date",
     ]
