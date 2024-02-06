@@ -28,40 +28,48 @@ class OperationCreateSerializer(ModelSerializer):
             "type",
             "wallet",
             "program",
+            "user_program",
+            "replenishment",
+            "amount",
             "amount_free",
             "amount_frozen",
             "confirmed",
         ]
 
+    def _validate_wallet(self, wallet: Wallet, free=0.0, frozen=0.0):
+        if wallet.free < free:
+            raise ValidationError("Insufficient free funds.")
+        if wallet.frozen < frozen:
+            raise ValidationError("Insufficient frozen funds.")
+
     def validate(self, attrs):
         wallet: Wallet = attrs["wallet"]
         program = attrs.get("program")
+        replenishment = attrs.get("replenishment")
+        amount = attrs.get("amount")
+        free = attrs.get("amount_free")
+        frozen = attrs.get("amount_frozen")
         _type: Operation.Type = attrs["type"]
 
-        if not program and _type.startswith("program"):
-            raise ValidationError(
-                f"'program' field must be set for operation with type '{_type}"
-            )
-
         types = Operation.Type
-        if _type in [
-            types.WITHDRAWAL,
-            types.PROGRAM_START,
-            types.PROGRAM_REPLENISHMENT,
-            types.EXTRA_FEE,
-        ]:
-            if wallet.free < attrs["amount_free"]:
-                raise ValidationError("Insufficient free funds.")
-            if wallet.frozen < attrs["amount_frozen"]:
-                raise ValidationError("Insufficient frozen funds.")
 
-        if _type in [
-            types.PROGRAM_ACCRUAL,
-            types.PROGRAM_EARLY_CLOSURE,
-            types.PROGRAM_REPLENISHMENT_CANCEL,
-        ]:
-            if program.funds < attrs["amount_free"]:
-                raise ValidationError("Insufficient program funds.")
+        if _type == types.PROGRAM_START:
+            self._validate_wallet(wallet, free=free, frozen=frozen)
+            if free + frozen < program.min_deposit:
+                raise ValidationError(
+                    f"Minimum program deposit = {program.min_deposit}"
+                )
+
+        if _type == types.PROGRAM_REPLENISHMENT:
+            self._validate_wallet(wallet, free=free, frozen=frozen)
+            if free + frozen < 100:
+                raise ValidationError(f"Minimum program replenishment = {100}")
+
+        if _type == types.PROGRAM_REPLENISHMENT_CANCEL:
+            if replenishment.amount < amount:
+                raise ValidationError(
+                    "The cancellation amount exceeds the replenishment amount"
+                )
 
         return attrs
 
