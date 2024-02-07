@@ -8,7 +8,6 @@ from core.utils import blank_and_null, add_business_days
 class Program(models.Model):
     class AccrualType(models.TextChoices):
         DAILY = "daily", _("Daily")
-        AFTER_FINISH = "after_end", _("After end")
 
     class WithdrawalType(models.TextChoices):
         DAILY = "daily", _("Daily")
@@ -30,7 +29,7 @@ class Program(models.Model):
 
 class ProgramResult(models.Model):
     program = models.ForeignKey(
-        Program, related_name="results", on_delete=models.CASCADE
+        Program, related_name="results", on_delete=models.CASCADE, **blank_and_null
     )
     result = models.FloatField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
