@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("accounts", "0007_alter_user_is_staff"),
+        # ("accounts", "0007_alter_user_is_staff"),
         ("accounts", "0009_alter_addressverification_file"),
     ]
 
