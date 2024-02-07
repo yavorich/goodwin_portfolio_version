@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.models import User, SettingsAuthCodes
+from apps.accounts.models.settings_auth_codes import DestinationType
 from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers import (
     ProfileRetrieveSerializer,
@@ -70,39 +71,49 @@ class SettingsAPIView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        new_auth_code = None
-
+        tokens = {}
         changed_fields = []
+
         for key, value in serializer.validated_data.items():
             if current_settings_serializer.data.get(key) != value:
                 changed_fields.append(key)
 
         if len(changed_fields) > 0:
-            destination = set()
+            destinations = set()
+
             for field in changed_fields:
-                destination.add(field.split("_")[0])
+                destinations.add(field.split("_")[0])
 
-            print("destination", destination)
-            new_auth_code = SettingsAuthCodes.objects.create(
-                user=request.user,
-                auth_code=SettingsAuthCodes.generate_code(),
-                request_body=serializer.data,
-            )
+            for destination in destinations:
+                new_auth_code = SettingsAuthCodes.objects.create(
+                    user=request.user,
+                    auth_code=SettingsAuthCodes.generate_code(),
+                    request_body={
+                        key: value
+                        for key, value in serializer.data.items()
+                        if key.startswith(destination)
+                    },
+                    destination=destination,
+                )
 
-            if destination == "email":
-                send_email_change_settings(
-                    user=request.user, code=new_auth_code.auth_code
-                )
-            else:
-                send_telegram_message(
-                    telegram_id=request.user.telegram_id,
-                    text=_("Смена настроек\nВаш код для подтверждения смены настроек")
-                    + f": {new_auth_code.auth_code}",
-                )
+                if new_auth_code.destination == DestinationType.EMAIL:
+                    send_email_change_settings(
+                        user=request.user, code=new_auth_code.auth_code
+                    )
+                    tokens[DestinationType.EMAIL] = new_auth_code.token
+                elif new_auth_code.destination == DestinationType.TELEGRAM:
+                    send_telegram_message(
+                        telegram_id=request.user.telegram_id,
+                        text=_(
+                            "Смена настроек\nВаш код для подтверждения смены настроек"
+                        )
+                        + f": {new_auth_code.auth_code}",
+                    )
+                    tokens[DestinationType.TELEGRAM] = new_auth_code.token
 
         return Response(
             {
-                "token": new_auth_code.token if new_auth_code else None,
+                "token": tokens,
                 "updated_data": serializer.data,
             },
             status=status.HTTP_200_OK,
@@ -114,6 +125,15 @@ class SettingsConfirmCreateView(CreateAPIView):
     serializer_class = SettingsAuthCodeSerializer
 
     def get_object(self):
+        destination = self.request.query_params.get("destination")
+        if destination is None or destination not in DestinationType:
+            raise ParseError(
+                detail=_(
+                    "В запросе должен быть передан параметр destination=email или "
+                    "destination=telegram"
+                )
+            )
+
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
@@ -121,6 +141,7 @@ class SettingsConfirmCreateView(CreateAPIView):
             user=self.request.user,
             auth_code=serializer.validated_data.get("auth_code"),
             token=serializer.validated_data.get("token"),
+            destination=destination,
         ).first()
 
         if settings_auth_code_object is None:
