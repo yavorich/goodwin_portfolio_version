@@ -12,6 +12,9 @@ class FrozenItem(models.Model):
     defrost_date = models.DateField(**blank_and_null)
     done = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ["-defrost_date"]
+
     def defrost(self):
         self.wallet.frozen -= self.amount
         self.wallet.free += self.amount
@@ -27,3 +30,5 @@ class FrozenItem(models.Model):
     def save(self, *args, **kwargs):
         self._set_defrost_date()
         super().save(*args, **kwargs)
+        if self.amount == 0:
+            self.delete()
