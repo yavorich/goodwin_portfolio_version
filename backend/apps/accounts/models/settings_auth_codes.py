@@ -10,9 +10,15 @@ from django.db.models import (
     CharField,
     DateTimeField,
     JSONField,
+    TextChoices,
 )
 
 from apps.accounts.models import User
+
+
+class DestinationType(TextChoices):
+    EMAIL = "email"
+    TELEGRAM = "telegram"
 
 
 class SettingsAuthCodes(Model):
@@ -21,6 +27,7 @@ class SettingsAuthCodes(Model):
     auth_code = CharField(max_length=16)
     created_at = DateTimeField(auto_now_add=True)
     request_body = JSONField(default=dict)
+    destination = CharField(choices=DestinationType.choices)
 
     @staticmethod
     def generate_code():
