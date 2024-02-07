@@ -1,6 +1,5 @@
-from django.http import Http404
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import ParseError
 from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -63,11 +62,7 @@ class SettingsAPIView(RetrieveUpdateAPIView):
     serializer_class = ProfileSettingsSerializer
 
     def get_object(self):
-        user = self.request.user
-        settings = getattr(user, "settings", None)
-        if settings is None:
-            raise Http404
-        return settings
+        return self.request.user.settings
 
     def update(self, request, *args, **kwargs):
         current_settings_serializer = self.get_serializer(self.get_object())
@@ -77,15 +72,17 @@ class SettingsAPIView(RetrieveUpdateAPIView):
 
         new_auth_code = None
 
-        if current_settings_serializer.data != serializer.data:
-            changed_fields = []
+        changed_fields = []
+        for key, value in serializer.validated_data.items():
+            if current_settings_serializer.data.get(key) != value:
+                changed_fields.append(key)
 
-            for key, value in serializer.data.items():
-                if current_settings_serializer.data.get(key) != value:
-                    changed_fields.append(key)
+        if len(changed_fields) > 0:
+            destination = set()
+            for field in changed_fields:
+                destination.add(field.split("_")[0])
 
-            destination = changed_fields[0].split("_")[0]
-
+            print("destination", destination)
             new_auth_code = SettingsAuthCodes.objects.create(
                 user=request.user,
                 auth_code=SettingsAuthCodes.generate_code(),
@@ -120,15 +117,16 @@ class SettingsConfirmCreateView(CreateAPIView):
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        unsaved_settings = SettingsAuthCodes.objects.filter(
+        settings_auth_code_object = SettingsAuthCodes.objects.filter(
+            user=self.request.user,
             auth_code=serializer.validated_data.get("auth_code"),
             token=serializer.validated_data.get("token"),
         ).first()
 
-        if unsaved_settings is None:
-            raise PermissionDenied()
+        if settings_auth_code_object is None:
+            raise ParseError(detail=_("Код подтверждения не найден"))
 
-        return unsaved_settings
+        return settings_auth_code_object
 
     def create(self, request, *args, **kwargs):
         settings_auth_code_object = self.get_object()
@@ -143,4 +141,5 @@ class SettingsConfirmCreateView(CreateAPIView):
 
         settings_serializer = ProfileSettingsSerializer(settings)
 
-        return Response(settings_serializer.data, status=status.HTTP_201_CREATED)
+        settings_auth_code_object.delete()
+        return Response(settings_serializer.data, status=status.HTTP_200_OK)
