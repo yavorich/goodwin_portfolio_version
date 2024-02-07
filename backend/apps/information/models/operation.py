@@ -119,10 +119,10 @@ class Operation(models.Model):
 
     def _apply_program_accrual(self):
         # начисление в актив программы
-        withdrawal_type = self.user_program.program.withdrawal_type
         self.user_program.update_balance(self.amount)
 
         # начисление в кошелек
+        withdrawal_type = self.user_program.program.withdrawal_type
         if withdrawal_type == Program.WithdrawalType.AFTER_FINISH:
             if self.user_program.end_date == now().date():
                 self.user_program.close(force=False)
