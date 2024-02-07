@@ -10,6 +10,7 @@ from apps.information.models import (
     UserProgramReplenishment,
     ProgramResult,
 )
+from apps.information.utils import get_accrual_amount
 
 
 @shared_task
@@ -57,7 +58,7 @@ def make_program_accruals(program):
 
     user_programs = program.users.filter(status=UserProgram.Status.RUNNING)
     for user_program in user_programs:
-        amount = user_program.funds * result.result / 100
+        amount = get_accrual_amount(program, user_program, result)
         Operation.objects.create(
             type=Operation.Type.PROGRAM_ACCRUAL,
             wallet=user_program.wallet,
