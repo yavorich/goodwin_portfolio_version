@@ -42,6 +42,14 @@ def apply_program_start():
 
 
 @shared_task
+def apply_program_finish():
+    with transaction.atomic():
+        items = UserProgram.objects.filter(end_date=now().date(), force_closed=False)
+        for item in items:
+            item.close(force=False)
+
+
+@shared_task
 def make_daily_programs_accruals():
     with transaction.atomic():
         programs = Program.objects.filter(accrual_type=Program.AccrualType.DAILY)
