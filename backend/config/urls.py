@@ -11,7 +11,10 @@ urlpatterns = [
         "api/v1/",
         include(
             [
-                path("", include("accounts.urls")),
+                path("", include("apps.accounts.urls")),
+                path("", include("apps.information.urls")),
+                path("", include("apps.faq.urls")),
+                path("telegram/", include("apps.telegram.urls")),
             ],
         ),
     ),
