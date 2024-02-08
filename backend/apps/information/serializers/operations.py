@@ -45,10 +45,12 @@ class OperationCreateSerializer(ModelSerializer):
     def validate(self, attrs):
         wallet: Wallet = attrs["wallet"]
         program = attrs.get("program")
+        user_program = attrs.get("user_program")
         replenishment = attrs.get("replenishment")
         amount = attrs.get("amount")
         free = attrs.get("amount_free")
         frozen = attrs.get("amount_frozen")
+        # option = self.context.get("option")
         _type: Operation.Type = attrs["type"]
 
         types = Operation.Type
@@ -66,12 +68,16 @@ class OperationCreateSerializer(ModelSerializer):
                 raise ValidationError(f"Minimum program replenishment = {100}")
 
         if _type == types.PROGRAM_REPLENISHMENT_CANCEL:
-            if replenishment.amount < amount:
+            if 0 < replenishment.amount - amount < 100:
                 raise ValidationError(
-                    "The cancellation amount exceeds the replenishment amount"
+                    "Minimum replenishment amount after cancellation - 100 USDT"
+                )
+
+        if _type == types.PROGRAM_EARLY_CLOSURE:
+            min_deposit = user_program.program.min_deposit
+            if 0 < user_program.funds - amount < min_deposit:
+                raise ValidationError(
+                    f"Minimum program deposit after cancellation - {min_deposit} USDT"
                 )
 
         return attrs
-
-    def create(self, validated_data):
-        return super().create(validated_data)
