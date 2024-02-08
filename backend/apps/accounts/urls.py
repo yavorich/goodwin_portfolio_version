@@ -62,7 +62,7 @@ urlpatterns = [
         name="settings",
     ),
     path(
-        "profile/settings/confirm/",
+        "profile/settings/confirm/<slug:destination>/",
         SettingsConfirmCreateView.as_view(),
         name="confirm-settings",
     ),
