@@ -1,6 +1,6 @@
+from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import timedelta
 
 from core.utils import blank_and_null, add_business_days
 
@@ -69,7 +69,7 @@ class UserProgram(models.Model):
 
     def _set_end_date(self):
         if not self.end_date and (duration := self.program.duration):
-            self.end_date = self.start_date + timedelta(months=duration)
+            self.end_date = self.start_date + relativedelta(months=duration)
 
     def save(self, *args, **kwargs):
         self._set_name()
