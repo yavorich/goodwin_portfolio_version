@@ -1,0 +1,58 @@
+from rest_framework.generics import ListAPIView, UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
+from rest_framework.status import HTTP_200_OK
+from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+
+from apps.information.models import Operation
+from apps.information.serializers import OperationSerializer
+from apps.accounts.serializers import UserEmailConfirmSerializer
+
+
+class OperationAPIView(ListAPIView):
+    serializer_class = OperationSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["type"]
+
+    def get_queryset(self):
+        return Operation.objects.filter(
+            wallet=self.request.user.wallet,  # confirmed=True, done=True
+        )
+
+    def filter_queryset(self, queryset):
+        _type = self.request.query_params.get("type")
+        if _type and _type not in Operation.Type:
+            available_types = [e.value for e in Operation.Type]
+            raise ValidationError(
+                f"Incorrect type='{_type}'. Must be one of {available_types}"
+            )
+        return super().filter_queryset(queryset)
+
+
+class OperationConfirmAPIView(UpdateAPIView):
+    serializer_class = UserEmailConfirmSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Operation.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer_class()(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        code = serializer.data["confirmation_code"]
+        user = request.user
+
+        if code != user.temp.email_verify_code:
+            raise ValidationError("Verification code is incorrect")
+
+        user.temp.email_verify_code = None
+        user.temp.save()
+
+        operation = self.get_object()
+        operation.confirmed = True
+        operation.save()
+        operation.apply()
+
+        return Response(status=HTTP_200_OK)
