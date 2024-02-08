@@ -1,5 +1,6 @@
 from django.contrib import admin
 from . import models
+from ..accounts.models.user import Partner
 
 
 @admin.register(models.Wallet)
@@ -70,3 +71,14 @@ class FrozenItemAdmin(admin.ModelAdmin):
         "amount",
         "defrost_date",
     ]
+
+
+@admin.register(Partner)
+class PartnerAdmin(admin.ModelAdmin):
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        field = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name == "partner_id":
+            partner_ids = self.model.objects.values_list("partner_id", flat=True)
+            help_text = f"Занятые ID партнёров: {', '.join(map(str, partner_ids))}"
+            field.help_text = help_text
+        return field
