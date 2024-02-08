@@ -1,7 +1,6 @@
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import now
 
 from core.utils import blank_and_null
 
@@ -93,9 +92,9 @@ class Operation(models.Model):
         self._transfer_wallet_to_program()
 
     def _apply_program_early_closure(self):
-        self.amount = self.user_program.funds
         self._transfer_program_to_wallet(freeze=True)
-        self.user_program.close(force=True)
+        if self.user_program.funds == 0:
+            self.user_program.close(force=True)
 
     def _apply_program_replenishment(self):
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
@@ -108,8 +107,6 @@ class Operation(models.Model):
         if self.replenishment.status == UserProgramReplenishment.Status.CANCELED:
             self.amount = self.replenishment.amount
             self.save()
-        self._create_frozen_item()
-        self.wallet.update_balance(frozen=self.amount)
 
     def _apply_extra_fee(self):
         self.wallet.update_balance(
@@ -123,10 +120,7 @@ class Operation(models.Model):
 
         # начисление в кошелек
         withdrawal_type = self.user_program.program.withdrawal_type
-        if withdrawal_type == Program.WithdrawalType.AFTER_FINISH:
-            if self.user_program.end_date == now().date():
-                self.user_program.close(force=False)
-        elif withdrawal_type == Program.WithdrawalType.DAILY:
+        if withdrawal_type == Program.WithdrawalType.DAILY:
             self._transfer_program_to_wallet(freeze=False)
 
     def _transfer_wallet_to_program(self):
