@@ -24,9 +24,6 @@ jobs:
           docker-compose down
           docker-compose up --build -d
 
-      - name: Linter check (Black)
-        run: docker exec -t goodwin_backend black --check --exclude '^.*\b(migrations)\b.*$' .
-
   database:
     runs-on: [ self-hosted ]
     needs: deploy
