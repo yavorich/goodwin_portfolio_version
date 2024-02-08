@@ -1,0 +1,224 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-02-06 12:50+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: apps/accounts/models/pre_auth_token.py:47
+msgid "Неверный код"
+msgstr ""
+
+#: apps/accounts/models/pre_auth_token.py:149
+msgid "Код подтверждения входа"
+msgstr ""
+
+#: apps/accounts/models/pre_auth_token.py:150
+#: apps/accounts/models/pre_auth_token.py:157
+#, python-brace-format
+msgid "Код подтверждения для входа в аккаунт: {code}"
+msgstr ""
+
+#: apps/accounts/models/user.py:63
+msgid "Inviter"
+msgstr ""
+
+#: apps/accounts/models/user.py:96
+msgid "No data"
+msgstr ""
+
+#: apps/accounts/models/user.py:97
+msgid "Check"
+msgstr ""
+
+#: apps/accounts/models/user.py:98
+msgid "Approved"
+msgstr ""
+
+#: apps/accounts/models/user.py:99
+msgid "Rejected"
+msgstr ""
+
+#: apps/accounts/models/user.py:110
+msgid "Male"
+msgstr ""
+
+#: apps/accounts/models/user.py:111
+msgid "Female"
+msgstr ""
+
+#: apps/accounts/models/user.py:116
+msgid "First name"
+msgstr ""
+
+#: apps/accounts/models/user.py:117
+msgid "Last name"
+msgstr ""
+
+#: apps/accounts/models/user.py:118
+msgid "Gender"
+msgstr ""
+
+#: apps/accounts/models/user.py:119
+msgid "Date of birth"
+msgstr ""
+
+#: apps/accounts/models/user.py:120
+msgid "Document type"
+msgstr ""
+
+#: apps/accounts/models/user.py:121
+msgid "Document issue date"
+msgstr ""
+
+#: apps/accounts/models/user.py:123
+msgid "Document issue region/country"
+msgstr ""
+
+#: apps/accounts/models/user.py:125 apps/accounts/models/user.py:158
+msgid "File"
+msgstr ""
+
+#: apps/accounts/models/user.py:127 apps/accounts/models/user.py:160
+msgid "Status"
+msgstr ""
+
+#: apps/accounts/models/user.py:146
+msgid "Passport registration"
+msgstr ""
+
+#: apps/accounts/models/user.py:147
+msgid "Utility bill"
+msgstr ""
+
+#: apps/accounts/models/user.py:148
+msgid "Bank statement"
+msgstr ""
+
+#: apps/accounts/models/user.py:149
+msgid "Other document"
+msgstr ""
+
+#: apps/accounts/models/user.py:154
+msgid "Country"
+msgstr ""
+
+#: apps/accounts/models/user.py:155
+msgid "City"
+msgstr ""
+
+#: apps/accounts/models/user.py:156
+msgid "Address"
+msgstr ""
+
+#: apps/accounts/models/user.py:157
+msgid "Postal code"
+msgstr ""
+
+#: apps/accounts/permissions.py:15
+msgid "Для доступа к этой странице необходимо принять условия договора оферты"
+msgstr ""
+
+#: apps/accounts/permissions.py:30
+msgid ""
+"Для доступа к этой странице необходимо подтвердить свою личность и адрес"
+msgstr ""
+
+#: apps/accounts/services.py:25
+msgid ""
+"Здравствуйте!\n"
+"Ваш код подтверждения"
+msgstr ""
+
+#: apps/accounts/services.py:28
+msgid "GOODWIN - Подтверждение электронной почты"
+msgstr ""
+
+#: apps/accounts/services.py:47
+msgid "Восстановление пароля"
+msgstr ""
+
+#: apps/accounts/services.py:49
+#, python-brace-format
+msgid ""
+"Здравствуйте, {full_name}!\n"
+"Был отправлен запрос на сброс пароля для вашего аккаунта. Если это сделали "
+"не вы, проигнорируйте данное сообщение (Эта ссылка действует 1 раз и в "
+"течение 24 часов)"
+msgstr ""
+
+#: apps/accounts/services.py:54
+msgid "Сбросить пароль"
+msgstr ""
+
+#: apps/information/models/operation.py:23
+msgid "Operation type"
+msgstr ""
+
+#: apps/information/models/program.py:11 apps/information/models/program.py:15
+msgid "Daily"
+msgstr ""
+
+#: apps/information/models/program.py:12 apps/information/models/program.py:16
+msgid "After end"
+msgstr ""
+
+#: apps/information/models/program.py:18
+msgid "Program name"
+msgstr ""
+
+#: apps/information/models/program.py:19
+msgid "Duration (months)"
+msgstr ""
+
+#: apps/information/models/program.py:20
+msgid "Expected profit"
+msgstr ""
+
+#: apps/information/models/program.py:21
+msgid "Minimum deposit"
+msgstr ""
+
+#: apps/information/models/program.py:22
+msgid "Accrual type"
+msgstr ""
+
+#: apps/information/models/program.py:24
+msgid "Withdrawal type"
+msgstr ""
+
+#: apps/information/models/program.py:26
+msgid "Maximum risk"
+msgstr ""
+
+#: apps/information/models/program.py:29
+msgid "Withdrawal term"
+msgstr ""
+
+#: apps/information/models/program.py:41
+msgid "Underlying funds"
+msgstr ""
+
+#: config/settings.py:133
+msgid "Russian"
+msgstr ""
+
+#: config/settings.py:134
+msgid "English"
+msgstr ""
+
+#: config/settings.py:135
+msgid "China"
+msgstr ""

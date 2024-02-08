@@ -44,11 +44,10 @@ services:
   nginx:
     image: nginx:latest
     container_name: goodwin_nginx
-#    build: ./docker/nginx
     volumes:
       - ./nginx/conf/:/etc/nginx/conf.d/:ro
       - ./backend/static/:/app/backend/static/
-      - ./backend/media/:/app/backend/media/
+      - media:/app/backend/media/
       - certbot_www:/var/www/certbot/:ro
       - certbot_conf:/etc/nginx/ssl/:ro
     ports:
@@ -98,6 +97,19 @@ services:
     volumes:
       - .:/backend
       - rmqdata:/var/lib/rabbitmq
+    networks:
+      - goodwin_back_default
+
+  telegram_bot:
+    command: python3 run_polling.py
+    container_name: goodwin_telegram_bot
+    env_file:
+      - .env
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - ./backend:/backend
     networks:
       - goodwin_back_default
 
