@@ -11,3 +11,4 @@ from .user import (
 from .docs import Docs
 from .region import Region
 from .pre_auth_token import PreAuthToken
+from .settings_auth_codes import SettingsAuthCodes

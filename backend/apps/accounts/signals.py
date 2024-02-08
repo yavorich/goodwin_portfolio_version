@@ -31,7 +31,10 @@ def create_wallet(sender, instance, created, **kwargs):
 def delete_verification_attachment(sender, instance, **kwargs):
     if instance.status == VerificationStatus.APPROVED and instance.file:
         file_path = instance.file.path
-        os.remove(file_path)
+        try:
+            os.remove(file_path)
+        except FileNotFoundError:
+            pass
         instance.file = None
     elif (
         instance.status == VerificationStatus.REJECTED and instance.reject_message == ""
