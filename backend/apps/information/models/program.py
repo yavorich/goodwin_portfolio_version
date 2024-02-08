@@ -111,18 +111,16 @@ class UserProgramReplenishment(models.Model):
     apply_date = models.DateField(**blank_and_null)
 
     def apply(self):
-        self.program.funds += self.amount
-        self.program.save()
-
+        self.program.update_balance(self.amount)
         self.status = self.Status.DONE
         self.save()
 
     def cancel(self, amount):
-        if self.amount - amount < 100:
+        self.amount -= amount
+        if self.amount == 0:
             self.status = self.Status.CANCELED
-        else:
-            self.amount -= amount
         self.save()
+        self.program.wallet.update_balance(frozen=amount)
 
     def _set_apply_date(self, *args, **kwargs):
         if not self.apply_date:
