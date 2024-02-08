@@ -1,4 +1,10 @@
 import os
+
+from django.core.validators import (
+    MinValueValidator,
+    MaxLengthValidator,
+    MaxValueValidator,
+)
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
@@ -197,3 +203,37 @@ class TempData(models.Model):
 
     def __str__(self):
         return f"{self.user}"
+
+
+class Partner(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="partner",
+        verbose_name="Пользователь-партнёр",
+    )
+    partner_id = models.IntegerField(
+        unique=True,
+        validators=[MinValueValidator(0)],
+        verbose_name="ID партнёра в системе GOODWIN",
+    )
+    region = models.ForeignKey(
+        Region,
+        verbose_name="Регион",
+        related_name="partners",
+        on_delete=models.CASCADE,
+    )
+    partner_fee = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        default=0.27,
+        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        verbose_name="Комиссия филиала/партнёра",
+    )
+
+    class Meta:
+        verbose_name = "Партнёр"
+        verbose_name_plural = "Партнёры"
+
+    def __str__(self):
+        return self.user.email
