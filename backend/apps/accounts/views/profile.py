@@ -1,5 +1,5 @@
 from rest_framework import status
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import ParseError, NotFound
 from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView, CreateAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -125,14 +125,9 @@ class SettingsConfirmCreateView(CreateAPIView):
     serializer_class = SettingsAuthCodeSerializer
 
     def get_object(self):
-        destination = self.request.query_params.get("destination")
-        if destination is None or destination not in DestinationType:
-            raise ParseError(
-                detail=_(
-                    "В запросе должен быть передан параметр destination=email или "
-                    "destination=telegram"
-                )
-            )
+        destination = self.kwargs.get("destination")
+        if destination not in DestinationType:
+            raise NotFound()
 
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
