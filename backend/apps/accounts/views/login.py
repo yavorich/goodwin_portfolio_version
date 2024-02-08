@@ -2,7 +2,7 @@ from rest_framework.exceptions import NotFound
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from apps.accounts.models import PreAuthToken
 from apps.accounts.serializers import (
@@ -47,3 +47,7 @@ class LoginConfirmView(GenericAPIView):
             )
 
         return Response(response_data)
+
+
+class TokenRefreshAPIView(TokenRefreshView):
+    pass
