@@ -5,8 +5,12 @@ from django.utils import timezone
 from django.utils.html import strip_tags
 
 from config import celery_app
-from config.settings import EMAIL_HOST_USER, PRE_AUTH_CODE_EXPIRES
-from apps.accounts.models import PreAuthToken
+from config.settings import (
+    EMAIL_HOST_USER,
+    PRE_AUTH_CODE_EXPIRES,
+    CHANGE_SETTINGS_CODE_EXPIRES,
+)
+from apps.accounts.models import PreAuthToken, SettingsAuthCodes
 
 
 @shared_task
@@ -36,10 +40,18 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=0, minute=10),
         delete_confirm_codes.s(),
     )
+    sender.add_periodic_task(crontab(hour=0, minute=0), delete_settings_auth_codes.s())
 
 
 @celery_app.task
 def delete_confirm_codes():
     PreAuthToken.objects.filter(
         created_at__lt=timezone.now() - PRE_AUTH_CODE_EXPIRES
+    ).delete()
+
+
+@celery_app.task
+def delete_settings_auth_codes():
+    SettingsAuthCodes.objects.filter(
+        created_at__lt=timezone.now() - CHANGE_SETTINGS_CODE_EXPIRES
     ).delete()
