@@ -40,6 +40,7 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour=0, minute=10),
         delete_confirm_codes.s(),
     )
+    sender.add_periodic_task(crontab(hour=0, minute=0), delete_settings_auth_codes.s())
 
 
 @celery_app.task
