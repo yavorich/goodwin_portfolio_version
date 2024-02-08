@@ -122,7 +122,11 @@ class PersonalVerification(models.Model):
     document_issue_region = models.CharField(
         _("Document issue region/country"), max_length=255
     )
-    file = models.FileField(_("File"), upload_to=get_id_doc_upload_path)
+    file = models.FileField(
+        _("File"),
+        upload_to=get_id_doc_upload_path,
+        **blank_and_null,
+    )
     status = models.CharField(
         _("Status"),
         choices=VerificationStatus.choices,
@@ -155,7 +159,9 @@ class AddressVerification(models.Model):
     city = models.CharField(_("City"), max_length=255)
     address = models.CharField(_("Address"), max_length=255)
     postal_code = models.CharField(_("Postal code"), max_length=20)
-    file = models.FileField(_("File"), upload_to=get_addr_doc_upload_path)
+    file = models.FileField(
+        _("File"), upload_to=get_addr_doc_upload_path, **blank_and_null
+    )
     status = models.CharField(
         _("Status"),
         choices=VerificationStatus.choices,
