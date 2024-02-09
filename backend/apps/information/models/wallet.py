@@ -13,6 +13,18 @@ class Wallet(models.Model):
     def update_balance(self, free: float = 0.0, frozen: float = 0.0):
         self.free += free
         self.frozen += frozen
+        self.save()
+        self.update_frozen(frozen)
+
+    def update_frozen(self, frozen):
         if frozen > 0:
             self.frozen_items.create(amount=frozen)
-        self.save()
+
+        elif frozen < 0:
+            for item in self.frozen_items.all():
+                value = min(abs(frozen), item.amount)
+                item.amount -= value
+                item.save()
+                frozen += value
+                if frozen == 0:
+                    break

@@ -35,6 +35,15 @@ class ProgramAdmin(admin.ModelAdmin):
     inlines = [ProgramResultInline]
 
 
+@admin.register(models.ProgramResult)
+class ProgramResultAdmin(admin.ModelAdmin):
+    list_display = [
+        "result",
+        "created_at",
+        "program",
+    ]
+
+
 class UserProgramReplenishmentInline(admin.TabularInline):
     model = models.UserProgramReplenishment
     fields = ["amount", "status", "apply_date"]
