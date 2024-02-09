@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.utils import blank_and_null
 
-from .program import Program, UserProgram, UserProgramReplenishment
+from .program import Program, UserProgram, UserProgramReplenishment, UserProgramAccrual
 from .wallet import Wallet
 
 
@@ -46,6 +46,12 @@ class Operation(models.Model):
     )
     replenishment = models.ForeignKey(
         UserProgramReplenishment,
+        related_name="operations",
+        on_delete=models.CASCADE,
+        **blank_and_null,
+    )
+    accrual = models.ForeignKey(
+        UserProgramAccrual,
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
@@ -116,7 +122,7 @@ class Operation(models.Model):
 
     def _apply_program_accrual(self):
         # начисление в актив программы
-        self.user_program.update_balance(self.amount)
+        self.accrual.apply()
 
         # начисление в кошелек
         withdrawal_type = self.user_program.program.withdrawal_type
