@@ -96,10 +96,13 @@ class UserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("email", "password")}),)
 
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name", "region")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser")}),
-        ("Important dates", {"fields": ("last_login", "date_joined")}),
+        (None, {"fields": ("email", "email_is_confirmed", "password")}),
+        ("Личная информация", {"fields": ("first_name", "last_name", "region")}),
+        ("Разрешения", {"fields": ("is_active", "is_staff", "is_superuser")}),
+        (
+            "Важные даты",
+            {"fields": ("last_login", "date_joined", "agreement_date")},
+        ),
     )
     add_fieldsets = (
         (
