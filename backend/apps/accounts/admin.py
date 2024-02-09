@@ -83,23 +83,15 @@ class UserForm(UserChangeForm):
 @admin.register(models.User)
 class UserAdmin(UserAdmin):
     form = UserForm
-    # list_display = [
-    #     "email",
-    #     "first_name",
-    #     "last_name",
-    #     "region",
-    #     "is_active",
-    #     "is_staff",
-    # ]
     inlines = [SettingsInline, PersonalVerificationInline, AddressVerificationInline]
 
-    list_filter = ["is_active", "is_staff", "region"]  # Добавьте необходимые фильтры
+    list_filter = ["is_active", "is_staff", "region"]
     search_fields = [
         "email",
         "first_name",
         "last_name",
-    ]  # Добавьте необходимые поля для поиска
-    ordering = ["-date_joined"]  # Указывайте поле, по которому нужно сортировать
+    ]
+    ordering = ["-date_joined"]
 
     fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("email", "password")}),)
 
