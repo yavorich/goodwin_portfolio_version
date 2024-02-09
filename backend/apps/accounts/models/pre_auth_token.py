@@ -42,7 +42,7 @@ class PreAuthTokenManager(Manager):
         if DEBUG and code == "1" * 10:
             filter_.pop(code_field)
 
-        pre_auth_token = self.filter().first()
+        pre_auth_token = self.filter(**filter_).order_by("-created_at").first()
         if pre_auth_token is None:
             raise ParseError(_("Неверный код"))
 
@@ -122,23 +122,23 @@ class PreAuthToken(Model):
 
     def send(self):
         if not self.telegram_verify:
+            self.telegram_code = self.generate_code()
+            text = PRE_AUTH_TOKEN_TELEGRAM_TEXT[self.verify_type].format(
+                code=self.telegram_code
+            )
+            send_telegram_message_task.delay(self.user.telegram_id, text)
+
+        if not self.email_verify:
             from apps.accounts.tasks import send_email_msg
 
-            self.telegram_code = self.generate_code()
+            self.email_code = self.generate_code()
             email_data = PRE_AUTH_TOKEN_EMAIL_DATA[self.verify_type]
             send_email_msg.delay(
                 self.user.email,
                 email_data["title"],
-                email_data["description"].format(code=self.telegram_code),
+                email_data["description"].format(code=self.email_code),
                 "GOODWIN",
             )
-
-        if not self.email_verify:
-            self.email_code = self.generate_code()
-            text = PRE_AUTH_TOKEN_TELEGRAM_TEXT[self.verify_type].format(
-                code=self.email_code
-            )
-            send_telegram_message_task.delay(self.user.telegram_id, text)
 
         self.save()
 
