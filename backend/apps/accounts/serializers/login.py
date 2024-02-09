@@ -10,7 +10,6 @@ from apps.accounts.models import PreAuthToken
 class TokenObtainPairEmailConfirmSerializer(TokenObtainPairSerializer):
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, str]:
         data = super(TokenObtainPairSerializer, self).validate(attrs)
-        user_settings = self.user.settings
 
         is_authenticated, confirmation_data = PreAuthToken.objects.send_code(
             PreAuthToken.VerifyType.AUTHORIZATION, self.user
