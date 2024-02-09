@@ -21,3 +21,6 @@ class PartnerSerializer(ModelSerializer):
 class PartnerRetrieveSerializer(PartnerSerializer):
     class Meta(PartnerSerializer.Meta):
         fields = ["partner_id", "region"]
+
+
+# class PartnerGeneralStatisticsSerializer(ModelSerializer):
