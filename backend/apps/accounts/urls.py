@@ -11,6 +11,7 @@ from apps.accounts.views import (
     LoginConfirmView,
     LoginAPIView,
     RegisterAPIView,
+    TokenRefreshAPIView,
 )
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
@@ -66,4 +67,5 @@ urlpatterns = [
         SettingsConfirmCreateView.as_view(),
         name="confirm-settings",
     ),
+    path("refresh-token/", TokenRefreshAPIView.as_view(), name="refresh_token"),
 ] + router.urls
