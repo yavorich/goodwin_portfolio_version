@@ -3,11 +3,14 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.contrib.auth import logout
+from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.models import PreAuthToken
 from apps.accounts.serializers import (
     TokenObtainPairEmailConfirmSerializer,
     LoginConfirmSerializer,
+    CustomTokenRefreshSerializer,
 )
 
 
@@ -50,4 +53,12 @@ class LoginConfirmView(GenericAPIView):
 
 
 class TokenRefreshAPIView(TokenRefreshView):
-    pass
+    serializer_class = CustomTokenRefreshSerializer
+
+
+class LogoutAPIView(GenericAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        logout(request)
+        return Response()

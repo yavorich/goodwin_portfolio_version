@@ -1,6 +1,10 @@
 # flake8: noqa: F401
 
-from .login import TokenObtainPairEmailConfirmSerializer, LoginConfirmSerializer
+from .login import (
+    TokenObtainPairEmailConfirmSerializer,
+    LoginConfirmSerializer,
+    CustomTokenRefreshSerializer,
+)
 from .register import RegisterUserSerializer
 from .recover_password import (
     ResetPasswordSerializer,
