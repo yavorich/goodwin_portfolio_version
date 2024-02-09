@@ -1,10 +1,11 @@
 from apps.information.models import Program, UserProgram, ProgramResult
 
 
-def get_accrual_amount(
+def create_accrual(
     program: Program, user_program: UserProgram, result: ProgramResult
 ):
-    amount = user_program.funds * (result.result - program.management_fee) / 100
-    if amount > 0:
-        amount *= (1 - program.success_fee / 100)
-    return amount
+    amount = user_program.funds * result.result / 100
+    management_fee = user_program.funds * program.management_fee / 100
+    success_fee = max(0, amount * program.success_fee / 100)
+    amount -= success_fee + management_fee
+    return user_program.accruals.create(amount=amount, success_fee=success_fee)
