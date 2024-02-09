@@ -1,6 +1,5 @@
 from celery import shared_task
 from django.db import transaction
-from django.db.models import Q
 from django.utils.timezone import now, timedelta
 
 from apps.information.models import (
@@ -9,7 +8,9 @@ from apps.information.models import (
     Operation,
     UserProgram,
     UserProgramReplenishment,
+    ProgramResult,
 )
+from apps.information.utils import create_accrual
 
 
 @shared_task
@@ -41,36 +42,34 @@ def apply_program_start():
 
 
 @shared_task
-def make_daily_programs_accruals():
+def apply_program_finish():
     with transaction.atomic():
-        programs = UserProgram.objects.filter(
-            program__withdrawal_type=Program.WithdrawalType.DAILY
-        )
-        for program in programs:
-            make_program_accruals(program)
+        items = UserProgram.objects.filter(end_date=now().date(), force_closed=False)
+        for item in items:
+            item.close(force=False)
 
 
 @shared_task
-def make_finish_programs_accruals():
+def make_daily_programs_accruals():
     with transaction.atomic():
-        programs = UserProgram.objects.filter(
-            program__withdrawal_type=Program.WithdrawalType.AFTER_FINISH,
-            end_date=now().date(),
-        )
+        programs = Program.objects.filter(accrual_type=Program.AccrualType.DAILY)
         for program in programs:
             make_program_accruals(program)
 
 
 def make_program_accruals(program):
-    latest_result = program.results.latest()
-    if not latest_result or latest_result.created_at < now() - timedelta(days=1):
-        latest_result = program.results.create()
-    user_programs = program.users.filter(Q(status=UserProgram.Status.RUNNING))
+    result = program.results.latest() or ProgramResult.objects.latest(
+        program__isnull=True
+    )
+    if not result or result.created_at < now() - timedelta(days=1):
+        result = ProgramResult.objects.create()
+
+    user_programs = program.users.filter(status=UserProgram.Status.RUNNING)
     for user_program in user_programs:
-        amount = user_program.funds * latest_result.result / 100
+        accrual = create_accrual(program, user_program, result)
         Operation.objects.create(
             type=Operation.Type.PROGRAM_ACCRUAL,
             wallet=user_program.wallet,
-            amount_free=amount,
+            accrual=accrual,
             confirmed=True,
         )
