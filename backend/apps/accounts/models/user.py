@@ -2,14 +2,11 @@ import os
 
 from django.core.validators import (
     MinValueValidator,
-    MaxLengthValidator,
     MaxValueValidator,
 )
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.base_user import BaseUserManager
-from rest_framework.exceptions import ValidationError
 
 from core.utils import blank_and_null
 from .region import Region
@@ -101,6 +98,13 @@ class Settings(models.Model):
     telegram_request_code_on_withdrawal = models.BooleanField(
         default=False, verbose_name="(telegram) Запрашивать код при выводе средств"
     )
+
+    class Meta:
+        verbose_name = "Настройки"
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.user.email
 
 
 def get_id_doc_upload_path(instance, filename):
@@ -229,7 +233,7 @@ class Partner(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name="partner",
+        related_name="partner_profile",
         verbose_name="Пользователь-партнёр",
     )
     partner_id = models.IntegerField(
