@@ -49,33 +49,38 @@ class UserManager(BaseUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True, verbose_name="Электронная почта")
-    email_is_confirmed = models.BooleanField(default=False)
+    email_is_confirmed = models.BooleanField(
+        default=False, verbose_name="Электронная почта подтверждена"
+    )
     agreement_date = models.DateTimeField(
         verbose_name="Дата и время принятия лицензионного соглашения", **blank_and_null
     )
     region = models.ForeignKey(
-        Region,
-        verbose_name="Регион",
+        "Partner",
+        verbose_name="Регион привязки",
         related_name="users",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         **blank_and_null,
     )
     telegram = models.CharField(
         max_length=127, verbose_name="Телеграм", blank=True, null=True
     )
-    telegram_id = models.IntegerField(**blank_and_null)
-    inviter = models.ForeignKey(
-        "User",
-        verbose_name=_("Inviter"),
-        related_name="invited_users",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-    )
+    telegram_id = models.IntegerField(**blank_and_null, verbose_name="Телеграмм ID")
+    # inviter = models.ForeignKey(
+    #     "User",
+    #     verbose_name=_("Inviter"),
+    #     related_name="invited_users",
+    #     on_delete=models.SET_NULL,
+    #     blank=True,
+    #     null=True,
+    # )
     objects = UserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+
+    def __str__(self):
+        return self.email
 
     @property
     def full_name(self):
@@ -84,10 +89,18 @@ class User(AbstractUser):
 
 class Settings(models.Model):
     user = models.OneToOneField(User, related_name="settings", on_delete=models.CASCADE)
-    email_request_code_on_auth = models.BooleanField(default=True)
-    email_request_code_on_withdrawal = models.BooleanField(default=True)
-    telegram_request_code_on_auth = models.BooleanField(default=True)
-    telegram_request_code_on_withdrawal = models.BooleanField(default=False)
+    email_request_code_on_auth = models.BooleanField(
+        default=True, verbose_name="(email) Запрашивать код при входе в кабинет"
+    )
+    email_request_code_on_withdrawal = models.BooleanField(
+        default=True, verbose_name="(email) Запрашивать код при выводе средств"
+    )
+    telegram_request_code_on_auth = models.BooleanField(
+        default=True, verbose_name="(telegram) Запрашивать код при входе в кабинет"
+    )
+    telegram_request_code_on_withdrawal = models.BooleanField(
+        default=False, verbose_name="(telegram) Запрашивать код при выводе средств"
+    )
 
 
 def get_id_doc_upload_path(instance, filename):
@@ -99,10 +112,10 @@ def get_addr_doc_upload_path(instance, filename):
 
 
 class VerificationStatus(models.TextChoices):
-    NO_DATA = "no_data", _("No data")
-    CHECK = "check", _("Check")
-    APPROVED = "approved", _("Approved")
-    REJECTED = "rejected", _("Rejected")
+    NO_DATA = "no_data", "Нет данных"
+    CHECK = "check", "Идёт проверка"
+    APPROVED = "approved", "Принято"
+    REJECTED = "rejected", "Отказано"
 
 
 class PersonalVerification(models.Model):
@@ -113,32 +126,34 @@ class PersonalVerification(models.Model):
         RESIDENCE_PERMIT = "residence_permit", "Вид на жительство"
 
     class Gender(models.TextChoices):
-        MALE = "male", _("Male")
-        FEMALE = "female", _("Female")
+        MALE = "male", "Мужской"
+        FEMALE = "female", "Женский"
 
     user = models.OneToOneField(
         User, related_name="personal_verification", on_delete=models.CASCADE
     )
-    first_name = models.CharField(_("First name"), max_length=255)
-    last_name = models.CharField(_("Last name"), max_length=255)
-    gender = models.CharField(_("Gender"), choices=Gender.choices)
-    date_of_birth = models.DateField(_("Date of birth"))
-    document_type = models.CharField(_("Document type"), choices=DocumentType.choices)
-    document_issue_date = models.DateField(_("Document issue date"))
+    first_name = models.CharField(max_length=255, verbose_name="Имя")
+    last_name = models.CharField(max_length=255, verbose_name="Фамилия")
+    gender = models.CharField(choices=Gender.choices, verbose_name="Пол")
+    date_of_birth = models.DateField(verbose_name="Дата рождения")
+    document_type = models.CharField(
+        choices=DocumentType.choices, verbose_name="Тип документа"
+    )
+    document_issue_date = models.DateField(verbose_name="Дата выдачи документа")
     document_issue_region = models.CharField(
-        _("Document issue region/country"), max_length=255
+        max_length=255, verbose_name="Регион выдачи документа"
     )
     file = models.FileField(
-        _("File"),
         upload_to=get_id_doc_upload_path,
+        verbose_name="Файл",
         **blank_and_null,
     )
     status = models.CharField(
-        _("Status"),
         choices=VerificationStatus.choices,
+        verbose_name="Статус проверки",
         default=VerificationStatus.NO_DATA,
     )
-    reject_message = models.TextField(verbose_name="Причина отказа", blank=True)
+    reject_message = models.TextField(blank=True, verbose_name="Причина отказа")
 
     class Meta:
         verbose_name = "Документ, подтверждающий личность"
@@ -153,25 +168,30 @@ class PersonalVerification(models.Model):
 
 class AddressVerification(models.Model):
     class DocumentType(models.TextChoices):
-        REGISTRATION = "registration", _("Passport registration")
-        UTILITY_BILL = "utility_bill", _("Utility bill")
-        BANK_STATEMENT = "bank_statement", _("Bank statement")
-        OTHER = "other", _("Other document")
+        REGISTRATION = "registration", "Прописка"
+        UTILITY_BILL = "utility_bill", "Счёт за коммунальные услуги"
+        BANK_STATEMENT = "bank_statement", "Банковская выписка"
+        OTHER = "other", "Другое"
 
     user = models.OneToOneField(
         User, related_name="address_verification", on_delete=models.CASCADE
     )
-    country = models.CharField(_("Country"), max_length=255)
-    city = models.CharField(_("City"), max_length=255)
-    address = models.CharField(_("Address"), max_length=255)
-    postal_code = models.CharField(_("Postal code"), max_length=20)
+    country = models.CharField(max_length=255, verbose_name="Страна")
+    city = models.CharField(max_length=255, verbose_name="Город")
+    address = models.CharField(max_length=255, verbose_name="Адрес")
+    postal_code = models.CharField(max_length=20, verbose_name="Почтовый индекс")
+    document_type = models.CharField(
+        choices=DocumentType.choices,
+        default=DocumentType.REGISTRATION,
+        verbose_name="Тип документа",
+    )
     file = models.FileField(
-        _("File"), upload_to=get_addr_doc_upload_path, **blank_and_null
+        upload_to=get_addr_doc_upload_path, verbose_name="Файл", **blank_and_null
     )
     status = models.CharField(
-        _("Status"),
         choices=VerificationStatus.choices,
         default=VerificationStatus.NO_DATA,
+        verbose_name="Статус проверки",
     )
     reject_message = models.TextField(verbose_name="Причина отказа", blank=True)
 
@@ -236,4 +256,4 @@ class Partner(models.Model):
         verbose_name_plural = "Партнёры"
 
     def __str__(self):
-        return self.user.email
+        return f"{self.region} - {self.partner_id} ({self.user})"
