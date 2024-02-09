@@ -51,7 +51,7 @@ class UserProgram(models.Model):
         "Wallet", related_name="programs", on_delete=models.CASCADE
     )
     program = models.ForeignKey(Program, related_name="users", on_delete=models.CASCADE)
-    start_date = models.DateField(default=add_business_days(3))
+    start_date = models.DateField(**blank_and_null)
     end_date = models.DateField(**blank_and_null)
     status = models.CharField(choices=Status.choices, default=Status.INITIAL)
     funds = models.FloatField(_("Underlying funds"), default=0.0)
@@ -67,12 +67,17 @@ class UserProgram(models.Model):
             ).count()
             self.name = self.program.name + f"/{count + 1}"
 
+    def _set_start_date(self):
+        if not self.start_date:
+            self.start_date = add_business_days(3)
+
     def _set_end_date(self):
         if not self.end_date and (duration := self.program.duration):
             self.end_date = self.start_date + relativedelta(months=duration)
 
     def save(self, *args, **kwargs):
         self._set_name()
+        self._set_start_date()
         self._set_end_date()
 
         super().save(*args, **kwargs)
@@ -104,7 +109,7 @@ class UserProgramReplenishment(models.Model):
     )
     amount = models.FloatField()
     status = models.CharField(choices=Status.choices, default=Status.INITIAL)
-    apply_date = models.DateField(default=add_business_days(3))
+    apply_date = models.DateField(**blank_and_null)
 
     def apply(self):
         self.program.funds += self.amount
@@ -119,3 +124,11 @@ class UserProgramReplenishment(models.Model):
         else:
             self.amount -= amount
         self.save()
+
+    def _set_apply_date(self, *args, **kwargs):
+        if not self.apply_date:
+            self.apply_date = add_business_days(3)
+
+    def save(self, *args, **kwargs):
+        self._set_apply_date()
+        super().save(*args, **kwargs)
