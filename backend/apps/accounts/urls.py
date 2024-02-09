@@ -13,6 +13,7 @@ from apps.accounts.views import (
     RegisterAPIView,
     TokenRefreshAPIView,
     RegisterConfirmView,
+    LogoutAPIView
 )
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
@@ -32,6 +33,7 @@ urlpatterns = [
         LoginConfirmView.as_view(),
         name="login_confirm",
     ),
+    path("logout/", LogoutAPIView.as_view(), name="logout"),
     path(
         "recover_password/send/",
         ResetPasswordAPIView.as_view(),
