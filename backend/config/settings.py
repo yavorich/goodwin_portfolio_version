@@ -24,6 +24,10 @@ CSRF_TRUSTED_ORIGINS = ["http://" + host + ":8000" for host in ALLOWED_HOSTS] + 
     "https://" + host for host in ALLOWED_HOSTS
 ]
 
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000").split(
+    ","
+)
+
 # Application definition
 LOCAL_APPS = [
     "core",
@@ -39,6 +43,7 @@ THIRD_PARTY_APPS = [
     "localized_fields",
     "rest_framework",
     "django_filters",
+    "corsheaders",
 ]
 
 INSTALLED_APPS = (
@@ -57,6 +62,7 @@ INSTALLED_APPS = (
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -212,3 +218,5 @@ SIMPLE_JWT = {
 TELEGRAM_BOT_NAME = os.environ.get("TELEGRAM_BOT_NAME")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", None)
 MAIN_BOT = Bot(TELEGRAM_BOT_TOKEN, parse_mode="HTML") if TELEGRAM_BOT_TOKEN else None
+
+CORS_ALLOW_CREDENTIALS = True
