@@ -8,7 +8,6 @@ from core.utils import blank_and_null, add_business_days
 class Program(models.Model):
     class AccrualType(models.TextChoices):
         DAILY = "daily", _("Daily")
-        AFTER_FINISH = "after_end", _("After end")
 
     class WithdrawalType(models.TextChoices):
         DAILY = "daily", _("Daily")
@@ -30,7 +29,7 @@ class Program(models.Model):
 
 class ProgramResult(models.Model):
     program = models.ForeignKey(
-        Program, related_name="results", on_delete=models.CASCADE
+        Program, related_name="results", on_delete=models.CASCADE, **blank_and_null
     )
     result = models.FloatField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,6 +53,7 @@ class UserProgram(models.Model):
     start_date = models.DateField(**blank_and_null)
     end_date = models.DateField(**blank_and_null)
     status = models.CharField(choices=Status.choices, default=Status.INITIAL)
+    deposit = models.FloatField(_("Underlying funds"), **blank_and_null)
     funds = models.FloatField(_("Underlying funds"), default=0.0)
     force_closed = models.BooleanField(default=False)
 
@@ -75,10 +75,15 @@ class UserProgram(models.Model):
         if not self.end_date and (duration := self.program.duration):
             self.end_date = self.start_date + relativedelta(months=duration)
 
+    def _set_deposit(self):
+        if not self.deposit:
+            self.deposit = self.funds
+
     def save(self, *args, **kwargs):
         self._set_name()
         self._set_start_date()
         self._set_end_date()
+        self._set_deposit()
 
         super().save(*args, **kwargs)
 
@@ -112,18 +117,16 @@ class UserProgramReplenishment(models.Model):
     apply_date = models.DateField(**blank_and_null)
 
     def apply(self):
-        self.program.funds += self.amount
-        self.program.save()
-
+        self.program.update_balance(self.amount)
         self.status = self.Status.DONE
         self.save()
 
     def cancel(self, amount):
-        if self.amount - amount < 100:
+        self.amount -= amount
+        if self.amount == 0:
             self.status = self.Status.CANCELED
-        else:
-            self.amount -= amount
         self.save()
+        self.program.wallet.update_balance(frozen=amount)
 
     def _set_apply_date(self, *args, **kwargs):
         if not self.apply_date:
@@ -132,3 +135,17 @@ class UserProgramReplenishment(models.Model):
     def save(self, *args, **kwargs):
         self._set_apply_date()
         super().save(*args, **kwargs)
+
+
+class UserProgramAccrual(models.Model):
+    program = models.ForeignKey(
+        UserProgram, related_name="accruals", on_delete=models.CASCADE
+    )
+    amount = models.FloatField()
+    success_fee = models.FloatField()
+    done = models.BooleanField(default=False)
+
+    def apply(self):
+        self.program.update_balance(self.amount)
+        self.done = True
+        self.save()
