@@ -69,7 +69,7 @@ class ProgramMixin(ModelViewSet):
             "start": Operation.Type.PROGRAM_START,
             "replenish": Operation.Type.PROGRAM_REPLENISHMENT,
             "cancel": Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
-            "close": Operation.Type.PROGRAM_EARLY_CLOSURE,
+            "close": Operation.Type.PROGRAM_CLOSURE,
         }
         operation_type = operation_types[self.action]
         data |= {

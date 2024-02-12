@@ -2,4 +2,4 @@
 
 from .operations import OperationAPIView, OperationConfirmAPIView
 from .programs import ProgramViewSet, ProgramReplenishmentViewSet
-from .wallet import WalletAPIView, FrozenItemAPIView
+from .wallet import WalletAPIView, FrozenItemViewSet
