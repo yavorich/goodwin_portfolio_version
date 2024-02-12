@@ -112,21 +112,22 @@ class UserProgramReplenishment(models.Model):
     program = models.ForeignKey(
         UserProgram, related_name="replenishments", on_delete=models.CASCADE
     )
+    operation = models.OneToOneField(
+        "Operation", on_delete=models.CASCADE, **blank_and_null
+    )
     amount = models.FloatField()
     status = models.CharField(choices=Status.choices, default=Status.INITIAL)
     apply_date = models.DateField(**blank_and_null)
-
-    def apply(self):
-        self.program.update_balance(self.amount)
-        self.status = self.Status.DONE
-        self.save()
 
     def cancel(self, amount):
         self.amount -= amount
         if self.amount == 0:
             self.status = self.Status.CANCELED
         self.save()
-        self.program.wallet.update_balance(frozen=amount)
+
+    def done(self):
+        self.status = self.Status.DONE
+        self.save()
 
     def _set_apply_date(self, *args, **kwargs):
         if not self.apply_date:
@@ -143,9 +144,9 @@ class UserProgramAccrual(models.Model):
     )
     amount = models.FloatField()
     success_fee = models.FloatField()
+    created_at = models.DateField(auto_now_add=True)
     done = models.BooleanField(default=False)
 
     def apply(self):
-        self.program.update_balance(self.amount)
         self.done = True
         self.save()

@@ -10,6 +10,10 @@ class Wallet(models.Model):
     free = models.FloatField(default=0.0)
     frozen = models.FloatField(default=0.0)
 
+    @property
+    def name(self):
+        return "Wallet GDW"
+
     def update_balance(self, free: float = 0.0, frozen: float = 0.0):
         self.free += free
         self.frozen += frozen
