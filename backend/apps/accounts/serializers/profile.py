@@ -55,6 +55,7 @@ class ProfileUpdateSerializer(ModelSerializer):
             "telegram",
             # "settings",
         ]
+        extra_kwargs = {f: {"required": True} for f in fields}
 
     def validate(self, attrs):
         for f in self.Meta.fields:
@@ -81,6 +82,7 @@ class ProfileUpdateSerializer(ModelSerializer):
 
         instance.email = validated_data["email"]
         instance.telegram = validated_data["telegram"]
+        instance.avatar = validated_data["avatar"]
 
         # for attr in validated_data["settings"].keys():
         #     setattr(instance.settings, attr, validated_data["settings"][attr])
