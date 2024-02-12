@@ -43,9 +43,16 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
+def get_upload_path(instance, filename):
+    return os.path.join("users", str(instance.pk), "avatar", filename)
+
+
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True, verbose_name="Электронная почта")
+    avatar = models.ImageField(
+        verbose_name="Аватар", upload_to=get_upload_path, **blank_and_null
+    )
     email_is_confirmed = models.BooleanField(
         default=False, verbose_name="Электронная почта подтверждена"
     )
