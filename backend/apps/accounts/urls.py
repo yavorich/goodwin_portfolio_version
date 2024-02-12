@@ -13,7 +13,8 @@ from apps.accounts.views import (
     RegisterAPIView,
     TokenRefreshAPIView,
     RegisterConfirmView,
-    LogoutAPIView
+    LogoutAPIView,
+    PartnerGeneralStatisticsRetrieveView,
 )
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
@@ -72,4 +73,9 @@ urlpatterns = [
         name="confirm-settings",
     ),
     path("refresh-token/", TokenRefreshAPIView.as_view(), name="refresh_token"),
+    path(
+        "partner/",
+        PartnerGeneralStatisticsRetrieveView.as_view(),
+        name="partner-general-statistics",
+    ),
 ] + router.urls
