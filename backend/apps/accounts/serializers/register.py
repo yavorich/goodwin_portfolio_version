@@ -1,21 +1,21 @@
+from django.utils.translation import gettext_lazy as _
+from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
     ModelSerializer,
     EmailField,
     CharField,
 )
-from rest_framework.validators import UniqueValidator
-from rest_framework.exceptions import ValidationError
-from apps.accounts.models import User
+
+from apps.accounts.models import User, RegisterConfirmation
 
 
 class RegisterUserSerializer(ModelSerializer):
-    email = EmailField(validators=[UniqueValidator(queryset=User.objects.all())])
+    email = EmailField()
     password2 = CharField(write_only=True)
 
     class Meta:
-        model = User
+        model = RegisterConfirmation
         fields = [
-            "id",
             "first_name",
             "last_name",
             "email",
@@ -23,17 +23,20 @@ class RegisterUserSerializer(ModelSerializer):
             "password2",
             "region",
         ]
-        extra_kwargs = {f: {"required": True} for f in fields}
+        # extra_kwargs = {f: {"required": True} for f in fields}
 
-    def create(self, validated_data):
-        email = validated_data.pop("email")
-        password = validated_data.pop("password")
-        user = User.objects.create_user(email, password, **validated_data)
-        return user
+    @staticmethod
+    def validate_email(value):
+        if User.objects.filter(email=value).exists():
+            raise ValidationError(_("Пользователь с данной почтой уже существует"))
+        return value
 
     def validate(self, data):
         password = data.get("password")
         password2 = data.pop("password2")
         if password != password2:
-            raise ValidationError("Passwords do not match")
+            raise ValidationError("Пароли не совпадают")
         return data
+
+    def create(self, validated_data):
+        return RegisterConfirmation.objects.send_code(validated_data)
