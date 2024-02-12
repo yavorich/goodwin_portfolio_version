@@ -32,9 +32,10 @@ class ProfileRetrieveSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "full_name",
             "id",
+            "full_name",
             "email",
+            "avatar",
             "telegram",
             "inviter",
             "settings",
@@ -50,6 +51,7 @@ class ProfileUpdateSerializer(ModelSerializer):
         fields = [
             "full_name",
             "email",
+            "avatar",
             "telegram",
             # "settings",
         ]
