@@ -10,6 +10,7 @@ from apps.accounts.models import (
     PersonalVerification,
     VerificationStatus,
     AddressVerification,
+    Settings,
 )
 from apps.information.models import Wallet
 
@@ -24,6 +25,12 @@ def create_temp_data(sender, instance, created, **kwargs):
 def create_wallet(sender, instance, created, **kwargs):
     if created:
         Wallet.objects.create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def create_settings(sender, instance, created, **kwargs):
+    if created:
+        Settings.objects.create(user=instance)
 
 
 @receiver(pre_save, sender=PersonalVerification)
