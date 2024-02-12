@@ -12,6 +12,8 @@ from apps.accounts.views import (
     LoginAPIView,
     RegisterAPIView,
     TokenRefreshAPIView,
+    RegisterConfirmView,
+    LogoutAPIView
 )
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
@@ -24,12 +26,14 @@ router.register("docs", DocsViewSet, basename="docs")
 
 urlpatterns = [
     path("register/", RegisterAPIView.as_view(), name="register"),
+    path("register/confirm/", RegisterConfirmView.as_view(), name="register_confirm"),
     path("login/", LoginAPIView.as_view(), name="login"),
     path(
         "login/confirm/<slug:service_type>/",
         LoginConfirmView.as_view(),
         name="login_confirm",
     ),
+    path("logout/", LogoutAPIView.as_view(), name="logout"),
     path(
         "recover_password/send/",
         ResetPasswordAPIView.as_view(),
