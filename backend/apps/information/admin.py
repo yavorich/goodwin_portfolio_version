@@ -1,5 +1,6 @@
 from django.contrib import admin
 from . import models
+from .models import UserProgramAccrual
 from ..accounts.models.user import Partner
 
 
@@ -91,3 +92,6 @@ class PartnerAdmin(admin.ModelAdmin):
             help_text = f"Занятые ID партнёров: {', '.join(map(str, partner_ids))}"
             field.help_text = help_text
         return field
+
+
+admin.site.register(UserProgramAccrual)
