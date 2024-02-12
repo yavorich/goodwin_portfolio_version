@@ -2,14 +2,12 @@ import os
 
 from django.core.validators import (
     MinValueValidator,
-    MaxLengthValidator,
     MaxValueValidator,
 )
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.base_user import BaseUserManager
-from rest_framework.exceptions import ValidationError
 
 from core.utils import blank_and_null
 from .region import Region
@@ -46,10 +44,17 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
+def get_upload_path(instance, filename):
+    return os.path.join("users", str(instance.pk), "avatar", filename)
+
+
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True, verbose_name="Электронная почта")
     email_is_confirmed = models.BooleanField(default=False)
+    avatar = models.ImageField(
+        verbose_name="Аватар", upload_to=get_upload_path, **blank_and_null
+    )
     agreement_date = models.DateTimeField(
         verbose_name="Дата и время принятия лицензионного соглашения", **blank_and_null
     )
