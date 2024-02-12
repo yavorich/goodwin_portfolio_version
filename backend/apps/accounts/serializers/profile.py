@@ -37,10 +37,11 @@ class ProfileRetrieveSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "full_name",
             "id",
+            "full_name",
             "email",
             "region",
+            "avatar",
             "telegram",
             "settings",
             "partner_profile",
@@ -56,8 +57,10 @@ class ProfileUpdateSerializer(ModelSerializer):
         fields = [
             "full_name",
             "email",
+            "avatar",
             "telegram",
         ]
+        extra_kwargs = {f: {"required": True} for f in fields}
 
     def validate(self, attrs):
         for f in self.Meta.fields:
@@ -84,6 +87,7 @@ class ProfileUpdateSerializer(ModelSerializer):
 
         instance.email = validated_data["email"]
         instance.telegram = validated_data["telegram"]
+        instance.avatar = validated_data["avatar"]
 
         # for attr in validated_data["settings"].keys():
         #     setattr(instance.settings, attr, validated_data["settings"][attr])
