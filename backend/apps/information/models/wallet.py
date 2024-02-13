@@ -27,8 +27,7 @@ class Wallet(models.Model):
         elif frozen < 0:
             for item in self.frozen_items.all():
                 value = min(abs(frozen), item.amount)
-                item.amount -= value
-                item.save()
+                item.defrost(value)
                 frozen += value
                 if frozen == 0:
                     break

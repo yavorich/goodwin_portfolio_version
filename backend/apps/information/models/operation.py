@@ -86,15 +86,6 @@ class Operation(models.Model):
                 f"'program' field must be set for operation with type '{self.type}"
             )
 
-    def save(self, *args, **kwargs):
-        if self.type not in [
-            self.Type.WITHDRAWAL,
-            self.Type.PROGRAM_CLOSURE,
-            self.Type.PROGRAM_REPLENISHMENT_CANCEL,
-        ]:
-            self.confirmed = True
-        return super().save(*args, **kwargs)
-
     def apply(self):
         with transaction.atomic():
             getattr(self, f"_apply_{self.type}")()
@@ -190,7 +181,6 @@ class Operation(models.Model):
             action_type = Action.Type.LOSS_CHARGEOFF
 
         self.actions.create(type=action_type, amount=self.amount, target=target)
-        self.accrual.apply()
 
     def _from_wallet(self):
         if self.amount_free:
@@ -349,11 +339,3 @@ class Action(models.Model):
 
     def _get_target_name(self):
         return getattr(self.operation, self.target).name
-
-    def save(self, *args, **kwargs):
-        self.apply()
-        if not self.name:
-            self.name = self._get_name()
-        if not self.target_name:
-            self.target_name = self._get_target_name()
-        super().save(*args, **kwargs)
