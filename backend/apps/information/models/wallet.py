@@ -6,10 +6,21 @@ from core.utils import decimal_usdt
 
 class Wallet(models.Model):
     user = models.OneToOneField(
-        User, related_name="wallet", primary_key=True, on_delete=models.CASCADE
+        User,
+        verbose_name="Пользователь",
+        related_name="wallet",
+        primary_key=True,
+        on_delete=models.CASCADE,
     )
-    free = models.DecimalField(**decimal_usdt, default=0.0)
-    frozen = models.DecimalField(**decimal_usdt, default=0.0)
+    free = models.DecimalField("Доступно", **decimal_usdt, default=0.0)
+    frozen = models.DecimalField("Заморожено", **decimal_usdt, default=0.0)
+
+    class Meta:
+        verbose_name = "Кошелёк"
+        verbose_name_plural = "Кошельки"
+
+    def __str__(self) -> str:
+        return f"Кошелёк пользователя ID{self.user.pk}"
 
     @property
     def name(self):

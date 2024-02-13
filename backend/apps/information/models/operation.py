@@ -1,6 +1,5 @@
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
 
 from core.utils import blank_and_null, decimal_usdt
 
@@ -26,59 +25,80 @@ class Operation(models.Model):
         EXTRA_FEE = "extra_fee", "Списание комиссии Extra Fee"
         PROGRAM_ACCRUAL = "program_accrual", "Начисление по программе"
 
-    type = models.CharField(_("Operation type"), choices=Type.choices)
+    type = models.CharField("Тип операции", choices=Type.choices)
     wallet = models.ForeignKey(
-        Wallet, related_name="operations", on_delete=models.CASCADE
+        Wallet,
+        verbose_name="Кошелёк",
+        related_name="operations",
+        on_delete=models.CASCADE,
     )
-    amount = models.DecimalField(**decimal_usdt, default=0.0)
-    amount_free = models.DecimalField(**decimal_usdt, default=0.0)
-    amount_frozen = models.DecimalField(**decimal_usdt, default=0.0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    confirmed = models.BooleanField(default=False)
-    done = models.BooleanField(default=False)
+    amount = models.DecimalField("Сумма", **decimal_usdt, default=0.0)
+    amount_free = models.DecimalField(
+        'Из раздела "Свободно"', **decimal_usdt, default=0.0
+    )
+    amount_frozen = models.DecimalField(
+        'Из раздела "Заморожено"', **decimal_usdt, default=0.0
+    )
+    created_at = models.DateTimeField("Дата и время", auto_now_add=True)
+    confirmed = models.BooleanField("Подтверждена", default=False)
+    done = models.BooleanField("Исполнена", default=False)
 
     program = models.ForeignKey(
         Program,
+        verbose_name="Программа",
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
     user_program = models.ForeignKey(
         UserProgram,
+        verbose_name="Программа пользователя",
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
     replenishment = models.ForeignKey(
         UserProgramReplenishment,
+        verbose_name="Пополнение",
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
     accrual = models.ForeignKey(
         UserProgramAccrual,
+        verbose_name="Начисление",
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
     frozen_item = models.ForeignKey(
         FrozenItem,
+        verbose_name="Замороженная сумма",
         related_name="operations",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
     sender = models.ForeignKey(
         Wallet,
+        verbose_name="Отправитель",
         related_name="sends",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
     receiver = models.ForeignKey(
         Wallet,
+        verbose_name="Получатель",
         related_name="receives",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
+
+    class Meta:
+        verbose_name = "Операция"
+        verbose_name_plural = "Операции"
+
+    def __str__(self) -> str:
+        return Operation.Type(self.type).label
 
     def clean_program(self, value):
         if not value and self.type.startswith("program"):
@@ -246,15 +266,25 @@ class Action(models.Model):
         WALLET = "wallet"
         USER_PROGRAM = "user_program"
 
-    type = models.CharField(choices=Type.choices)
-    name = models.CharField(max_length=127, **blank_and_null)
-    target = models.CharField(choices=Target.choices)
+    type = models.CharField("Тип действия", choices=Type.choices)
+    name = models.CharField("Описание", max_length=127, **blank_and_null)
+    target = models.CharField("Объект", choices=Target.choices)
     operation = models.ForeignKey(
-        Operation, related_name="actions", on_delete=models.CASCADE
+        Operation,
+        verbose_name="Операция",
+        related_name="actions",
+        on_delete=models.CASCADE,
     )
-    target_name = models.CharField(max_length=127, **blank_and_null)
-    created_at = models.DateTimeField(auto_now_add=True)
-    amount = models.DecimalField(**decimal_usdt)
+    target_name = models.CharField("Название объекта", max_length=127, **blank_and_null)
+    created_at = models.DateTimeField("Дата и время", auto_now_add=True)
+    amount = models.DecimalField("Сумма", **decimal_usdt)
+
+    class Meta:
+        verbose_name = "Деталь"
+        verbose_name_plural = "Детали"
+
+    def __str__(self) -> str:
+        return self.name
 
     def apply(self):
         if self.target == self.Target.WALLET:
