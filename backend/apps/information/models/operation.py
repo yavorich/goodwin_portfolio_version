@@ -2,7 +2,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from core.utils import blank_and_null
+from core.utils import blank_and_null, decimal_usdt
 
 from .program import Program, UserProgram, UserProgramReplenishment, UserProgramAccrual
 from .wallet import Wallet
@@ -30,9 +30,9 @@ class Operation(models.Model):
     wallet = models.ForeignKey(
         Wallet, related_name="operations", on_delete=models.CASCADE
     )
-    amount = models.FloatField(default=0.0)
-    amount_free = models.FloatField(default=0.0)
-    amount_frozen = models.FloatField(default=0.0)
+    amount = models.DecimalField(**decimal_usdt, default=0.0)
+    amount_free = models.DecimalField(**decimal_usdt, default=0.0)
+    amount_frozen = models.DecimalField(**decimal_usdt, default=0.0)
     created_at = models.DateTimeField(auto_now_add=True)
     confirmed = models.BooleanField(default=False)
     done = models.BooleanField(default=False)
@@ -254,7 +254,7 @@ class Action(models.Model):
     )
     target_name = models.CharField(max_length=127, **blank_and_null)
     created_at = models.DateTimeField(auto_now_add=True)
-    amount = models.FloatField()
+    amount = models.DecimalField(**decimal_usdt)
 
     def apply(self):
         if self.target == self.Target.WALLET:

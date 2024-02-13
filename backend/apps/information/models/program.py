@@ -2,7 +2,7 @@ from dateutil.relativedelta import relativedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.utils import blank_and_null, add_business_days
+from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 
 
 class Program(models.Model):
@@ -15,15 +15,15 @@ class Program(models.Model):
 
     name = models.CharField(_("Program name"), max_length=31)
     duration = models.IntegerField(_("Duration (months)"), **blank_and_null)
-    exp_profit = models.FloatField(_("Expected profit"))
-    min_deposit = models.FloatField(_("Minimum deposit"))
+    exp_profit = models.DecimalField(_("Expected profit"), **decimal_pct)
+    min_deposit = models.DecimalField(_("Minimum deposit"), **decimal_usdt)
     accrual_type = models.CharField(_("Accrual type"), choices=AccrualType.choices)
     withdrawal_type = models.CharField(
         _("Withdrawal type"), choices=WithdrawalType.choices
     )
     max_risk = models.FloatField(_("Maximum risk"))
-    success_fee = models.FloatField("Success fee")
-    management_fee = models.FloatField("Management fee")
+    success_fee = models.DecimalField("Success fee", **decimal_pct)
+    management_fee = models.DecimalField("Management fee", **decimal_pct)
     withdrawal_terms = models.IntegerField(_("Withdrawal term (days)"))
 
 
@@ -31,7 +31,7 @@ class ProgramResult(models.Model):
     program = models.ForeignKey(
         Program, related_name="results", on_delete=models.CASCADE, **blank_and_null
     )
-    result = models.FloatField(default=1)
+    result = models.DecimalField(**decimal_pct, default=1)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -53,8 +53,10 @@ class UserProgram(models.Model):
     start_date = models.DateField(**blank_and_null)
     end_date = models.DateField(**blank_and_null)
     status = models.CharField(choices=Status.choices, default=Status.INITIAL)
-    deposit = models.FloatField(_("Underlying funds"), **blank_and_null)
-    funds = models.FloatField(_("Underlying funds"), default=0.0)
+    deposit = models.DecimalField(
+        _("Underlying funds"), **decimal_usdt, **blank_and_null
+    )
+    funds = models.DecimalField(_("Underlying funds"), **decimal_usdt, default=0.0)
     force_closed = models.BooleanField(default=False)
 
     def __str__(self):
@@ -107,7 +109,7 @@ class UserProgramReplenishment(models.Model):
     operation = models.OneToOneField(
         "Operation", on_delete=models.CASCADE, **blank_and_null
     )
-    amount = models.FloatField()
+    amount = models.DecimalField(**decimal_usdt)
     status = models.CharField(choices=Status.choices, default=Status.INITIAL)
     apply_date = models.DateField(**blank_and_null)
 
@@ -130,6 +132,6 @@ class UserProgramAccrual(models.Model):
     program = models.ForeignKey(
         UserProgram, related_name="accruals", on_delete=models.CASCADE
     )
-    amount = models.FloatField()
-    success_fee = models.FloatField()
+    amount = models.DecimalField(**decimal_usdt)
+    success_fee = models.DecimalField(**decimal_usdt)
     created_at = models.DateField(auto_now_add=True)
