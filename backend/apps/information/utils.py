@@ -1,9 +1,14 @@
-from apps.information.models import Program, UserProgram, ProgramResult
+from apps.information.models import (
+    Program,
+    UserProgram,
+    ProgramResult,
+    UserProgramAccrual,
+)
 
 
 def create_accrual(
     program: Program, user_program: UserProgram, result: ProgramResult
-):
+) -> UserProgramAccrual:
     amount = user_program.funds * result.result / 100
     management_fee = user_program.funds * program.management_fee / 100
     success_fee = max(0, amount * program.success_fee / 100)

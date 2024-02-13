@@ -1,21 +1,26 @@
 from rest_framework.serializers import (
     ModelSerializer,
+    CharField,
 )
 from rest_framework.exceptions import ValidationError
 
-from apps.information.models import Operation, Wallet
+from apps.information.models import Operation, Wallet, Action
 
 
 class OperationSerializer(ModelSerializer):
+    operation_type = CharField(source="operation.type")
+    action_type = CharField(source="type")
 
     class Meta:
-        model = Operation
+        model = Action
         fields = [
             "id",
-            "type",
-            "amount",
+            "operation_type",
+            "action_type",
+            "name",
+            "target_name",
             "created_at",
-            "program",
+            "amount",
         ]
 
 
@@ -30,6 +35,7 @@ class OperationCreateSerializer(ModelSerializer):
             "program",
             "user_program",
             "replenishment",
+            "frozen_item",
             "amount",
             "amount_free",
             "amount_frozen",
@@ -73,11 +79,14 @@ class OperationCreateSerializer(ModelSerializer):
                     "Minimum replenishment amount after cancellation - 100 USDT"
                 )
 
-        if _type == types.PROGRAM_EARLY_CLOSURE:
+        if _type == types.PROGRAM_CLOSURE:
             min_deposit = user_program.program.min_deposit
             if 0 < user_program.funds - amount < min_deposit:
                 raise ValidationError(
                     f"Minimum program deposit after cancellation - {min_deposit} USDT"
                 )
+
+        if _type == types.DEFROST:
+            self._validate_wallet(wallet, frozen=amount)
 
         return attrs

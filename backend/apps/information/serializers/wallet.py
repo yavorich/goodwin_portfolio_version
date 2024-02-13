@@ -18,4 +18,4 @@ class FrozenItemSerializer(ModelSerializer):
 
     class Meta:
         model = FrozenItem
-        fields = ["amount", "defrost_date"]
+        fields = ["id", "amount", "frost_date", "defrost_date"]
