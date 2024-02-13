@@ -68,3 +68,7 @@ class PartnerInvestorsList(ListAPIView):
         )
 
         return queryset
+
+
+# class PartnerTotalDepositsGraph(ListAPIView):
+#     permission_classes = [IsPartner]

@@ -53,13 +53,13 @@ class User(AbstractUser):
     avatar = models.ImageField(
         verbose_name="Аватар", upload_to=get_upload_path, **blank_and_null
     )
-    email_is_confirmed = models.BooleanField(
-        default=False, verbose_name="Электронная почта подтверждена"
-    )
+    # email_is_confirmed = models.BooleanField(
+    #     default=False, verbose_name="Электронная почта подтверждена"
+    # )
     agreement_date = models.DateTimeField(
         verbose_name="Дата и время принятия лицензионного соглашения", **blank_and_null
     )
-    region = models.ForeignKey(
+    partner = models.ForeignKey(
         "Partner",
         verbose_name="Регион привязки",
         related_name="users",
@@ -70,14 +70,6 @@ class User(AbstractUser):
         max_length=127, verbose_name="Телеграм", blank=True, null=True
     )
     telegram_id = models.IntegerField(**blank_and_null, verbose_name="Телеграмм ID")
-    # inviter = models.ForeignKey(
-    #     "User",
-    #     verbose_name=_("Inviter"),
-    #     related_name="invited_users",
-    #     on_delete=models.SET_NULL,
-    #     blank=True,
-    #     null=True,
-    # )
     objects = UserManager()
 
     USERNAME_FIELD = "email"
