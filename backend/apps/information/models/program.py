@@ -79,14 +79,6 @@ class UserProgram(models.Model):
         if not self.deposit:
             self.deposit = self.funds
 
-    def save(self, *args, **kwargs):
-        self._set_name()
-        self._set_start_date()
-        self._set_end_date()
-        self._set_deposit()
-
-        super().save(*args, **kwargs)
-
     def start(self):
         self.status = self.Status.RUNNING
         self.save()
@@ -133,10 +125,6 @@ class UserProgramReplenishment(models.Model):
         if not self.apply_date:
             self.apply_date = add_business_days(3)
 
-    def save(self, *args, **kwargs):
-        self._set_apply_date()
-        super().save(*args, **kwargs)
-
 
 class UserProgramAccrual(models.Model):
     program = models.ForeignKey(
@@ -145,8 +133,3 @@ class UserProgramAccrual(models.Model):
     amount = models.FloatField()
     success_fee = models.FloatField()
     created_at = models.DateField(auto_now_add=True)
-    done = models.BooleanField(default=False)
-
-    def apply(self):
-        self.done = True
-        self.save()
