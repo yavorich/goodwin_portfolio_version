@@ -3,9 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.status import HTTP_200_OK
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 
-from apps.information.models import Operation
+from apps.information.models import Operation, Action
 from apps.information.serializers import OperationSerializer
 from apps.accounts.serializers import UserEmailConfirmSerializer
 
@@ -13,12 +12,10 @@ from apps.accounts.serializers import UserEmailConfirmSerializer
 class OperationAPIView(ListAPIView):
     serializer_class = OperationSerializer
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["type"]
 
     def get_queryset(self):
-        return Operation.objects.filter(
-            wallet=self.request.user.wallet,  # confirmed=True, done=True
+        return Action.objects.filter(
+            operation__wallet=self.request.user.wallet,  # confirmed=True, done=True
         )
 
     def filter_queryset(self, queryset):
@@ -28,7 +25,7 @@ class OperationAPIView(ListAPIView):
             raise ValidationError(
                 f"Incorrect type='{_type}'. Must be one of {available_types}"
             )
-        return super().filter_queryset(queryset)
+        return queryset.filter(operation__type=_type) if _type else queryset
 
 
 class OperationConfirmAPIView(UpdateAPIView):

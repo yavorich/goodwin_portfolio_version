@@ -10,6 +10,7 @@ router.register(
     views.ProgramReplenishmentViewSet,
     basename="program-replenishments",
 )
+router.register("wallet/frozen", views.FrozenItemViewSet, basename="wallet-frozen")
 
 
 urlpatterns = [
@@ -19,7 +20,5 @@ urlpatterns = [
         views.OperationConfirmAPIView.as_view(),
         name="operation-confirm",
     ),
-    # path("programs/", views.ProgramAPIView.as_view(), name="program-list"),
     path("wallet/", views.WalletAPIView.as_view(), name="wallet-detail"),
-    path("wallet/frozen/", views.FrozenItemAPIView.as_view(), name="frozen-list"),
 ] + router.urls
