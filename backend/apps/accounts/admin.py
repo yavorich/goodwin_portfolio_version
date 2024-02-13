@@ -85,7 +85,7 @@ class UserAdmin(UserAdmin):
     form = UserForm
     inlines = [SettingsInline, PersonalVerificationInline, AddressVerificationInline]
 
-    list_filter = ["is_active", "is_staff", "region"]
+    list_filter = ["is_active", "is_staff", "partner"]
     search_fields = [
         "email",
         "first_name",
@@ -96,8 +96,8 @@ class UserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("email", "password")}),)
 
     fieldsets = (
-        (None, {"fields": ("email", "email_is_confirmed", "password")}),
-        ("Личная информация", {"fields": ("first_name", "last_name", "region")}),
+        (None, {"fields": ("email", "password")}),
+        ("Личная информация", {"fields": ("first_name", "last_name", "partner")}),
         ("Разрешения", {"fields": ("is_active", "is_staff", "is_superuser")}),
         (
             "Важные даты",
