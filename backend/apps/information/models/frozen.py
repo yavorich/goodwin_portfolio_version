@@ -10,15 +10,20 @@ class FrozenItem(models.Model):
         DONE = "done", "Разморожено"
 
     wallet = models.ForeignKey(
-        "Wallet", related_name="frozen_items", on_delete=models.CASCADE
+        "Wallet",
+        verbose_name="Кошелёк",
+        related_name="frozen_items",
+        on_delete=models.CASCADE,
     )
-    amount = models.DecimalField(**decimal_usdt)
-    frost_date = models.DateField(auto_now_add=True)
-    defrost_date = models.DateField(**blank_and_null)
-    status = models.CharField(choices=Status.choices, default=Status.INITIAL)
+    amount = models.DecimalField("Сумма", **decimal_usdt)
+    frost_date = models.DateField("Дата заморозки", auto_now_add=True)
+    defrost_date = models.DateField("Срок разморозки", **blank_and_null)
+    status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
 
     class Meta:
         ordering = ["-defrost_date"]
+        verbose_name = "Замороженная сумма"
+        verbose_name_plural = "Замороженные средства"
 
     def defrost(self, value=None):
         self.amount -= value or self.amount
