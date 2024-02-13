@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 
@@ -179,7 +180,7 @@ class Operation(models.Model):
             Operation.objects.create(
                 type=Operation.Type.EXTRA_FEE,
                 wallet=self.wallet,
-                amount=0.1 * self.amount,
+                amount=Decimal("0.1") * self.amount,
                 confirmed=True,
             )
 
@@ -234,8 +235,6 @@ class Operation(models.Model):
             target=Action.Target.USER_PROGRAM,
             amount=self.amount_free + self.amount_frozen,
         )
-        if self.type == self.Type.PROGRAM_REPLENISHMENT:
-            self.replenishment.done()
 
     def _from_wallet_to_program(self):
         self._from_wallet()
@@ -294,6 +293,8 @@ class Action(models.Model):
                 self.operation.wallet.update_balance(free=self.amount)
         elif self.target == self.Target.USER_PROGRAM:
             self.operation.user_program.update_balance(amount=self.amount)
+            if self.operation.type == Operation.Type.PROGRAM_REPLENISHMENT:
+                self.operation.replenishment.done()
 
     def _get_name(self):
         if self.operation.type == Operation.Type.REPLENISHMENT:

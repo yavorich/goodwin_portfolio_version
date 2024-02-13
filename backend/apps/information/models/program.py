@@ -1,4 +1,5 @@
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
 from django.db import models
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
@@ -76,7 +77,9 @@ class UserProgram(models.Model):
     end_date = models.DateField("Дата завершения", **blank_and_null)
     status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
     deposit = models.DecimalField("Начальный депозит", **decimal_usdt, **blank_and_null)
-    funds = models.DecimalField("Текущие средства", **decimal_usdt, default=0.0)
+    funds = models.DecimalField(
+        "Текущие средства", **decimal_usdt, default=Decimal("0.0")
+    )
     force_closed = models.BooleanField("Завершена принудительно", default=False)
 
     class Meta:
