@@ -20,12 +20,7 @@ class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
 
     def get_object(self):
         user = self.request.user
-        return user.partner_profile
-
-    def retrieve(self, request, *args, **kwargs):
-        partner_profile = self.get_object()
-
-        investors = partner_profile.users.all()
+        partner_profile = user.partner_profile
 
         total_success_fee = (
             partner_profile.users.all()
@@ -35,14 +30,16 @@ class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
             .aggregate(total_success_fee=Sum("user_total_success_fee"))
         )["total_success_fee"]
 
-        total_partner_fee = Decimal(total_success_fee) * partner_profile.partner_fee
+        total_success_fee = Decimal(total_success_fee)
+
+        total_partner_fee = total_success_fee * partner_profile.partner_fee
 
         data = {
             "total_success_fee": total_success_fee,
             "total_partner_fee": total_partner_fee,
         }
 
-        return Response(data)
+        return data
 
 
 class PartnerInvestorsList(ListAPIView):
