@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.utils.timezone import now, timedelta
 
@@ -25,7 +26,7 @@ class FrozenItem(models.Model):
         verbose_name = "Замороженная сумма"
         verbose_name_plural = "Замороженные средства"
 
-    def defrost(self, value=None):
+    def defrost(self, value: Decimal | None = None):
         self.amount -= value or self.amount
         if self.amount == 0:
             self.status = self.Status.DONE

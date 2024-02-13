@@ -79,6 +79,7 @@ class OperationActionsInline(admin.TabularInline):
 @admin.register(models.Operation)
 class OperationAdmin(admin.ModelAdmin):
     list_display = [
+        "id",
         "type",
         "wallet",
         "amount",
