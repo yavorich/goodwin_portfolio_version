@@ -1,6 +1,6 @@
 from rest_framework.serializers import (
     ModelSerializer,
-    FloatField,
+    DecimalField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -10,6 +10,7 @@ from apps.information.models import (
     Wallet,
     UserProgramReplenishment,
 )
+from core.utils import decimal_usdt
 
 
 class ProgramSerializer(ModelSerializer):
@@ -44,8 +45,8 @@ class UserProgramSerializer(ModelSerializer):
 
 
 class UserProgramCreateSerializer(ModelSerializer):
-    amount_free = FloatField(write_only=True)
-    amount_frozen = FloatField(write_only=True)
+    amount_free = DecimalField(**decimal_usdt, write_only=True)
+    amount_frozen = DecimalField(**decimal_usdt, write_only=True)
 
     class Meta:
         model = UserProgram
