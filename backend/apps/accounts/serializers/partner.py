@@ -25,8 +25,8 @@ class PartnerRetrieveSerializer(PartnerSerializer):
 
 
 class PartnerTotalFeeSerializer(Serializer):
-    total_success_fee = FloatField()
-    total_partner_fee = DecimalField(max_digits=3, decimal_places=2)
+    total_success_fee = DecimalField(max_digits=12, decimal_places=2)
+    total_partner_fee = DecimalField(max_digits=12, decimal_places=2)
 
 
 class InvestorsSerializer(ModelSerializer):
