@@ -20,16 +20,12 @@ class FrozenItem(models.Model):
     class Meta:
         ordering = ["-defrost_date"]
 
-    def defrost(self):
-        self.amount = 0
+    def defrost(self, value=None):
+        self.amount -= value or self.amount
+        if self.amount == 0:
+            self.status = self.Status.DONE
         self.save()
 
     def _set_defrost_date(self):
         if not self.defrost_date:
             self.defrost_date = now().date() + timedelta(days=30)
-
-    def save(self, *args, **kwargs):
-        self._set_defrost_date()
-        if self.amount == 0:
-            self.status = self.Status.DONE
-        super().save(*args, **kwargs)
