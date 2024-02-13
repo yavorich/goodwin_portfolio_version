@@ -18,7 +18,13 @@ def defrost_funds(pk):
     with transaction.atomic():
         items = FrozenItem.objects.filter(defrost_date=now().date())
         for item in items:
-            item.defrost()
+            Operation.objects.create(
+                type=Operation.Type.DEFROST,
+                wallet=item.wallet,
+                frozen_item=item,
+                amount=item.amount,
+                confirmed=True,
+            )
 
 
 @shared_task
@@ -28,7 +34,7 @@ def apply_program_replenishments():
             status=UserProgramReplenishment.Status.INITIAL, apply_date=now().date()
         )
         for item in items:
-            item.apply()
+            item.operation._to_program()
 
 
 @shared_task
@@ -71,5 +77,6 @@ def make_program_accruals(program):
             type=Operation.Type.PROGRAM_ACCRUAL,
             wallet=user_program.wallet,
             accrual=accrual,
+            amount=accrual.amount,
             confirmed=True,
         )
