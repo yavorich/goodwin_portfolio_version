@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 
 from apps.accounts.models import User
@@ -12,8 +13,8 @@ class Wallet(models.Model):
         primary_key=True,
         on_delete=models.CASCADE,
     )
-    free = models.DecimalField("Доступно", **decimal_usdt, default=0.0)
-    frozen = models.DecimalField("Заморожено", **decimal_usdt, default=0.0)
+    free = models.DecimalField("Доступно", **decimal_usdt, default=Decimal("0.0"))
+    frozen = models.DecimalField("Заморожено", **decimal_usdt, default=Decimal("0.0"))
 
     class Meta:
         verbose_name = "Кошелёк"
@@ -26,7 +27,9 @@ class Wallet(models.Model):
     def name(self):
         return "Wallet GDW"
 
-    def update_balance(self, free: float = 0.0, frozen: float = 0.0):
+    def update_balance(
+        self, free: Decimal = Decimal("0.0"), frozen: Decimal = Decimal("0.0")
+    ):
         self.free += free
         self.frozen += frozen
         self.save()
