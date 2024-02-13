@@ -54,16 +54,15 @@ class ProfileUpdateSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = [
+        required_fields = [
             "full_name",
             "email",
-            "avatar",
             "telegram",
         ]
-        extra_kwargs = {f: {"required": True} for f in fields}
+        fields = required_fields + ["avatar"]
 
     def validate(self, attrs):
-        for f in self.Meta.fields:
+        for f in self.Meta.required_fields:
             if f not in attrs:
                 raise ValidationError(f"{f} is required")
         if (
@@ -87,7 +86,8 @@ class ProfileUpdateSerializer(ModelSerializer):
 
         instance.email = validated_data["email"]
         instance.telegram = validated_data["telegram"]
-        instance.avatar = validated_data["avatar"]
+        if "avatar" in validated_data:
+            instance.avatar = validated_data["avatar"]
 
         # for attr in validated_data["settings"].keys():
         #     setattr(instance.settings, attr, validated_data["settings"][attr])
