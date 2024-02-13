@@ -2,7 +2,7 @@ from rest_framework.fields import DecimalField, FloatField
 from rest_framework.serializers import ModelSerializer, Serializer
 
 from apps.accounts.models import Region
-from apps.accounts.models.user import Partner
+from apps.accounts.models.user import Partner, User
 
 
 class RegionSerializer(ModelSerializer):
@@ -29,4 +29,11 @@ class PartnerTotalFeeSerializer(Serializer):
     total_partner_fee = DecimalField(max_digits=3, decimal_places=2)
 
 
-# class PartnerGeneralStatisticsSerializer(ModelSerializer):
+class InvestorsSerializer(ModelSerializer):
+    total_funds = FloatField()
+    total_net_profit = FloatField()
+
+    class Meta:
+        model = User
+        fields = ["id", "full_name", "total_funds", "total_net_profit"]
+        read_only_fields = fields

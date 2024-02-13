@@ -1,20 +1,17 @@
 from decimal import Decimal
 
-from django.db.models import Sum
-from django.http import HttpResponse
-from rest_framework.generics import RetrieveAPIView
+from django.db.models import Sum, Q, Value
+from django.db.models.functions import Coalesce
+from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
-from apps.accounts.models.user import Partner, User
 from apps.accounts.permissions import IsPartner
 from apps.accounts.serializers.partner import (
-    PartnerSerializer,
     PartnerTotalFeeSerializer,
+    InvestorsSerializer,
 )
-from apps.information.models import Wallet
-
-
-# from apps.accounts.serializers.partner import PartnerGeneralStatisticsSerializer
+from apps.information.models import UserProgram
 
 
 class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
@@ -46,4 +43,31 @@ class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
         }
 
         return Response(data)
-        # return super().retrieve(request, *args, **kwargs)
+
+
+class PartnerInvestorsList(ListAPIView):
+    permission_classes = [IsPartner]
+    serializer_class = InvestorsSerializer
+    pagination_class = LimitOffsetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        partner_profile = user.partner_profile
+        queryset = partner_profile.users.all()
+
+        queryset = queryset.annotate(
+            total_funds=Coalesce(
+                Sum(
+                    "wallet__programs__funds",
+                    filter=Q(wallet__programs__status=UserProgram.Status.RUNNING),
+                ),
+                Value(0.0),
+            )
+        )
+        queryset = queryset.annotate(
+            total_net_profit=Coalesce(
+                Sum("wallet__programs__accruals__amount"), Value(0.0)
+            )
+        )
+
+        return queryset
