@@ -12,6 +12,7 @@ from apps.accounts.serializers.partner import (
     InvestorsSerializer,
 )
 from apps.information.models import UserProgram
+from core.pagination import PageNumberSetPagination
 
 
 class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
@@ -45,7 +46,7 @@ class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
 class PartnerInvestorsList(ListAPIView):
     permission_classes = [IsPartner]
     serializer_class = InvestorsSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = PageNumberSetPagination
 
     def get_queryset(self):
         user = self.request.user
