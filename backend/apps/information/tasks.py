@@ -1,7 +1,9 @@
 from celery import shared_task
 from django.db import transaction
+from django.db.models import Sum
 from django.utils.timezone import now, timedelta
 
+from apps.accounts.models import User
 from apps.information.models import (
     FrozenItem,
     Program,
@@ -9,6 +11,8 @@ from apps.information.models import (
     UserProgram,
     UserProgramReplenishment,
     ProgramResult,
+    WalletHistory,
+    Wallet,
 )
 from apps.information.utils import create_accrual
 
@@ -72,4 +76,27 @@ def make_program_accruals(program):
             wallet=user_program.wallet,
             accrual=accrual,
             confirmed=True,
+        )
+
+
+@shared_task
+def create_wallet_history():
+    users = User.objects.all()
+    print("started 1")
+
+    for user in users:
+        wallet: Wallet = user.wallet
+        total_funds = (
+            UserProgram.objects.filter(
+                wallet=wallet,
+            )
+            .exclude(status=UserProgram.Status.FINISHED)
+            .aggregate(total_funds=Sum("funds"))["total_funds"]
+            or 0
+        )
+
+        print(total_funds)
+
+        history_slice = WalletHistory.objects.create(
+            user=user, free=wallet.free, frozen=wallet.frozen, deposits=total_funds
         )
