@@ -64,35 +64,35 @@ class ProfileUpdateSerializer(ModelSerializer):
         required_fields = [
             "full_name",
             "email",
+            "avatar",
             "telegram",
         ]
-        fields = required_fields + ["avatar"]
 
     def validate(self, attrs):
-        for f in self.Meta.required_fields:
-            if f not in attrs:
-                raise ValidationError(f"{f} is required")
-        if (
+        if "email" in attrs and (
             User.objects.filter(email=attrs["email"])
             .exclude(pk=self.context["user"].pk)
             .exists()
         ):
             raise ValidationError("Email is already taken")
 
-        if len(attrs["full_name"].split()) != 2:
+        if "full_name" in attrs and len(attrs["full_name"].split()) != 2:
             raise ValidationError(
                 "'Name and surname' value must include exactly 2 words"
             )
         return attrs
 
     def update(self, instance: User, validated_data):
-        instance.first_name, instance.last_name = validated_data["full_name"].split()
+        if "full_name" in validated_data:
+            values = validated_data["full_name"].split()
+            instance.first_name, instance.last_name = values
 
-        # if instance.email != validated_data["email"]:
-        #     instance.email_is_confirmed = False
+        if "email" in validated_data:
+            instance.email = validated_data["email"]
 
-        instance.email = validated_data["email"]
-        instance.telegram = validated_data["telegram"]
+        if "telegram" in validated_data:
+            instance.telegram = validated_data["telegram"]
+
         if "avatar" in validated_data:
             instance.avatar = validated_data["avatar"]
 
