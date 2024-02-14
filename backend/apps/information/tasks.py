@@ -89,7 +89,6 @@ def make_program_accruals(program):
 @shared_task
 def create_wallet_history():
     users = User.objects.all()
-    print("started 1")
 
     for user in users:
         wallet: Wallet = user.wallet
@@ -102,8 +101,6 @@ def create_wallet_history():
             or 0
         )
 
-        print(total_funds)
-
-        history_slice = WalletHistory.objects.create(
+        WalletHistory.objects.create(
             user=user, free=wallet.free, frozen=wallet.frozen, deposits=total_funds
         )

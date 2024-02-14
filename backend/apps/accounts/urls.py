@@ -16,7 +16,7 @@ from apps.accounts.views import (
     LogoutAPIView,
     PartnerGeneralStatisticsRetrieveView,
 )
-from apps.accounts.views.partner import PartnerInvestorsList
+from apps.accounts.views.partner import PartnerInvestorsList, PartnerInvestmentGraph
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
     VerificationAPIView,
@@ -80,4 +80,5 @@ urlpatterns = [
         name="partner-general-statistics",
     ),
     path("partner/investors/", PartnerInvestorsList.as_view(), name="investors"),
+    path("partner/investment/", PartnerInvestmentGraph.as_view(), name="investment"),
 ] + router.urls
