@@ -33,12 +33,12 @@ class Operation(models.Model):
         related_name="operations",
         on_delete=models.CASCADE,
     )
-    amount = models.DecimalField("Сумма", **decimal_usdt, default=0.0)
+    amount = models.DecimalField("Сумма", **decimal_usdt, **blank_and_null)
     amount_free = models.DecimalField(
-        'Из раздела "Свободно"', **decimal_usdt, default=0.0
+        'Из раздела "Свободно"', **decimal_usdt, **blank_and_null
     )
     amount_frozen = models.DecimalField(
-        'Из раздела "Заморожено"', **decimal_usdt, default=0.0
+        'Из раздела "Заморожено"', **decimal_usdt, **blank_and_null
     )
     created_at = models.DateTimeField("Дата и время", auto_now_add=True)
     confirmed = models.BooleanField("Подтверждена", default=False)
@@ -114,31 +114,21 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):
-        if self.amount:
-            self.actions.create(
-                type=Action.Type.REPLENISHMENT,
-                target=Action.Target.WALLET,
-                amount=self.amount,
-            )
-        if self.amount_free:
-            self.actions.create(
-                type=Action.Type.TRANSFER_FREE,
-                target=Action.Target.WALLET,
-                amount=self.amount_free,
-            )
-        if self.amount_frozen:
-            self.actions.create(
-                type=Action.Type.TRANSFER_FROZEN,
-                target=Action.Target.WALLET,
-                amount=self.amount_frozen,
-            )
+        self._to_wallet()
 
     def _apply_withdrawal(self):
-        self.actions.create(
-            type=Action.Type.WITHDRAWAL,
-            target=Action.Target.WALLET,
-            amount=-self.amount,
-        )  # TODO: add accept/reject ?
+        pass
+
+    def _apply_transfer(self):
+        self._from_wallet()
+        Operation.objects.create(
+            type=Operation.Type.REPLENISHMENT,
+            wallet=self.receiver,
+            sender=self.wallet,
+            amount_free=(1 - Decimal("0.005")) * self.amount_free,
+            amount_frozen=(1 - Decimal("0.005")) * self.amount_frozen,
+            confirmed=True,
+        )
 
     def _apply_partner_bonus(self):
         self.actions.create(
@@ -217,17 +207,26 @@ class Operation(models.Model):
                 amount=-self.amount_frozen,
             )
 
-    def _to_wallet(self, frozen: bool):
-        if frozen:
-            _type = Action.Type.TRANSFER_FROZEN
-        else:
-            _type = Action.Type.TRANSFER_FREE
-
-        self.actions.create(
-            type=_type,
-            target=Action.Target.WALLET,
-            amount=self.amount,
-        )
+    def _to_wallet(self, frozen: bool = False):
+        if self.amount:
+            _type = Action.Type.TRANSFER_FROZEN if frozen else Action.Type.TRANSFER_FREE
+            self.actions.create(
+                type=_type,
+                target=Action.Target.WALLET,
+                amount=self.amount,
+            )
+        if self.amount_free:
+            self.actions.create(
+                type=Action.Type.TRANSFER_FREE,
+                target=Action.Target.WALLET,
+                amount=self.amount_free,
+            )
+        if self.amount_frozen:
+            self.actions.create(
+                type=Action.Type.TRANSFER_FROZEN,
+                target=Action.Target.WALLET,
+                amount=self.amount_frozen,
+            )
 
     def _to_program(self):
         self.actions.create(
