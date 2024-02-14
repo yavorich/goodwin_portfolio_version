@@ -28,3 +28,33 @@ class Wallet(models.Model):
                 frozen += value
                 if frozen == 0:
                     break
+
+
+class WalletHistory(models.Model):
+    user = models.ForeignKey(
+        User, related_name="wallet_history", on_delete=models.CASCADE
+    )
+    free = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.0,
+        verbose_name="Доступно",
+    )
+    frozen = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.0, verbose_name="Заморожено"
+    )
+    deposits = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.0,
+        verbose_name="Сумма базовых активов всех незакрытых программ",
+    )
+    created_at = models.DateField(auto_now_add=True, verbose_name="Дата создания")
+
+    class Meta:
+        unique_together = ("user", "created_at")
+        verbose_name = "История кошелька"
+        verbose_name_plural = "Истории кошельков"
+
+    def __str__(self):
+        return f"{self.user}"
