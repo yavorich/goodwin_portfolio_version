@@ -1,6 +1,6 @@
 from django.contrib import admin
 from . import models
-from .models import UserProgramAccrual
+from .models import UserProgramAccrual, WalletHistory
 from ..accounts.models.user import Partner
 
 
@@ -11,6 +11,12 @@ class WalletAdmin(admin.ModelAdmin):
         "free",
         "frozen",
     ]
+
+
+@admin.register(WalletHistory)
+class WalletHistoryAdmin(admin.ModelAdmin):
+    list_display = ["user", "free", "frozen", "deposits"]
+    readonly_fields = ("created_at",)
 
 
 class ProgramResultInline(admin.TabularInline):
