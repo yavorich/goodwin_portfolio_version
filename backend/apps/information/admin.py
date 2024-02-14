@@ -4,6 +4,12 @@ from .models import UserProgramAccrual, WalletHistory
 from ..accounts.models.user import Partner
 
 
+class FrozenItemInline(admin.TabularInline):
+    model = models.FrozenItem
+    fields = ["amount", "defrost_date"]
+    classes = ["collapse"]
+
+
 @admin.register(models.Wallet)
 class WalletAdmin(admin.ModelAdmin):
     list_display = [
@@ -11,6 +17,7 @@ class WalletAdmin(admin.ModelAdmin):
         "free",
         "frozen",
     ]
+    inlines = [FrozenItemInline]
 
 
 @admin.register(WalletHistory)
@@ -70,14 +77,22 @@ class UserProgramAdmin(admin.ModelAdmin):
     inlines = [UserProgramReplenishmentInline]
 
 
+class OperationActionsInline(admin.TabularInline):
+    model = models.Action
+    fields = ["type", "name", "target", "target_name", "amount"]
+    extra = 0
+
+
 @admin.register(models.Operation)
 class OperationAdmin(admin.ModelAdmin):
     list_display = [
+        "id",
         "type",
         "wallet",
         "amount",
         "created_at",
     ]
+    inlines = [OperationActionsInline]
 
 
 @admin.register(models.FrozenItem)
