@@ -1,17 +1,17 @@
+from datetime import timedelta, datetime
 from decimal import Decimal
 
-from django.db.models import Sum, Q, Value
+from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from rest_framework.generics import RetrieveAPIView, ListAPIView
-from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.response import Response
 
 from apps.accounts.permissions import IsPartner
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
     InvestorsSerializer,
+    PartnerInvestmentGraphSerializer,
 )
-from apps.information.models import UserProgram
+from apps.information.models import UserProgram, WalletHistory
 from core.pagination import PageNumberSetPagination
 
 
@@ -31,13 +31,11 @@ class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
             .aggregate(total_success_fee=Sum("user_total_success_fee"))
         )["total_success_fee"]
 
-        total_success_fee = Decimal(total_success_fee)
-
         total_partner_fee = total_success_fee * partner_profile.partner_fee
 
         data = {
-            "total_success_fee": total_success_fee,
-            "total_partner_fee": total_partner_fee,
+            "total_success_fee": total_success_fee or 0,
+            "total_partner_fee": total_partner_fee or 0,
         }
 
         return data
@@ -59,17 +57,56 @@ class PartnerInvestorsList(ListAPIView):
                     "wallet__programs__funds",
                     filter=Q(wallet__programs__status=UserProgram.Status.RUNNING),
                 ),
-                Value(0.0),
-            )
+                Decimal(0.0),
+            ),
         )
+
         queryset = queryset.annotate(
             total_net_profit=Coalesce(
-                Sum("wallet__programs__accruals__amount"), Value(0.0)
+                Sum("wallet__programs__accruals__amount"), Decimal(0.0)
             )
         )
 
         return queryset
 
 
-# class PartnerTotalDepositsGraph(ListAPIView):
-#     permission_classes = [IsPartner]
+class PartnerInvestmentGraph(ListAPIView):
+    permission_classes = [IsPartner]
+    serializer_class = PartnerInvestmentGraphSerializer
+
+    def get_queryset(self):
+        investors = self.request.user.partner_profile.users.all()
+
+        start_date = WalletHistory.objects.earliest("created_at").created_at
+        end_date = WalletHistory.objects.latest("created_at").created_at
+
+        if start_date_string := self.request.query_params.get("start_date"):
+            try:
+                start_date = datetime.strptime(start_date_string, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        if end_date_string := self.request.query_params.get("end_date"):
+            try:
+                end_date = datetime.strptime(end_date_string, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+
+        results = []
+
+        current_date = start_date
+        while current_date <= end_date:
+            daily_totals = WalletHistory.objects.filter(
+                created_at=current_date, user__in=investors
+            ).aggregate(total_sum=Sum("free") + Sum("frozen") + Sum("deposits"))
+
+            results.append(
+                {
+                    "date": current_date,
+                    "total_amount": daily_totals["total_sum"] or 0,
+                }
+            )
+
+            current_date += timedelta(days=1)
+
+        return results
