@@ -15,7 +15,6 @@ class WalletSerializer(ModelSerializer):
 
 
 class FrozenItemSerializer(ModelSerializer):
-
     class Meta:
         model = FrozenItem
         fields = ["id", "amount", "frost_date", "defrost_date"]
