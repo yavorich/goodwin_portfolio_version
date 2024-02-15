@@ -53,17 +53,13 @@ class WalletHistory(models.Model):
         User, related_name="wallet_history", on_delete=models.CASCADE
     )
     free = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+        **decimal_usdt,
         default=0.0,
         verbose_name="Доступно",
     )
-    frozen = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.0, verbose_name="Заморожено"
-    )
+    frozen = models.DecimalField(**decimal_usdt, default=0.0, verbose_name="Заморожено")
     deposits = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
+        **decimal_usdt,
         default=0.0,
         verbose_name="Сумма базовых активов всех незакрытых программ",
     )

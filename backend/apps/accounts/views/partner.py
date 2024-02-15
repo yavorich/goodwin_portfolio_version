@@ -1,6 +1,7 @@
-from datetime import timedelta, datetime
+from datetime import datetime
 from decimal import Decimal
 
+from django_filters import rest_framework as filters
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from rest_framework.generics import RetrieveAPIView, ListAPIView
@@ -29,7 +30,7 @@ class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
                 user_total_success_fee=Sum("wallet__programs__accruals__success_fee")
             )
             .aggregate(total_success_fee=Sum("user_total_success_fee"))
-        )["total_success_fee"]
+        )["total_success_fee"] or 0
 
         total_partner_fee = total_success_fee * partner_profile.partner_fee
 
@@ -70,9 +71,19 @@ class PartnerInvestorsList(ListAPIView):
         return queryset
 
 
+class WalletHistoryFilter(filters.FilterSet):
+    start_date = filters.DateFilter(field_name="created_at", lookup_expr="gte")
+    end_date = filters.DateFilter(field_name="created_at", lookup_expr="lte")
+
+    class Meta:
+        model = WalletHistory
+        fields = ["start_date", "end_date"]
+
+
 class PartnerInvestmentGraph(ListAPIView):
     permission_classes = [IsPartner]
     serializer_class = PartnerInvestmentGraphSerializer
+    filterset_class = WalletHistoryFilter
 
     def get_queryset(self):
         investors = self.request.user.partner_profile.users.all()
@@ -80,33 +91,12 @@ class PartnerInvestmentGraph(ListAPIView):
         start_date = WalletHistory.objects.earliest("created_at").created_at
         end_date = WalletHistory.objects.latest("created_at").created_at
 
-        if start_date_string := self.request.query_params.get("start_date"):
-            try:
-                start_date = datetime.strptime(start_date_string, "%Y-%m-%d").date()
-            except ValueError:
-                pass
-
-        if end_date_string := self.request.query_params.get("end_date"):
-            try:
-                end_date = datetime.strptime(end_date_string, "%Y-%m-%d").date()
-            except ValueError:
-                pass
-
-        results = []
-
-        current_date = start_date
-        while current_date <= end_date:
-            daily_totals = WalletHistory.objects.filter(
-                created_at=current_date, user__in=investors
-            ).aggregate(total_sum=Sum("free") + Sum("frozen") + Sum("deposits"))
-
-            results.append(
-                {
-                    "date": current_date,
-                    "total_amount": daily_totals["total_sum"] or 0,
-                }
+        results = (
+            WalletHistory.objects.filter(
+                created_at__range=(start_date, end_date), user__in=investors
             )
-
-            current_date += timedelta(days=1)
+            .values("created_at")
+            .annotate(total_sum=Sum("free") + Sum("frozen") + Sum("deposits"))
+        )
 
         return results

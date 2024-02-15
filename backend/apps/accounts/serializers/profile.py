@@ -41,19 +41,13 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "id",
             "full_name",
             "email",
-            "partner",
+            "partner_label",
             "avatar",
             "telegram",
             "settings",
             "partner_profile",
         ]
         read_only_fields = fields
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        partner = Partner.objects.get(id=data["partner"])
-        data["partner"] = f"{partner.region} - {partner.partner_id}"
-        return data
 
 
 class ProfileUpdateSerializer(ModelSerializer):

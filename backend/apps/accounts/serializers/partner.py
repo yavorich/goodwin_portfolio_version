@@ -1,4 +1,4 @@
-from rest_framework.fields import DecimalField, DateField
+from rest_framework.fields import DecimalField, DateField, FloatField
 from rest_framework.serializers import ModelSerializer, Serializer
 
 from apps.accounts.models import Region
@@ -26,13 +26,13 @@ class PartnerRetrieveSerializer(PartnerSerializer):
 
 
 class PartnerTotalFeeSerializer(Serializer):
-    total_success_fee = DecimalField(max_digits=12, decimal_places=2)
-    total_partner_fee = DecimalField(max_digits=12, decimal_places=2)
+    total_success_fee = FloatField()
+    total_partner_fee = FloatField()
 
 
 class InvestorsSerializer(ModelSerializer):
-    total_funds = DecimalField(**decimal_usdt)
-    total_net_profit = DecimalField(**decimal_usdt)
+    total_funds = FloatField()
+    total_net_profit = FloatField()
 
     class Meta:
         model = User
@@ -41,5 +41,5 @@ class InvestorsSerializer(ModelSerializer):
 
 
 class PartnerInvestmentGraphSerializer(Serializer):
-    date = DateField()
-    total_amount = DecimalField(**decimal_usdt)
+    created_at = DateField()
+    total_sum = FloatField()
