@@ -82,6 +82,10 @@ class User(AbstractUser):
     def full_name(self):
         return f"{self.first_name.capitalize()} {self.last_name.capitalize()}"
 
+    @property
+    def partner_label(self):
+        return f"{self.partner.region} - {self.partner.partner_id}"
+
 
 class Settings(models.Model):
     user = models.OneToOneField(User, related_name="settings", on_delete=models.CASCADE)
