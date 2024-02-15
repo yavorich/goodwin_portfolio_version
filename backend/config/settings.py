@@ -195,12 +195,6 @@ CELERY_BROKER_URL = (
     f"{RABBITMQ['PROTOCOL']}://{RABBITMQ['USER']}:"
     f"{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}"
 )
-CELERY_BEAT_SCHEDULE = {
-    "create_wallet_history_daily": {
-        "task": "apps.information.tasks.create_wallet_history",
-        "schedule": crontab(hour="0", minute="20"),
-    },
-}
 
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
 FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
