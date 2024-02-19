@@ -8,5 +8,5 @@ from .program import (
     UserProgramReplenishment,
     UserProgramAccrual,
 )
-from .wallet import Wallet
+from .wallet import Wallet, WalletHistory
 from .frozen import FrozenItem
