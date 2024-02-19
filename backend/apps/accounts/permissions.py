@@ -48,3 +48,15 @@ class IsAuthenticatedAndVerified(IsAuthenticatedAndAcceptedOfferAgreement):
             and personal_verification.status == VerificationStatus.APPROVED
             and address_verification.status == VerificationStatus.APPROVED
         )
+
+
+class IsPartner(IsAuthenticatedAndVerified):
+    message = {
+        "code": "not_partner",
+        "detail": _("Для доступа к этой странице необходимо иметь статус партнёра"),
+    }
+
+    def has_permission(self, request, view):
+        user = request.user
+        partner_profile = getattr(user, "partner_profile", None)
+        return super().has_permission(request, view) and partner_profile is not None

@@ -34,15 +34,6 @@ def send_email_msg(email, subject, msg, from_email=None, html=False):
     return send_mail(**msg_data)
 
 
-@celery_app.on_after_finalize.connect
-def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(
-        crontab(hour=0, minute=10),
-        delete_confirm_codes.s(),
-    )
-    sender.add_periodic_task(crontab(hour=0, minute=0), delete_settings_auth_codes.s())
-
-
 @celery_app.task
 def delete_confirm_codes():
     PreAuthToken.objects.filter(
