@@ -23,7 +23,7 @@ class EmailConfirmAPIView(GenericAPIView):
         user.temp.email_verify_code = None
         user.temp.save()
 
-        user.email_is_confirmed = True
+        # user.email_is_confirmed = True
         user.save()
 
         return Response(
