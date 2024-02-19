@@ -96,10 +96,13 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
         extra_kwargs = {f: {"required": True} for f in fields}
 
     def validate(self, attrs):
-        if 0 < attrs["replenishment"].amount - attrs["amount"] < 100:
+        remainder = attrs["replenishment"].amount - attrs["amount"]
+        if 0 < remainder < 100:
             raise ValidationError(
                 "Minimum replenishment amount after cancellation - 100 USDT"
             )
+        if remainder < 0:
+            raise ValidationError("Insufficient funds to cancel")
         return attrs
 
 
@@ -115,10 +118,13 @@ class ProgramClosureSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         min_deposit = attrs["user_program"].program.min_deposit
-        if 0 < attrs["user_program"].funds - attrs["amount"] < min_deposit:
+        remainder = attrs["user_program"].deposit - attrs["amount"]
+        if 0 < remainder < min_deposit:
             raise ValidationError(
                 f"Minimum program deposit after cancellation - {min_deposit} USDT"
             )
+        if remainder < 0:
+            raise ValidationError("Insufficient program deposit")
         return attrs
 
 
