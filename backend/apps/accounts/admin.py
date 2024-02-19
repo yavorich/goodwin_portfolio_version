@@ -83,31 +83,26 @@ class UserForm(UserChangeForm):
 @admin.register(models.User)
 class UserAdmin(UserAdmin):
     form = UserForm
-    # list_display = [
-    #     "email",
-    #     "first_name",
-    #     "last_name",
-    #     "region",
-    #     "is_active",
-    #     "is_staff",
-    # ]
     inlines = [SettingsInline, PersonalVerificationInline, AddressVerificationInline]
 
-    list_filter = ["is_active", "is_staff", "region"]  # Добавьте необходимые фильтры
+    list_filter = ["is_active", "is_staff", "partner"]
     search_fields = [
         "email",
         "first_name",
         "last_name",
-    ]  # Добавьте необходимые поля для поиска
-    ordering = ["-date_joined"]  # Указывайте поле, по которому нужно сортировать
+    ]
+    ordering = ["-date_joined"]
 
     fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("email", "password")}),)
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name", "region")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser")}),
-        ("Important dates", {"fields": ("last_login", "date_joined")}),
+        ("Личная информация", {"fields": ("first_name", "last_name", "partner")}),
+        ("Разрешения", {"fields": ("is_active", "is_staff", "is_superuser")}),
+        (
+            "Важные даты",
+            {"fields": ("last_login", "date_joined", "agreement_date")},
+        ),
     )
     add_fieldsets = (
         (
