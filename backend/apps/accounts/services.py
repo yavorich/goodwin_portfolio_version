@@ -1,11 +1,10 @@
 import random
 from uuid import uuid4
 from django.utils import timezone
-from django.urls import reverse
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 
-from config.settings import RECOVER_PASSWORD_CODE_EXPIRES
+from config.settings import RECOVER_PASSWORD_CODE_EXPIRES, FRONT_URL
 from apps.accounts.tasks import send_email_msg
 
 
@@ -41,9 +40,7 @@ def send_email_change_password(user, request):
     user.temp.save()
 
     message_template_context = {
-        "confirmation_url": request.build_absolute_uri(
-            reverse("recover-password", kwargs={"token": code})
-        ),
+        "confirmation_url": f"{FRONT_URL}/auth/new-password/{code}",
         "title": _("Восстановление пароля"),
         "description": _(
             "Здравствуйте, {full_name}!\n"
