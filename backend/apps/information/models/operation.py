@@ -1,6 +1,5 @@
 from decimal import Decimal
 from django.db import models, transaction
-from django.core.exceptions import ValidationError
 
 from core.utils import blank_and_null, decimal_usdt
 
@@ -101,12 +100,6 @@ class Operation(models.Model):
     def __str__(self) -> str:
         return Operation.Type(self.type).label
 
-    def clean_program(self, value):
-        if not value and self.type.startswith("program"):
-            raise ValidationError(
-                f"'program' field must be set for operation with type '{self.type}"
-            )
-
     def apply(self):
         with transaction.atomic():
             getattr(self, f"_apply_{self.type}")()
@@ -147,7 +140,7 @@ class Operation(models.Model):
     def _apply_program_closure(self):
         self._from_program_to_wallet(frozen=True)
         if self.user_program.funds == 0:
-            self.user_program.close(force=True)
+            self.user_program.close()
 
     def _apply_program_replenishment(self):
         self._from_wallet()
@@ -182,16 +175,21 @@ class Operation(models.Model):
         )
 
     def _apply_program_accrual(self):
-        withdrawal_type = self.user_program.program.withdrawal_type
-        target = Action.Target.USER_PROGRAM
+        # начисление в profit программы
         if self.amount >= 0:
             action_type = Action.Type.PROFIT_ACCRUAL
-            if withdrawal_type == Program.WithdrawalType.DAILY:
-                target = Action.Target.WALLET
         else:
             action_type = Action.Type.LOSS_CHARGEOFF
+        self.actions.create(
+            type=action_type, amount=self.amount, target=Action.Target.USER_PROGRAM
+        )
 
-        self.actions.create(type=action_type, amount=self.amount, target=target)
+        # ежедневные начисления начисляются в кошелёк пользователя
+        withdrawal_type = self.user_program.program.withdrawal_type
+        if withdrawal_type == Program.WithdrawalType.DAILY:
+            self.actions.create(
+                type=action_type, amount=self.amount, target=Action.Target.WALLET
+            )
 
     def _from_wallet(self):
         if self.amount_free:
@@ -228,6 +226,13 @@ class Operation(models.Model):
                 amount=self.amount_frozen,
             )
 
+    def _from_program(self):
+        self.actions.create(
+            type=Action.Type.TRANSFER_BETWEEN,
+            target=Action.Target.USER_PROGRAM,
+            amount=-self.amount,
+        )
+
     def _to_program(self):
         self.actions.create(
             type=Action.Type.TRANSFER_BETWEEN,
@@ -240,12 +245,8 @@ class Operation(models.Model):
         self._to_program()
 
     def _from_program_to_wallet(self, frozen: bool):
+        self._from_program()
         self._to_wallet(frozen)
-        self.actions.create(
-            type=Action.Type.TRANSFER_BETWEEN,
-            target=Action.Target.USER_PROGRAM,
-            amount=-self.amount,
-        )
 
 
 class Action(models.Model):
@@ -291,7 +292,10 @@ class Action(models.Model):
             else:
                 self.operation.wallet.update_balance(free=self.amount)
         elif self.target == self.Target.USER_PROGRAM:
-            self.operation.user_program.update_balance(amount=self.amount)
+            if self.operation.type == Operation.Type.PROGRAM_ACCRUAL:
+                self.operation.user_program.update_profit(amount=self.amount)
+            else:
+                self.operation.user_program.update_deposit(amount=self.amount)
             if self.operation.type == Operation.Type.PROGRAM_REPLENISHMENT:
                 self.operation.replenishment.done()
 
@@ -325,7 +329,7 @@ class Action(models.Model):
                 if self.operation.user_program.force_closed:
                     return message % "early "
                 if self.operation.user_program.status != UserProgram.Status.FINISHED:
-                    return message % "partially"
+                    return message % "partially "
                 return message % ""
             if self.target == self.Target.WALLET:
                 return f"Transfer to program {self.operation.user_program.name}"
@@ -346,7 +350,7 @@ class Action(models.Model):
             )
             return (
                 f"The program {self.operation.user_program.name} replenishment "
-                f"has been {'partially' if not canceled else ''} canceled"
+                f"has been {'partially ' if not canceled else ''}canceled"
             )
 
         if self.operation.type == Operation.Type.PROGRAM_ACCRUAL:

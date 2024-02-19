@@ -35,7 +35,7 @@ def save_user_program(sender, instance: UserProgram, **kwargs):
     instance._set_name()
     instance._set_start_date()
     instance._set_end_date()
-    instance._set_deposit()
+    instance._update_funds()
 
 
 @receiver(pre_save, sender=UserProgramReplenishment)
