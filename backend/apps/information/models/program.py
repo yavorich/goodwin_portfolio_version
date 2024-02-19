@@ -1,6 +1,7 @@
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db import models
+from django.utils.timezone import now
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 
@@ -74,13 +75,18 @@ class UserProgram(models.Model):
         on_delete=models.CASCADE,
     )
     start_date = models.DateField("Дата начала", **blank_and_null)
-    end_date = models.DateField("Дата завершения", **blank_and_null)
+    end_date = models.DateField("Планируемая дата завершения", **blank_and_null)
+    close_date = models.DateField("Фактическая дата завершения", **blank_and_null)
     status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
-    deposit = models.DecimalField("Начальный депозит", **decimal_usdt, **blank_and_null)
-    funds = models.DecimalField(
-        "Текущие средства", **decimal_usdt, default=Decimal("0.0")
+    deposit = models.DecimalField(
+        "Базовый депозит", **decimal_usdt, default=Decimal("0.0")
     )
-    force_closed = models.BooleanField("Завершена принудительно", default=False)
+    funds = models.DecimalField(
+        "Текущие торговые средства", **decimal_usdt, default=Decimal("0.0")
+    )
+    profit = models.DecimalField(
+        "Суммарный доход", **decimal_usdt, default=Decimal("0.0")
+    )
 
     class Meta:
         verbose_name = "Программа пользователя"
@@ -88,6 +94,10 @@ class UserProgram(models.Model):
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def profit_percent(self):
+        return 100 * self.profit / self.deposit
 
     def _set_name(self):
         if not self.name:
@@ -104,23 +114,26 @@ class UserProgram(models.Model):
         if not self.end_date and (duration := self.program.duration):
             self.end_date = self.start_date + relativedelta(months=duration)
 
-    def _set_deposit(self):
-        if not self.deposit:
-            self.deposit = self.funds
+    def _update_funds(self):
+        if self.end_date:
+            self.funds = self.deposit + self.profit
+        else:
+            self.funds = self.deposit
 
     def start(self):
         self.status = self.Status.RUNNING
         self.save()
 
-    def close(self, force: bool = False):
+    def close(self):
         self.status = self.Status.FINISHED
-        self.force_closed = force
-        self.wallet.update_balance(frozen=self.funds)
-        self.update_balance(-self.funds)
+        self.close_date = now().date()
+
+    def update_deposit(self, amount):
+        self.deposit += amount
         self.save()
 
-    def update_balance(self, amount):
-        self.funds += amount
+    def update_profit(self, amount):
+        self.profit += amount
         self.save()
 
 
