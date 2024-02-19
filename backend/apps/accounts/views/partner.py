@@ -1,11 +1,10 @@
-from datetime import datetime
 from decimal import Decimal
 
-from django_filters import rest_framework as filters
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from rest_framework.generics import RetrieveAPIView, ListAPIView
 
+from apps.accounts.filters.wallet_history import WalletHistoryFilter
 from apps.accounts.permissions import IsPartner
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
@@ -69,15 +68,6 @@ class PartnerInvestorsList(ListAPIView):
         )
 
         return queryset
-
-
-class WalletHistoryFilter(filters.FilterSet):
-    start_date = filters.DateFilter(field_name="created_at", lookup_expr="gte")
-    end_date = filters.DateFilter(field_name="created_at", lookup_expr="lte")
-
-    class Meta:
-        model = WalletHistory
-        fields = ["start_date", "end_date"]
 
 
 class PartnerInvestmentGraph(ListAPIView):
