@@ -40,7 +40,9 @@ class UserProgramSerializer(ModelSerializer):
             "name",
             "start_date",
             "end_date",
-            "funds",
+            "deposit",
+            "profit",
+            "profit_percent",
         ]
 
 

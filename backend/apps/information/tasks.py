@@ -56,7 +56,13 @@ def apply_program_finish():
     with transaction.atomic():
         items = UserProgram.objects.filter(end_date=now().date(), force_closed=False)
         for item in items:
-            item.close(force=False)
+            Operation.objects.create(
+                type=Operation.Type.PROGRAM_CLOSURE,
+                wallet=item.wallet,
+                user_program=item,
+                amount=item.funds,
+                confirmed=True,
+            )
 
 
 @shared_task
