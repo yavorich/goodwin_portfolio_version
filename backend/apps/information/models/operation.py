@@ -3,7 +3,7 @@ from django.db import models, transaction
 
 from core.utils import blank_and_null, decimal_usdt
 
-from .program import Program, UserProgram, UserProgramReplenishment, UserProgramAccrual
+from .program import Program, UserProgram, UserProgramReplenishment
 from .wallet import Wallet
 from .frozen import FrozenItem
 
@@ -64,13 +64,6 @@ class Operation(models.Model):
         on_delete=models.CASCADE,
         **blank_and_null,
     )
-    accrual = models.ForeignKey(
-        UserProgramAccrual,
-        verbose_name="Начисление",
-        related_name="operations",
-        on_delete=models.CASCADE,
-        **blank_and_null,
-    )
     frozen_item = models.ForeignKey(
         FrozenItem,
         verbose_name="Замороженная сумма",
@@ -92,6 +85,8 @@ class Operation(models.Model):
         on_delete=models.CASCADE,
         **blank_and_null,
     )
+    early_closure = models.BooleanField(default=False)
+    partial = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "Операция"
@@ -139,8 +134,19 @@ class Operation(models.Model):
 
     def _apply_program_closure(self):
         self._from_program_to_wallet(frozen=True)
-        if self.user_program.funds == 0:
+        if not self.partial:
             self.user_program.close()
+            replenishments = self.user_program.replenishments.filter(
+                status=UserProgramReplenishment.Status.INITIAL
+            )
+            for replenishment in replenishments:
+                Operation.objects.create(
+                    type=Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
+                    wallet=self.wallet,
+                    replenishment=replenishment,
+                    amount=replenishment.amount,
+                    confirmed=True,
+                )
 
     def _apply_program_replenishment(self):
         self._from_wallet()
@@ -151,21 +157,26 @@ class Operation(models.Model):
     def _apply_program_replenishment_cancel(self):
         self.user_program = self.replenishment.program
         self.save()
-        self.replenishment.cancel(self.amount)
+        if self.partial:
+            self.replenishment.decrease(self.amount)
+        else:
+            self.replenishment.cancel()
         self._to_wallet(frozen=True)
 
     def _apply_defrost(self):
-        self._to_wallet(frozen=False)
         if self.frozen_item:
-            self.frozen_item.defrost()
+            self.wallet.update_balance(
+                frozen=-self.amount, item=self.frozen_item  # разморозка frozen-item
+            )
         else:
-            self.wallet.update_balance(frozen=-self.amount)
+            self.wallet.update_balance(frozen=-self.amount)  # разморозка суммы
             Operation.objects.create(
                 type=Operation.Type.EXTRA_FEE,
                 wallet=self.wallet,
                 amount=Decimal("0.1") * self.amount,
                 confirmed=True,
             )
+        self._to_wallet(frozen=False)  # пополнение раздела "Доступно"
 
     def _apply_extra_fee(self):
         self.actions.create(
@@ -226,9 +237,10 @@ class Operation(models.Model):
                 amount=self.amount_frozen,
             )
 
-    def _from_program(self):
+    def _from_program(self, type=None):
+        type = type or Action.Type.TRANSFER_BETWEEN
         self.actions.create(
-            type=Action.Type.TRANSFER_BETWEEN,
+            type=type,
             target=Action.Target.USER_PROGRAM,
             amount=-self.amount,
         )
@@ -245,7 +257,7 @@ class Operation(models.Model):
         self._to_program()
 
     def _from_program_to_wallet(self, frozen: bool):
-        self._from_program()
+        self._from_program(type=Action.Type.SYSTEM_MESSAGE)
         self._to_wallet(frozen)
 
 
@@ -306,7 +318,7 @@ class Action(models.Model):
             return f"Receipt from ID{self.operation.sender.user.id}"
 
         if self.operation.type == Operation.Type.WITHDRAWAL:
-            return "Withdrawal request accepted"
+            return f"Request for withdrawal of {self.amount} USDT completed"
 
         if self.operation.type == Operation.Type.TRANSFER:
             return f"Transfer to client ID{self.operation.receiver.user.id}"
@@ -326,10 +338,10 @@ class Action(models.Model):
                     f"The program {self.operation.user_program.name} "
                     "has been %sclosed"
                 )
-                if self.operation.user_program.force_closed:
-                    return message % "early "
-                if self.operation.user_program.status != UserProgram.Status.FINISHED:
+                if self.operation.partial:
                     return message % "partially "
+                if self.operation.early_closure:
+                    return message % "early "
                 return message % ""
             if self.target == self.Target.WALLET:
                 return f"Transfer to program {self.operation.user_program.name}"
@@ -344,13 +356,9 @@ class Action(models.Model):
                 return f"Transfer to program {self.operation.user_program.name}"
 
         if self.operation.type == Operation.Type.PROGRAM_REPLENISHMENT_CANCEL:
-            canceled = (
-                self.operation.replenishment.status
-                == UserProgramReplenishment.Status.CANCELED
-            )
             return (
                 f"The program {self.operation.user_program.name} replenishment "
-                f"has been {'partially ' if not canceled else ''}canceled"
+                f"has been {'partially ' if self.operation.partial else ''}canceled"
             )
 
         if self.operation.type == Operation.Type.PROGRAM_ACCRUAL:

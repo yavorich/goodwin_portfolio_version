@@ -4,6 +4,8 @@ from django.db import models
 from apps.accounts.models import User
 from core.utils import decimal_usdt
 
+from .frozen import FrozenItem
+
 
 class Wallet(models.Model):
     user = models.OneToOneField(
@@ -28,24 +30,30 @@ class Wallet(models.Model):
         return "Wallet GDW"
 
     def update_balance(
-        self, free: Decimal = Decimal("0.0"), frozen: Decimal = Decimal("0.0")
+        self,
+        free: Decimal = Decimal("0.0"),
+        frozen: Decimal = Decimal("0.0"),
+        item: FrozenItem | None = None,
     ):
         self.free += free
         self.frozen += frozen
         self.save()
-        self.update_frozen(frozen)
+        self.update_frozen(frozen, item)
 
-    def update_frozen(self, frozen):
+    def update_frozen(self, frozen: Decimal, item: FrozenItem | None = None):
+        if item:
+            return item.defrost()
+
         if frozen > 0:
-            self.frozen_items.create(amount=frozen)
+            return self.frozen_items.create(amount=frozen)
 
-        elif frozen < 0:
+        if frozen < 0:
             for item in self.frozen_items.all():
                 value = min(abs(frozen), item.amount)
                 item.defrost(value)
                 frozen += value
                 if frozen == 0:
-                    break
+                    return
 
 
 class WalletHistory(models.Model):
