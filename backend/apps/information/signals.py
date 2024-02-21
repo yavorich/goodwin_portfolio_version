@@ -8,7 +8,7 @@ from apps.information.models import (
     FrozenItem,
     Action,
 )
-from apps.accounts.services import send_email_confirmation
+from apps.information.services import send_operation_confirm_email
 
 
 @receiver(pre_save, sender=Operation)
@@ -19,13 +19,15 @@ def save_operation(sender, instance: Operation, **kwargs):
         Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
     ]:
         instance.confirmed = True
+    if not instance.confirmed:
+        instance.set_code()
 
 
 @receiver(post_save, sender=Operation)
 def handle_operation(sender, instance: Operation, created, **kwargs):
     if created:
         if not instance.confirmed:
-            send_email_confirmation(instance.wallet.user)
+            send_operation_confirm_email(instance)
         else:
             instance.apply()
 
