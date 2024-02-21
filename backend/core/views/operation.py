@@ -5,6 +5,12 @@ from apps.information.models import Program, UserProgram, UserProgramReplenishme
 
 
 class OperationViewMixin:
+    def get_object(self):
+        try:
+            return super().get_object()
+        except AssertionError:
+            return None
+
     def get_extended_data(self):
         data = self.request.data.copy()
         if not isinstance(data, dict):
