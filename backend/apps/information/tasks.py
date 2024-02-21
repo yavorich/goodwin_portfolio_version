@@ -38,6 +38,8 @@ def apply_program_replenishments():
             status=UserProgramReplenishment.Status.INITIAL, apply_date=now().date()
         )
         for item in items:
+            item.operation.replenishment = item
+            item.operation.save()
             item.operation._to_program()
 
 
@@ -86,7 +88,7 @@ def make_program_accruals(program):
         Operation.objects.create(
             type=Operation.Type.PROGRAM_ACCRUAL,
             wallet=user_program.wallet,
-            accrual=accrual,
+            user_program=user_program,
             amount=accrual.amount,
             confirmed=True,
         )
