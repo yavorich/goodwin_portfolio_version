@@ -38,9 +38,9 @@ class OperationCreateSerializer(ModelSerializer):
             "confirmed",
         ]
 
-    def _validate_wallet(self, attrs):
-        free = attrs.get("amount_free")
-        frozen = attrs.get("amount_frozen")
+    def _validate_wallet(self, attrs, free=None, frozen=None):
+        free = free or attrs.get("amount_free")
+        frozen = frozen or attrs.get("amount_frozen")
         if free and attrs["wallet"].free < free:
             raise ValidationError("Insufficient free funds.")
         if frozen and attrs["wallet"].frozen < frozen:
@@ -105,14 +105,22 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
             raise ValidationError("Insufficient funds to cancel")
         return attrs
 
+    def create(self, validated_data):
+        validated_data["partial"] = (
+            validated_data["replenishment"].amount != validated_data["amount"]
+        )
+        return super().create(validated_data)
+
 
 class ProgramClosureSerializer(OperationCreateSerializer):
     type = CharField(default=Operation.Type.PROGRAM_CLOSURE)
+    early_closure = BooleanField(default=True)
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
             "user_program",
             "amount",
+            "early_closure",
         ]
         extra_kwargs = {f: {"required": True} for f in fields}
 
@@ -127,18 +135,25 @@ class ProgramClosureSerializer(OperationCreateSerializer):
             raise ValidationError("Insufficient program deposit")
         return attrs
 
+    def create(self, validated_data):
+        validated_data["partial"] = (
+            validated_data["user_program"].deposit != validated_data["amount"]
+        )
+        return super().create(validated_data)
+
 
 class WalletDefrostSerializer(OperationCreateSerializer):
     type = CharField(default=Operation.Type.DEFROST)
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
-            "amount_frozen",
+            "amount",
         ]
         extra_kwargs = {f: {"required": True} for f in fields}
 
     def validate(self, attrs):
-        self._validate_wallet(attrs)
+        self._validate_wallet(attrs, frozen=attrs["amount"])
+        return attrs
 
 
 class WalletTransferSerializer(OperationCreateSerializer):

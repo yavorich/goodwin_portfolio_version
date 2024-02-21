@@ -118,7 +118,7 @@ class UserProgram(models.Model):
         if self.end_date:
             self.funds = self.deposit + self.profit
         else:
-            self.funds = self.deposit
+            self.funds = self.deposit + min(self.profit, 0)
 
     def start(self):
         self.status = self.Status.RUNNING
@@ -127,6 +127,9 @@ class UserProgram(models.Model):
     def close(self):
         self.status = self.Status.FINISHED
         self.close_date = now().date()
+        self.deposit = 0
+        self.profit = 0
+        self.save()
 
     def update_deposit(self, amount):
         self.deposit += amount
@@ -165,10 +168,12 @@ class UserProgramReplenishment(models.Model):
         verbose_name = "Пополнение"
         verbose_name_plural = "Пополнения программ"
 
-    def cancel(self, amount):
+    def decrease(self, amount):
         self.amount -= amount
-        if self.amount == 0:
-            self.status = self.Status.CANCELED
+        self.save()
+
+    def cancel(self):
+        self.status = self.Status.CANCELED
         self.save()
 
     def done(self):
