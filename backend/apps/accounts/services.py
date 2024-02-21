@@ -8,7 +8,7 @@ from config.settings import RECOVER_PASSWORD_CODE_EXPIRES, FRONT_URL
 from apps.accounts.tasks import send_email_msg
 
 
-def send_email_confirmation(user):
+def send_auth_confirm_email(user):
     if user.temp.email_last_sending_code is None:
         pass
     elif (
@@ -21,10 +21,11 @@ def send_email_confirmation(user):
     user.temp.email_verify_code = code
     user.temp.email_last_sending_code = timezone.now()
     user.temp.save()
-    message = _("Здравствуйте!\nВаш код подтверждения") + f": {code}"
+    title = _("GOODWIN - Подтверждение электронной почты")
+    message = _("Здравствуйте!\nВаш код для подтверждения почты") + f": {code}"
     send_email_msg.delay(
         user.email,
-        _("GOODWIN - Подтверждение электронной почты"),
+        title,
         message,
         from_email=None,
         html=False,
