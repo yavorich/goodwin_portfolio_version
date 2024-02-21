@@ -38,7 +38,9 @@ class ProgramMixin(OperationViewMixin, ModelViewSet):
         if self.action in ["start", "all"]:
             return Program.objects.all()
 
-        user_programs = UserProgram.objects.filter(wallet=self.request.user.wallet)
+        user_programs = UserProgram.objects.filter(
+            wallet=self.request.user.wallet
+        ).exclude(status=UserProgram.Status.FINISHED)
 
         if self.action == "waiting":
             return user_programs.filter(status=UserProgram.Status.INITIAL)
