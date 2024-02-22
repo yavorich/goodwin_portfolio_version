@@ -3,6 +3,11 @@ from rest_framework.serializers import ModelSerializer, CharField, Serializer
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User, Settings, SettingsAuthCodes
+from apps.accounts.models.user import Partner
+from apps.accounts.serializers.partner import (
+    PartnerRetrieveSerializer,
+    PartnerSerializer,
+)
 
 
 class ProfileSettingsSerializer(ModelSerializer):
@@ -26,7 +31,8 @@ class InviterSerializer(ModelSerializer):
 
 
 class ProfileRetrieveSerializer(ModelSerializer):
-    inviter = InviterSerializer()
+    # region = PartnerRetrieveSerializer()
+    partner_profile = PartnerSerializer()
     settings = ProfileSettingsSerializer()
 
     class Meta:
@@ -35,16 +41,17 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "id",
             "full_name",
             "email",
+            "partner_label",
             "avatar",
             "telegram",
-            "inviter",
             "settings",
+            "partner_profile",
         ]
+        read_only_fields = fields
 
 
 class ProfileUpdateSerializer(ModelSerializer):
     full_name = CharField()
-    # settings = ProfileSettingsSerializer()
 
     class Meta:
         model = User
@@ -53,7 +60,6 @@ class ProfileUpdateSerializer(ModelSerializer):
             "email",
             "avatar",
             "telegram",
-            # "settings",
         ]
 
     def validate(self, attrs):
@@ -77,8 +83,6 @@ class ProfileUpdateSerializer(ModelSerializer):
 
         if "email" in validated_data:
             instance.email = validated_data["email"]
-            if instance.email != validated_data["email"]:
-                instance.email_is_confirmed = False
 
         if "telegram" in validated_data:
             instance.telegram = validated_data["telegram"]

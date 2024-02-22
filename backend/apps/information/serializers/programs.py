@@ -1,6 +1,7 @@
 from rest_framework.serializers import (
     ModelSerializer,
     DecimalField,
+    FloatField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -14,6 +15,10 @@ from core.utils import decimal_usdt
 
 
 class ProgramSerializer(ModelSerializer):
+    min_deposit = FloatField()
+    success_fee = FloatField()
+    management_fee = FloatField()
+
     class Meta:
         model = Program
         fields = [
@@ -40,7 +45,9 @@ class UserProgramSerializer(ModelSerializer):
             "name",
             "start_date",
             "end_date",
-            "funds",
+            "deposit",
+            "profit",
+            "profit_percent",
         ]
 
 

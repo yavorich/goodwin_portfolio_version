@@ -1,7 +1,9 @@
 from celery import shared_task
 from django.db import transaction
+from django.db.models import Sum
 from django.utils.timezone import now, timedelta
 
+from apps.accounts.models import User
 from apps.information.models import (
     FrozenItem,
     Program,
@@ -9,6 +11,8 @@ from apps.information.models import (
     UserProgram,
     UserProgramReplenishment,
     ProgramResult,
+    WalletHistory,
+    Wallet,
 )
 from apps.information.utils import create_accrual
 
@@ -34,6 +38,8 @@ def apply_program_replenishments():
             status=UserProgramReplenishment.Status.INITIAL, apply_date=now().date()
         )
         for item in items:
+            item.operation.replenishment = item
+            item.operation.save()
             item.operation._to_program()
 
 
@@ -52,7 +58,13 @@ def apply_program_finish():
     with transaction.atomic():
         items = UserProgram.objects.filter(end_date=now().date(), force_closed=False)
         for item in items:
-            item.close(force=False)
+            Operation.objects.create(
+                type=Operation.Type.PROGRAM_CLOSURE,
+                wallet=item.wallet,
+                user_program=item,
+                amount=item.funds,
+                confirmed=True,
+            )
 
 
 @shared_task
@@ -76,7 +88,27 @@ def make_program_accruals(program):
         Operation.objects.create(
             type=Operation.Type.PROGRAM_ACCRUAL,
             wallet=user_program.wallet,
-            accrual=accrual,
+            user_program=user_program,
             amount=accrual.amount,
             confirmed=True,
+        )
+
+
+@shared_task
+def create_wallet_history():
+    users = User.objects.all()
+
+    for user in users:
+        wallet: Wallet = user.wallet
+        total_funds = (
+            UserProgram.objects.filter(
+                wallet=wallet,
+            )
+            .exclude(status=UserProgram.Status.FINISHED)
+            .aggregate(total_funds=Sum("funds"))["total_funds"]
+            or 0
+        )
+
+        WalletHistory.objects.create(
+            user=user, free=wallet.free, frozen=wallet.frozen, deposits=total_funds
         )
