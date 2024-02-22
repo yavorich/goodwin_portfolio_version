@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.status import HTTP_200_OK
 from rest_framework.response import Response
+from django.utils.timezone import now
 
 from apps.information.models import Operation, Action
 from apps.information.serializers import OperationSerializer
@@ -31,23 +32,22 @@ class OperationAPIView(ListAPIView):
 class OperationConfirmAPIView(UpdateAPIView):
     serializer_class = UserEmailConfirmSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Operation.objects.all()
+    queryset = Operation.objects.all()
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.data["confirmation_code"]
-        user = request.user
+        operation: Operation = self.get_object()
 
-        if code != user.temp.email_verify_code:
-            raise ValidationError("Verification code is incorrect")
+        if code != operation.confirmation_code:
+            raise ValidationError("Verification code is incorrect.")
 
-        user.temp.email_verify_code = None
-        user.temp.save()
+        if now() > operation.confirmation_code_expires_at:
+            raise ValidationError(
+                "Verification code has expired. Repeat the operation."
+            )
 
-        operation = self.get_object()
         operation.confirmed = True
         operation.save()
         operation.apply()

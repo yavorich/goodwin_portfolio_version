@@ -38,6 +38,8 @@ def apply_program_replenishments():
             status=UserProgramReplenishment.Status.INITIAL, apply_date=now().date()
         )
         for item in items:
+            item.operation.replenishment = item
+            item.operation.save()
             item.operation._to_program()
 
 
@@ -56,7 +58,13 @@ def apply_program_finish():
     with transaction.atomic():
         items = UserProgram.objects.filter(end_date=now().date(), force_closed=False)
         for item in items:
-            item.close(force=False)
+            Operation.objects.create(
+                type=Operation.Type.PROGRAM_CLOSURE,
+                wallet=item.wallet,
+                user_program=item,
+                amount=item.funds,
+                confirmed=True,
+            )
 
 
 @shared_task
@@ -80,7 +88,7 @@ def make_program_accruals(program):
         Operation.objects.create(
             type=Operation.Type.PROGRAM_ACCRUAL,
             wallet=user_program.wallet,
-            accrual=accrual,
+            user_program=user_program,
             amount=accrual.amount,
             confirmed=True,
         )
