@@ -64,17 +64,25 @@ class UserProgramReplenishmentInline(admin.TabularInline):
     extra = 0
 
 
+class UserProgramAccrualInline(admin.TabularInline):
+    model = models.UserProgramAccrual
+    fields = ["amount", "success_fee"]
+    extra = 0
+
+
 @admin.register(models.UserProgram)
 class UserProgramAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "wallet",
+        "status",
         "start_date",
         "end_date",
+        "deposit",
+        "profit",
         "funds",
-        "status",
     ]
-    inlines = [UserProgramReplenishmentInline]
+    inlines = [UserProgramReplenishmentInline, UserProgramAccrualInline]
 
 
 class OperationActionsInline(admin.TabularInline):

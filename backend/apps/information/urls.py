@@ -11,6 +11,7 @@ router.register(
     basename="program-replenishments",
 )
 router.register("wallet/frozen", views.FrozenItemViewSet, basename="wallet-frozen")
+router.register("wallet", views.WalletViewSet, basename="wallet")
 
 
 urlpatterns = [
