@@ -1,9 +1,15 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import (
+    ModelSerializer,
+    SerializerMethodField,
+    FloatField,
+)
 
 from apps.information.models import Wallet, FrozenItem
 
 
 class WalletSerializer(ModelSerializer):
+    free = FloatField()
+    frozen = FloatField()
     total = SerializerMethodField()
 
     class Meta:
@@ -15,7 +21,6 @@ class WalletSerializer(ModelSerializer):
 
 
 class FrozenItemSerializer(ModelSerializer):
-
     class Meta:
         model = FrozenItem
         fields = ["id", "amount", "frost_date", "defrost_date"]

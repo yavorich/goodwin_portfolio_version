@@ -1,12 +1,13 @@
 from django.contrib import admin
 from . import models
+from .models import UserProgramAccrual, WalletHistory
 from ..accounts.models.user import Partner
 
 
 class FrozenItemInline(admin.TabularInline):
     model = models.FrozenItem
     fields = ["amount", "defrost_date"]
-    classes = ['collapse']
+    classes = ["collapse"]
 
 
 @admin.register(models.Wallet)
@@ -17,6 +18,12 @@ class WalletAdmin(admin.ModelAdmin):
         "frozen",
     ]
     inlines = [FrozenItemInline]
+
+
+@admin.register(WalletHistory)
+class WalletHistoryAdmin(admin.ModelAdmin):
+    list_display = ["user", "free", "frozen", "deposits"]
+    readonly_fields = ("created_at",)
 
 
 class ProgramResultInline(admin.TabularInline):
@@ -57,17 +64,25 @@ class UserProgramReplenishmentInline(admin.TabularInline):
     extra = 0
 
 
+class UserProgramAccrualInline(admin.TabularInline):
+    model = models.UserProgramAccrual
+    fields = ["amount", "success_fee"]
+    extra = 0
+
+
 @admin.register(models.UserProgram)
 class UserProgramAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "wallet",
+        "status",
         "start_date",
         "end_date",
+        "deposit",
+        "profit",
         "funds",
-        "status",
     ]
-    inlines = [UserProgramReplenishmentInline]
+    inlines = [UserProgramReplenishmentInline, UserProgramAccrualInline]
 
 
 class OperationActionsInline(admin.TabularInline):
@@ -106,3 +121,6 @@ class PartnerAdmin(admin.ModelAdmin):
             help_text = f"Занятые ID партнёров: {', '.join(map(str, partner_ids))}"
             field.help_text = help_text
         return field
+
+
+admin.site.register(UserProgramAccrual)
