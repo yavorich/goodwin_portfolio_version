@@ -1,24 +1,22 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED
 
 from apps.information.models import (
     Program,
     UserProgram,
-    Operation,
     UserProgramReplenishment,
 )
 from apps.information.serializers import (
     ProgramSerializer,
     UserProgramSerializer,
-    OperationCreateSerializer,
     UserProgramReplenishmentSerializer,
+    program_operations_serializers,
 )
+from core.views import OperationViewMixin
 
 
-class ProgramMixin(ModelViewSet):
+class ProgramMixin(OperationViewMixin, ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
@@ -28,7 +26,7 @@ class ProgramMixin(ModelViewSet):
             if self.action == "replenishments":
                 return UserProgramReplenishmentSerializer
             return UserProgramSerializer
-        return OperationCreateSerializer
+        return program_operations_serializers[self.action]
 
     def get_object(self):
         try:
@@ -40,7 +38,9 @@ class ProgramMixin(ModelViewSet):
         if self.action in ["start", "all"]:
             return Program.objects.all()
 
-        user_programs = UserProgram.objects.filter(wallet=self.request.user.wallet)
+        user_programs = UserProgram.objects.filter(
+            wallet=self.request.user.wallet
+        ).exclude(status=UserProgram.Status.FINISHED)
 
         if self.action == "waiting":
             return user_programs.filter(status=UserProgram.Status.INITIAL)
@@ -60,37 +60,6 @@ class ProgramMixin(ModelViewSet):
             )
 
         return user_programs
-
-    def get_extended_data(self):
-        data = self.request.data
-        if data:
-            data = data.dict()
-        operation_types = {
-            "start": Operation.Type.PROGRAM_START,
-            "replenish": Operation.Type.PROGRAM_REPLENISHMENT,
-            "cancel": Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
-            "close": Operation.Type.PROGRAM_CLOSURE,
-        }
-        operation_type = operation_types[self.action]
-        data |= {
-            "type": operation_type,
-            "wallet": self.request.user.wallet.pk,
-        }
-        instance = self.get_object()
-        if isinstance(instance, Program):
-            data["program"] = instance.pk
-        elif isinstance(instance, UserProgram):
-            data["user_program"] = instance.pk
-        elif isinstance(instance, UserProgramReplenishment):
-            data["replenishment"] = instance.pk
-        return data
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=self.get_extended_data())
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=HTTP_201_CREATED, headers=headers)
 
 
 class ProgramViewSet(ProgramMixin):
