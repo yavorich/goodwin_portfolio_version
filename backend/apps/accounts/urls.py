@@ -16,7 +16,11 @@ from apps.accounts.views import (
     LogoutAPIView,
     PartnerGeneralStatisticsRetrieveView,
 )
-from apps.accounts.views.partner import PartnerInvestorsList, PartnerInvestmentGraph
+from apps.accounts.views.partner import (
+    PartnerInvestorsList,
+    PartnerInvestmentGraph,
+    PartnerList,
+)
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.verification import (
     VerificationAPIView,
@@ -74,6 +78,7 @@ urlpatterns = [
         name="confirm-settings",
     ),
     path("refresh-token/", TokenRefreshAPIView.as_view(), name="refresh_token"),
+    path("partner/list/", PartnerList.as_view(), name="partners"),
     path(
         "partner/general/",
         PartnerGeneralStatisticsRetrieveView.as_view(),
