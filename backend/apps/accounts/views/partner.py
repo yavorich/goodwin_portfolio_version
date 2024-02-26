@@ -5,11 +5,13 @@ from django.db.models.functions import Coalesce
 from rest_framework.generics import RetrieveAPIView, ListAPIView
 
 from apps.accounts.filters.wallet_history import WalletHistoryFilter
+from apps.accounts.models.user import Partner
 from apps.accounts.permissions import IsPartner
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
     InvestorsSerializer,
     PartnerInvestmentGraphSerializer,
+    PartnerListSerializer,
 )
 from apps.information.models import UserProgram, WalletHistory
 from core.pagination import PageNumberSetPagination
@@ -90,3 +92,8 @@ class PartnerInvestmentGraph(ListAPIView):
         )
 
         return results
+
+
+class PartnerList(ListAPIView):
+    serializer_class = PartnerListSerializer
+    queryset = Partner.objects.all()

@@ -3,9 +3,7 @@ from rest_framework.serializers import ModelSerializer, CharField, Serializer
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import User, Settings, SettingsAuthCodes
-from apps.accounts.models.user import Partner
 from apps.accounts.serializers.partner import (
-    PartnerRetrieveSerializer,
     PartnerSerializer,
 )
 
