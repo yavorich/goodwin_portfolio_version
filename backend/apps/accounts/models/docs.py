@@ -1,11 +1,10 @@
-import os
 from django.db import models
 
 from core.localized.fields import LocalizedFileField
 
 
 def get_upload_path(instance, filename):
-    return os.path.join("docs", str(instance.pk), filename)
+    pass
 
 
 class Docs(models.Model):
@@ -18,7 +17,7 @@ class Docs(models.Model):
         default=Type.CONTRACT_OFFER,
         primary_key=True,
     )
-    file = LocalizedFileField("Файл документа", upload_to=get_upload_path)
+    file = LocalizedFileField("Файл документа", upload_to="documents")
 
     class Meta:
         verbose_name = "Document"
