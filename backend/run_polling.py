@@ -10,9 +10,10 @@ from config.settings import MAIN_BOT
 
 
 async def main():
-    dp = Dispatcher()
-    dp.include_routers(telegram_router)
-    await dp.start_polling(MAIN_BOT)
+    if MAIN_BOT:
+        dp = Dispatcher()
+        dp.include_routers(telegram_router)
+        await dp.start_polling(MAIN_BOT)
 
 
 if __name__ == "__main__":
