@@ -13,14 +13,20 @@ from apps.information.services import send_operation_confirm_email
 
 @receiver(pre_save, sender=Operation)
 def save_operation(sender, instance: Operation, **kwargs):
-    if instance.type not in [
-        Operation.Type.WITHDRAWAL,
-        Operation.Type.PROGRAM_CLOSURE,
-        Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
-    ]:
-        instance.confirmed = True
-    if not instance.confirmed:
+    if (
+        instance.type
+        in [
+            Operation.Type.WITHDRAWAL,
+            Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
+            Operation.Type.PROGRAM_CLOSURE,
+        ]
+        and instance.wallet.user.settings.request_email_code_on_withdrawal
+        or instance.type == Operation.Type.TRANSFER
+        and instance.wallet.user.settings.request_email_code_on_transfer
+    ):
         instance.set_code()
+    else:
+        instance.confirmed = True
 
 
 @receiver(post_save, sender=Operation)
