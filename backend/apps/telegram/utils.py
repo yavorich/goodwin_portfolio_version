@@ -16,8 +16,9 @@ def aiogram_async_to_sync(func):
         except AiogramError:
             pass
         finally:
-            await MAIN_BOT.session.close()
-            await asyncio.sleep(0.25)  # для успешного закрытия сессии
+            if MAIN_BOT:
+                await MAIN_BOT.session.close()
+                await asyncio.sleep(0.25)  # для успешного закрытия сессии
 
     def wrapper(*args, **kwargs):
         asyncio.run(main(*args, **kwargs))
@@ -32,6 +33,7 @@ async def send_telegram_message(telegram_id, text):
 
 async def asend_telegram_message(telegram_id, text):
     try:
-        await MAIN_BOT.send_message(telegram_id, text)
+        if MAIN_BOT:
+            await MAIN_BOT.send_message(telegram_id, text)
     except TelegramBadRequest:
         pass
