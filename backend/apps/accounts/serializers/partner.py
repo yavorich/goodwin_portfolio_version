@@ -20,9 +20,9 @@ class PartnerSerializer(ModelSerializer):
         fields = ["id", "partner_id", "region", "partner_fee"]
 
 
-class PartnerRetrieveSerializer(PartnerSerializer):
+class PartnerListSerializer(PartnerSerializer):
     class Meta(PartnerSerializer.Meta):
-        fields = ["partner_id", "region"]
+        fields = ["id", "partner_id", "region"]
 
 
 class PartnerTotalFeeSerializer(Serializer):
