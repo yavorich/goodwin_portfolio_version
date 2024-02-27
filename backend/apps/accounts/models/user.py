@@ -95,11 +95,17 @@ class Settings(models.Model):
     email_request_code_on_withdrawal = models.BooleanField(
         default=True, verbose_name="(email) Запрашивать код при выводе средств"
     )
+    email_request_code_on_transfer = models.BooleanField(
+        default=True, verbose_name="(email) Запрашивать код при внутреннем переводе"
+    )
     telegram_request_code_on_auth = models.BooleanField(
-        default=True, verbose_name="(telegram) Запрашивать код при входе в кабинет"
+        default=False, verbose_name="(telegram) Запрашивать код при входе в кабинет"
     )
     telegram_request_code_on_withdrawal = models.BooleanField(
         default=False, verbose_name="(telegram) Запрашивать код при выводе средств"
+    )
+    telegram_request_code_on_transfer = models.BooleanField(
+        default=False, verbose_name="(telegram) Запрашивать код при внутреннем переводе"
     )
 
     class Meta:
