@@ -28,6 +28,8 @@ class PartnerListSerializer(PartnerSerializer):
 class PartnerTotalFeeSerializer(Serializer):
     total_success_fee = FloatField()
     total_partner_fee = FloatField()
+    success_fee_percent = FloatField()
+    partner_fee_percent = FloatField()
 
 
 class InvestorsSerializer(ModelSerializer):
