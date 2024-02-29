@@ -14,8 +14,10 @@ class ProfileSettingsSerializer(ModelSerializer):
         fields = [
             "email_request_code_on_auth",
             "email_request_code_on_withdrawal",
+            "email_request_code_on_transfer",
             "telegram_request_code_on_auth",
             "telegram_request_code_on_withdrawal",
+            "telegram_request_code_on_transfer",
         ]
 
 
@@ -30,7 +32,7 @@ class InviterSerializer(ModelSerializer):
 
 class ProfileRetrieveSerializer(ModelSerializer):
     # region = PartnerRetrieveSerializer()
-    partner_profile = PartnerSerializer()
+    partner = PartnerSerializer()
     settings = ProfileSettingsSerializer()
 
     class Meta:
@@ -43,7 +45,7 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "avatar",
             "telegram",
             "settings",
-            "partner_profile",
+            "partner",
         ]
         read_only_fields = fields
 

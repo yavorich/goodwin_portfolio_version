@@ -20,9 +20,9 @@ def save_operation(sender, instance: Operation, **kwargs):
             Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
             Operation.Type.PROGRAM_CLOSURE,
         ]
-        and instance.wallet.user.settings.request_email_code_on_withdrawal
+        and instance.wallet.user.settings.email_request_code_on_withdrawal
         or instance.type == Operation.Type.TRANSFER
-        and instance.wallet.user.settings.request_email_code_on_transfer
+        and instance.wallet.user.settings.email_request_code_on_transfer
     ):
         instance.set_code()
     else:

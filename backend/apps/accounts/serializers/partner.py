@@ -1,9 +1,8 @@
-from rest_framework.fields import DecimalField, DateField, FloatField
+from rest_framework.fields import DateField, FloatField
 from rest_framework.serializers import ModelSerializer, Serializer
 
 from apps.accounts.models import Region
 from apps.accounts.models.user import Partner, User
-from core.utils import decimal_usdt
 
 
 class RegionSerializer(ModelSerializer):
@@ -28,6 +27,8 @@ class PartnerListSerializer(PartnerSerializer):
 class PartnerTotalFeeSerializer(Serializer):
     total_success_fee = FloatField()
     total_partner_fee = FloatField()
+    success_fee_percent = FloatField()
+    partner_fee_percent = FloatField()
 
 
 class InvestorsSerializer(ModelSerializer):
