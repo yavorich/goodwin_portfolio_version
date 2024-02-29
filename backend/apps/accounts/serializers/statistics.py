@@ -1,4 +1,4 @@
-from rest_framework.fields import FloatField
+from rest_framework.fields import FloatField, DateField
 from rest_framework.serializers import ModelSerializer, Serializer
 
 from apps.information.models import UserProgramAccrual
@@ -16,3 +16,4 @@ class TotalProfitStatisticsGraphSerializer(ModelSerializer):
 class GeneralInvestmentStatisticsSerializer(Serializer):
     total_funds = FloatField()
     total_profits = FloatField()
+    start_date = DateField()

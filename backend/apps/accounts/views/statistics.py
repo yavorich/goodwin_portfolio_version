@@ -94,5 +94,20 @@ class GeneralInvestmentStatisticsView(RetrieveAPIView):
             )["total_profits"]
             or 0
         )
+        try:
+            start_date = UserProgram.objects.earliest("start_date").start_date
+        except UserProgram.DoesNotExist:
+            start_date = None
 
-        return {"total_funds": total_funds, "total_profits": total_profits}
+        print(
+            {
+                "total_funds": total_funds,
+                "total_profits": total_profits,
+                "start_date": start_date,
+            }
+        )
+        return {
+            "total_funds": total_funds,
+            "total_profits": total_profits,
+            "start_date": start_date,
+        }
