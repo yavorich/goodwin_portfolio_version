@@ -32,7 +32,7 @@ class InviterSerializer(ModelSerializer):
 
 class ProfileRetrieveSerializer(ModelSerializer):
     # region = PartnerRetrieveSerializer()
-    partner_profile = PartnerSerializer()
+    partner = PartnerSerializer()
     settings = ProfileSettingsSerializer()
 
     class Meta:
@@ -41,11 +41,10 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "id",
             "full_name",
             "email",
-            "partner_label",
             "avatar",
             "telegram",
             "settings",
-            "partner_profile",
+            "partner",
         ]
         read_only_fields = fields
 
