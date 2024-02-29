@@ -1,7 +1,6 @@
 from rest_framework.serializers import (
     ModelSerializer,
     CharField,
-    EmailField,
     BooleanField,
 )
 from rest_framework.exceptions import ValidationError
@@ -157,13 +156,11 @@ class WalletDefrostSerializer(OperationCreateSerializer):
 
 
 class WalletTransferSerializer(OperationCreateSerializer):
-    email = EmailField(write_only=True)
     type = CharField(default=Operation.Type.TRANSFER)
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
             "receiver",
-            "email",
             "amount_free",
             "amount_frozen",
         ]
@@ -171,12 +168,9 @@ class WalletTransferSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         self._validate_wallet(attrs)
-        if attrs["email"] != attrs["receiver"].user.email:
-            raise ValidationError("Email is incorrect")
         return attrs
 
     def create(self, validated_data: dict):
-        validated_data.pop("email", None)
         return super().create(validated_data)
 
 
