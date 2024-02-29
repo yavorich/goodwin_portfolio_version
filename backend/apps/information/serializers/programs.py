@@ -48,6 +48,8 @@ class UserProgramSerializer(ModelSerializer):
             "deposit",
             "profit",
             "profit_percent",
+            "yesterday_profit",
+            "yesterday_profit_percent",
         ]
 
 
