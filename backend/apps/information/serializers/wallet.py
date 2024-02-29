@@ -46,4 +46,4 @@ class WalletTransferUserSerializer(Serializer):
 
     def to_representation(self, instance):
         user = User.objects.get(**instance)
-        return {"id": user.id, "full_name": user.full_name}
+        return {"id": user.id, "full_name": f"{user.last_name} {user.first_name[0]}."}
