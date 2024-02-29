@@ -11,4 +11,4 @@ from .programs import (
     UserProgramCreateSerializer,
     UserProgramReplenishmentSerializer,
 )
-from .wallet import WalletSerializer, FrozenItemSerializer
+from .wallet import WalletSerializer, FrozenItemSerializer, WalletTransferUserSerializer
