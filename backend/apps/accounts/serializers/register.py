@@ -21,7 +21,7 @@ class RegisterUserSerializer(ModelSerializer):
             "email",
             "password",
             "password2",
-            "region",
+            "partner",
         ]
         # extra_kwargs = {f: {"required": True} for f in fields}
 
