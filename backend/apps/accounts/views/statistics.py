@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.db.models import Sum, F, Window
 from rest_framework.generics import ListAPIView, get_object_or_404
 
 from apps.accounts.permissions import IsAuthenticatedAndVerified
+from apps.accounts.serializers.date import DateRangeSerializer
 from apps.accounts.serializers.statistics import TotalProfitStatisticsGraphSerializer
-from apps.information.models import WalletHistory, UserProgramAccrual, UserProgram
+from apps.information.models import UserProgramAccrual, UserProgram
 
 
 class TotalProfitStatisticsGraph(ListAPIView):
@@ -18,19 +19,15 @@ class TotalProfitStatisticsGraph(ListAPIView):
         user_program = get_object_or_404(
             UserProgram, pk=user_program_id, wallet=user.wallet
         )
+        serializer = DateRangeSerializer(data=self.request.query_params)
+        serializer.is_valid(raise_exception=True)
 
-        start_date = self.request.query_params.get("start_date")
-        end_date = self.request.query_params.get("end_date")
-
-        if not start_date:
-            start_date = WalletHistory.objects.earliest("created_at").created_at
-        else:
-            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-
-        if not end_date:
-            end_date = WalletHistory.objects.latest("created_at").created_at
-        else:
-            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        start_date = serializer.validated_data.get(
+            "start_date", UserProgramAccrual.objects.earliest("created_at").created_at
+        )
+        end_date = serializer.validated_data.get(
+            "end_date", UserProgramAccrual.objects.latest("created_at").created_at
+        )
 
         all_dates = [
             start_date + timedelta(days=x)
