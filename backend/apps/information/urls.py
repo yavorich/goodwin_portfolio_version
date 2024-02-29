@@ -22,4 +22,9 @@ urlpatterns = [
         name="operation-confirm",
     ),
     path("wallet/", views.WalletAPIView.as_view(), name="wallet-detail"),
+    path(
+        "wallet/transfer/to/",
+        views.WalletTransferAPIView.as_view(),
+        name="wallet-transfer-user",
+    ),
 ] + router.urls
