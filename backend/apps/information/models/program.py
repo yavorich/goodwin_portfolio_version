@@ -194,7 +194,9 @@ class UserProgramAccrual(models.Model):
     )
     amount = models.DecimalField("Сумма начисления", **decimal_usdt)
     success_fee = models.DecimalField("Сумма Success Fee", **decimal_usdt)
-    created_at = models.DateField("Дата", auto_now_add=True)
+    created_at = models.DateField(
+        "Дата", auto_now_add=True
+    )  # TODO сделать уникальным для одной program
 
     def __str__(self):
         return f"Начисление по {self.program.name}"
