@@ -11,6 +11,7 @@ from apps.accounts.models import (
     VerificationStatus,
     AddressVerification,
     Settings,
+    Partner,
 )
 from apps.information.models import Wallet
 
@@ -47,3 +48,10 @@ def delete_verification_attachment(sender, instance, **kwargs):
         instance.status == VerificationStatus.REJECTED and instance.reject_message == ""
     ):
         raise ValidationError("Reject message is required for REJECTED status.")
+
+
+@receiver(post_save, sender=Partner)
+def delete_related_partner(sender, instance: Partner, **kwargs):
+    if instance.user.partner:
+        instance.user.partner = None
+        instance.user.save()
