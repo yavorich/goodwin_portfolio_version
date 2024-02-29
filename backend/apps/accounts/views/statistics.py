@@ -1,11 +1,14 @@
 from datetime import timedelta
 
 from django.db.models import Sum, F, Window
-from rest_framework.generics import ListAPIView, get_object_or_404
+from rest_framework.generics import ListAPIView, get_object_or_404, RetrieveAPIView
 
 from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers.date_range import DateRangeSerializer
-from apps.accounts.serializers.statistics import TotalProfitStatisticsGraphSerializer
+from apps.accounts.serializers.statistics import (
+    TotalProfitStatisticsGraphSerializer,
+    GeneralInvestmentStatisticsSerializer,
+)
 from apps.information.models import UserProgramAccrual, UserProgram
 
 
@@ -70,3 +73,26 @@ class TotalProfitStatisticsGraph(ListAPIView):
             )
 
         return final_results
+
+
+class GeneralInvestmentStatisticsView(RetrieveAPIView):
+    permission_classes = [IsAuthenticatedAndVerified]
+    serializer_class = GeneralInvestmentStatisticsSerializer
+
+    def get_object(self):
+        user = self.request.user
+        total_funds = (
+            UserProgram.objects.filter(wallet=user.wallet)
+            .exclude(status=UserProgram.Status.FINISHED)
+            .aggregate(total_funds=Sum("funds"))["total_funds"]
+            or 0
+        )
+
+        total_profits = (
+            UserProgramAccrual.objects.filter(program__wallet=user.wallet).aggregate(
+                total_profits=Sum("amount")
+            )["total_profits"]
+            or 0
+        )
+
+        return {"total_funds": total_funds, "total_profits": total_profits}
