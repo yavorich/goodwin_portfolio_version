@@ -1,7 +1,7 @@
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db import models
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 
@@ -46,13 +46,24 @@ class ProgramResult(models.Model):
     result = models.DecimalField(
         "Результат программы за прошедшие сутки (%) ", **decimal_pct, default=1
     )
-    created_at = models.DateTimeField("Дата и время создания", auto_now_add=True)
+    created_at = models.DateField("Дата и время создания")
 
     class Meta:
         get_latest_by = "created_at"
         ordering = ["-created_at"]
         verbose_name = "Результат программы"
         verbose_name_plural = "Результаты программ"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program", "created_at"],
+                name="unique_program_result_created_at",
+            )
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.created_at is None:
+            self.created_at = now().date()
+        super().save(*args, **kwargs)
 
 
 class UserProgram(models.Model):
@@ -98,6 +109,24 @@ class UserProgram(models.Model):
     @property
     def profit_percent(self):
         return 100 * self.profit / self.deposit
+
+    @property
+    def yesterday_profit(self):
+        yesterday = now().date() - timedelta(days=1)
+        try:
+            accrual: UserProgramAccrual = self.accruals.get(created_at=yesterday)
+        except UserProgramAccrual.DoesNotExist:
+            return None
+        return accrual.amount
+
+    @property
+    def yesterday_profit_percent(self):
+        yesterday = now().date() - timedelta(days=1)
+        try:
+            result: ProgramResult = self.program.results.get(created_at=yesterday)
+        except ProgramResult.DoesNotExist:
+            return None
+        return result.result
 
     def _set_name(self):
         if not self.name:
@@ -207,6 +236,7 @@ class UserProgramAccrual(models.Model):
         verbose_name_plural = "Начисления по программам"
         constraints = [
             models.UniqueConstraint(
-                fields=["program", "created_at"], name="unique_program_created_at"
+                fields=["program", "created_at"],
+                name="unique_program_accrual_created_at",
             )
         ]
