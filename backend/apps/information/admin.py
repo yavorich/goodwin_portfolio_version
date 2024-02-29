@@ -123,10 +123,8 @@ class PartnerAdmin(admin.ModelAdmin):
         return field
 
 
-# admin.site.register(UserProgramAccrual)
-
-
 @admin.register(UserProgramAccrual)
 class PartnerAccrualAdmin(admin.ModelAdmin):
     list_display = ["program", "amount", "success_fee"]
     readonly_fields = ["created_at"]
+    # TODO валидация unique together program и created_at
