@@ -1,13 +1,17 @@
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK
 from django.shortcuts import get_object_or_404
 
+from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.information.serializers import (
     WalletSerializer,
     FrozenItemSerializer,
     wallet_operations_serializers,
+    WalletTransferUserSerializer,
 )
 from apps.information.models import Wallet, FrozenItem
 from core.views import OperationViewMixin
@@ -62,3 +66,12 @@ class FrozenItemViewSet(OperationViewMixin, ModelViewSet):
     @action(methods=["post"], detail=False)
     def defrost(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class WalletTransferAPIView(GenericAPIView):
+    permission_classes = [IsAuthenticatedAndVerified]
+
+    def post(self, request, *args, **kwargs):
+        serializer = WalletTransferUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(data=serializer.data, status=HTTP_200_OK)
