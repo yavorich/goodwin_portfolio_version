@@ -194,7 +194,10 @@ class UserProgramAccrual(models.Model):
     )
     amount = models.DecimalField("Сумма начисления", **decimal_usdt)
     success_fee = models.DecimalField("Сумма Success Fee", **decimal_usdt)
-    created_at = models.DateField("Дата", auto_now_add=True)
+    created_at = models.DateField(
+        "Дата",
+        auto_now_add=True,
+    )
 
     def __str__(self):
         return f"Начисление по {self.program.name}"
@@ -202,3 +205,8 @@ class UserProgramAccrual(models.Model):
     class Meta:
         verbose_name = "Начисление"
         verbose_name_plural = "Начисления по программам"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program", "created_at"], name="unique_program_created_at"
+            )
+        ]
