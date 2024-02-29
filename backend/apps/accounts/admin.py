@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import UserChangeForm
-from django.forms import ModelForm, CharField
+from django.forms import ModelForm
 
 from . import models
 from .models import VerificationStatus
@@ -75,6 +75,11 @@ class AddressVerificationInline(admin.StackedInline):
     form = AddressVerificationForm
 
 
+class PartnerInline(admin.StackedInline):
+    model = models.Partner
+    fields = ["partner_id", "region"]
+
+
 class UserForm(UserChangeForm):
     class Meta(UserChangeForm.Meta):
         model = get_user_model()
@@ -83,7 +88,12 @@ class UserForm(UserChangeForm):
 @admin.register(models.User)
 class UserAdmin(UserAdmin):
     form = UserForm
-    inlines = [SettingsInline, PersonalVerificationInline, AddressVerificationInline]
+    inlines = [
+        SettingsInline,
+        PersonalVerificationInline,
+        AddressVerificationInline,
+        PartnerInline,
+    ]
 
     list_filter = ["is_active", "is_staff", "partner"]
     search_fields = [

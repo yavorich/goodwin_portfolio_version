@@ -43,6 +43,7 @@ class IsAuthenticatedAndVerified(IsAuthenticatedAndAcceptedOfferAgreement):
         if personal_verification is None or address_verification is None:
             return False
 
+        self.message = super().message
         return (
             super().has_permission(request, view)
             and personal_verification.status == VerificationStatus.APPROVED
@@ -59,4 +60,7 @@ class IsPartner(IsAuthenticatedAndVerified):
     def has_permission(self, request, view):
         user = request.user
         partner_profile = getattr(user, "partner_profile", None)
-        return super().has_permission(request, view) and partner_profile is not None
+        if partner_profile is None:
+            return False
+        self.message = super().message
+        return super().has_permission(request, view)
