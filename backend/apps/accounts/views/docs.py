@@ -21,7 +21,9 @@ class DocsViewSet(ListModelMixin, GenericViewSet):
 
     def list(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer_class()(instance=instance)
+        serializer = self.get_serializer_class()(
+            instance=instance, context=self.get_serializer_context()
+        )
         return Response(data=serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=["post"], detail=False)
