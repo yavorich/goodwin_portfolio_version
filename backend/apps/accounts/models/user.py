@@ -5,6 +5,7 @@ from django.core.validators import (
     MaxValueValidator,
 )
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
 
@@ -61,7 +62,7 @@ class User(AbstractUser):
     )
     partner = models.ForeignKey(
         "Partner",
-        verbose_name="Регион привязки",
+        verbose_name="Привязан к партнёру",
         related_name="users",
         on_delete=models.SET_NULL,
         **blank_and_null,
@@ -82,9 +83,11 @@ class User(AbstractUser):
     def full_name(self):
         return f"{self.first_name.capitalize()} {self.last_name.capitalize()}"
 
-    @property
-    def partner_label(self):
-        return f"{self.partner.region} - {self.partner.partner_id}"
+    def clean(self) -> None:
+        if getattr(self, "partner_profile", None) and self.partner:
+            raise ValidationError(
+                "Пользователя со статусом партнёра нельзя привязать к другому партнёру."
+            )
 
 
 class Settings(models.Model):
