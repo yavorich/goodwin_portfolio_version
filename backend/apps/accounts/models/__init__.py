@@ -7,6 +7,7 @@ from .user import (
     AddressVerification,
     VerificationStatus,
     Settings,
+    Partner,
 )
 from .docs import Docs
 from .region import Region

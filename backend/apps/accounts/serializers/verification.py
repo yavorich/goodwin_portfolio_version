@@ -1,4 +1,3 @@
-from django.db.models import TextField
 from rest_framework.serializers import ModelSerializer, FileField, CharField
 from apps.accounts.models import (
     PersonalVerification,
