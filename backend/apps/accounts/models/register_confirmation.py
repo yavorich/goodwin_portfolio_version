@@ -19,7 +19,7 @@ from rest_framework.exceptions import ParseError
 
 from config.settings import REGISTER_CONFIRMATION_EXPIRES, DEBUG
 from core.utils import blank_and_null
-from . import Region
+from . import Partner
 from .user import User
 
 
@@ -57,9 +57,9 @@ class RegisterConfirmation(Model):
     email = EmailField("Электронная почта")
     first_name = CharField(_("first name"), max_length=150)
     last_name = CharField(_("last name"), max_length=150)
-    region = ForeignKey(
-        Region,
-        verbose_name="Регион",
+    partner = ForeignKey(
+        Partner,
+        verbose_name="Регион привязки",
         on_delete=CASCADE,
         **blank_and_null,
     )
@@ -84,7 +84,7 @@ class RegisterConfirmation(Model):
             "email": self.email,
             "first_name": self.first_name,
             "last_name": self.last_name,
-            "region": self.region,
+            "partner": self.partner,
             "password": self.password,
         }
 
