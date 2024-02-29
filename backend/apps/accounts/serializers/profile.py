@@ -41,7 +41,6 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "id",
             "full_name",
             "email",
-            "partner_label",
             "avatar",
             "telegram",
             "settings",
