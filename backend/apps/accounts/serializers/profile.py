@@ -6,6 +6,7 @@ from apps.accounts.models import User, Settings, SettingsAuthCodes
 from apps.accounts.serializers.partner import (
     PartnerSerializer,
 )
+from core.serializers import HttpsFileField
 
 
 class ProfileSettingsSerializer(ModelSerializer):
@@ -32,6 +33,7 @@ class InviterSerializer(ModelSerializer):
 
 class ProfileRetrieveSerializer(ModelSerializer):
     # region = PartnerRetrieveSerializer()
+    avatar = HttpsFileField()
     partner = PartnerSerializer()
     settings = ProfileSettingsSerializer()
 
@@ -51,10 +53,11 @@ class ProfileRetrieveSerializer(ModelSerializer):
 
 class ProfileUpdateSerializer(ModelSerializer):
     full_name = CharField()
+    avatar = HttpsFileField()
 
     class Meta:
         model = User
-        required_fields = [
+        fields = [
             "full_name",
             "email",
             "avatar",
