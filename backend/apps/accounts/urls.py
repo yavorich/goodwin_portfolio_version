@@ -15,6 +15,7 @@ from apps.accounts.views import (
     RegisterConfirmView,
     LogoutAPIView,
     PartnerGeneralStatisticsRetrieveView,
+    PasswordChangeConfirmAPIView,
 )
 from apps.accounts.views.partner import (
     PartnerInvestorsList,
@@ -70,6 +71,11 @@ urlpatterns = [
         "profile/change_password/",
         PasswordChangeAPIView.as_view(),
         name="change-password",
+    ),
+    path(
+        "profile/change_password/confirm/",
+        PasswordChangeConfirmAPIView.as_view(),
+        name="change-password-confirm",
     ),
     path(
         "profile/settings/",
