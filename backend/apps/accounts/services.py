@@ -32,7 +32,7 @@ def send_auth_confirm_email(user):
     )
 
 
-def send_email_change_password(user, request):
+def send_email_recover_password(user, request):
     code = uuid4()
     user.temp.changing_password_code = code
     user.temp.changing_password_code_expires = (
@@ -66,6 +66,31 @@ def send_email_change_settings(user, code):
     send_email_msg.delay(
         email=user.email,
         subject=_("GOODWIN - Смена настроек"),
+        msg=message,
+        from_email="GOODWIN",
+        html=False,
+    )
+
+
+def send_email_change_password(user, code):
+    message = _("Здравствуйте!\nВаш код для подтверждения смены пароля") + f": {code}"
+    send_email_msg.delay(
+        email=user.email,
+        subject=_("GOODWIN - Смена пароля"),
+        msg=message,
+        from_email="GOODWIN",
+        html=False,
+    )
+
+
+def send_email_change_email(email, code):
+    message = (
+        _("Здравствуйте!\nВаш код для подтверждения смены адреса электронной почты")
+        + f": {code}"
+    )
+    send_email_msg.delay(
+        email=email,
+        subject=_("GOODWIN - Смена адреса электронной почты"),
         msg=message,
         from_email="GOODWIN",
         html=False,
