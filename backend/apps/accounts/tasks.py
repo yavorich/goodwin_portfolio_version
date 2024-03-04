@@ -1,5 +1,4 @@
 from celery import shared_task
-from celery.schedules import crontab
 from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.html import strip_tags
