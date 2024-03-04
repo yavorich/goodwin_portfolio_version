@@ -1,4 +1,4 @@
-from django.db.models import CharField, TextField, ImageField, URLField, Model
+from django.db.models import Model
 
 from core.localized.fields import (
     LocalizedCharField,

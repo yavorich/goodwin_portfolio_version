@@ -10,7 +10,7 @@ from apps.accounts.serializers import (
     RecoverPasswordSerializer,
     TokenSerializer,
 )
-from apps.accounts.services import send_email_change_password
+from apps.accounts.services import send_email_recover_password
 
 
 class ResetPasswordAPIView(CreateAPIView):
@@ -23,7 +23,7 @@ class ResetPasswordAPIView(CreateAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        send_email_change_password(user, request)
+        send_email_recover_password(user, request)
         return Response({"success": "Сообщение отправлено"})
 
 
