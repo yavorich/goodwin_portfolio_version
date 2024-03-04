@@ -198,7 +198,7 @@ CELERY_BROKER_URL = (
 
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
 FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
-RECOVER_PASSWORD_CODE_EXPIRES = timedelta(minutes=5)
+RECOVER_PASSWORD_CODE_EXPIRES = timedelta(hours=24)
 REGISTER_CONFIRMATION_EXPIRES = timedelta(hours=1)
 PRE_AUTH_CODE_EXPIRES = timedelta(minutes=5)
 CHANGE_SETTINGS_CODE_EXPIRES = timedelta(days=1)
