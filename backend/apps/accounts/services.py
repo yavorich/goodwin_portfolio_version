@@ -76,7 +76,21 @@ def send_email_change_password(user, code):
     message = _("Здравствуйте!\nВаш код для подтверждения смены пароля") + f": {code}"
     send_email_msg.delay(
         email=user.email,
-        subject=_("GOODWIN - Смена настроек"),
+        subject=_("GOODWIN - Смена пароля"),
+        msg=message,
+        from_email="GOODWIN",
+        html=False,
+    )
+
+
+def send_email_change_email(email, code):
+    message = (
+        _("Здравствуйте!\nВаш код для подтверждения смены адреса электронной почты")
+        + f": {code}"
+    )
+    send_email_msg.delay(
+        email=email,
+        subject=_("GOODWIN - Смена адреса электронной почты"),
         msg=message,
         from_email="GOODWIN",
         html=False,
