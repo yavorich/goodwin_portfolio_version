@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import DateField
 from rest_framework.serializers import Serializer
@@ -13,9 +15,13 @@ class DateRangeSerializer(Serializer):
 
         if start_date and end_date:
             delta = end_date - start_date
-            if delta.days > 365 * 10:
-                raise ValidationError(
-                    "Разница между датами должна быть не больше 10 лет"
-                )
+        elif start_date:
+            delta = datetime.now().date() - start_date
+        elif end_date:
+            delta = end_date - datetime.now().date()
+        else:
+            return data
 
+        if delta.days > 365 * 10:
+            raise ValidationError("Разница между датами должна быть не больше 10 лет")
         return data

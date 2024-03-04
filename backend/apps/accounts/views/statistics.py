@@ -42,13 +42,13 @@ class TotalProfitStatisticsGraph(ListAPIView):
             UserProgramAccrual.objects.filter(
                 created_at__range=(start_date, end_date), program=user_program
             )
-            .values("created_at", "amount")
+            .values("created_at", "amount", "percent_amount")
             .order_by("created_at")
         )
 
         results = results.annotate(
-            total_amount=Window(
-                expression=Sum("amount"),
+            percent_total_amount=Window(
+                expression=Sum("percent_amount"),
                 order_by=F("created_at").asc(),
             )
         )
@@ -61,14 +61,17 @@ class TotalProfitStatisticsGraph(ListAPIView):
         for date in all_dates:
             if date in results_dict:
                 amount = results_dict[date]["amount"]
-                previous_total_amount = results_dict[date]["total_amount"]
+                percent_amount = results_dict[date]["percent_amount"]
+                previous_total_amount = results_dict[date]["percent_total_amount"]
             else:
                 amount = None
+                percent_amount = None
             final_results.append(
                 {
                     "created_at": date,
                     "amount": amount,
-                    "total_amount": previous_total_amount,
+                    "percent_amount": percent_amount,
+                    "percent_total_amount": previous_total_amount,
                 }
             )
 

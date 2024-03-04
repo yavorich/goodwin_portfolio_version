@@ -6,11 +6,17 @@ from apps.information.models import UserProgramAccrual
 
 class TotalProfitStatisticsGraphSerializer(ModelSerializer):
     amount = FloatField()
-    total_amount = FloatField()
+    percent_amount = FloatField()
+    percent_total_amount = FloatField()
 
     class Meta:
         model = UserProgramAccrual
-        fields = ["created_at", "amount", "total_amount"]
+        fields = [
+            "created_at",
+            "amount",
+            "percent_amount",
+            "percent_total_amount",
+        ]
 
 
 class GeneralInvestmentStatisticsSerializer(Serializer):
