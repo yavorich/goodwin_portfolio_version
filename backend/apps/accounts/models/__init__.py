@@ -14,3 +14,4 @@ from .region import Region
 from .pre_auth_token import PreAuthToken
 from .settings_auth_codes import SettingsAuthCodes
 from .register_confirmation import RegisterConfirmation
+from .password_change import PasswordChangeConfirmation

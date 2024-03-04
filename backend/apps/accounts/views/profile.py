@@ -5,8 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.hashers import make_password
 
-from apps.accounts.models import User, SettingsAuthCodes
+from apps.accounts.models import User, SettingsAuthCodes, PasswordChangeConfirmation
 from apps.accounts.models.settings_auth_codes import DestinationType
 from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers import (
@@ -17,8 +18,12 @@ from apps.accounts.serializers import (
 from apps.accounts.serializers.profile import (
     ProfileSettingsSerializer,
     SettingsAuthCodeSerializer,
+    PasswordAuthCodeSerializer,
 )
-from apps.accounts.services import send_email_change_settings
+from apps.accounts.services import (
+    send_email_change_settings,
+    send_email_change_password,
+)
 from apps.telegram.utils import (
     send_telegram_message,
 )
@@ -45,7 +50,7 @@ class ProfileAPIView(RetrieveUpdateAPIView):
 
 
 class PasswordChangeAPIView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedAndVerified]
     serializer_class = PasswordChangeSerializer
 
     def post(self, request, *args, **kwargs):
@@ -53,9 +58,46 @@ class PasswordChangeAPIView(GenericAPIView):
             data=request.data, context={"user": request.user}
         )
         serializer.is_valid(raise_exception=True)
-        request.user.set_password(serializer.data["new_password"])
-        request.user.save()
-        return Response({"success": "Пароль успешно обновлен"})
+        confirmation = PasswordChangeConfirmation.objects.create(
+            user=request.user,
+            new_password=make_password(serializer.data["new_password"]),
+            auth_code=PasswordChangeConfirmation.generate_code(),
+        )
+        send_email_change_password(user=request.user, code=confirmation.auth_code)
+        return Response({"token": confirmation.token}, status=status.HTTP_200_OK)
+
+
+class PasswordChangeConfirmAPIView(CreateAPIView):
+    permission_classes = [IsAuthenticatedAndVerified]
+    serializer_class = PasswordAuthCodeSerializer
+
+    def get_object(self):
+        serializer = self.get_serializer(data=self.request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        print(serializer.validated_data)
+        password_confirmation_object = PasswordChangeConfirmation.objects.filter(
+            user=self.request.user,
+            auth_code=serializer.validated_data.get("auth_code"),
+            token=serializer.validated_data.get("token"),
+        ).first()
+
+        if password_confirmation_object is None:
+            raise ParseError(detail=_("Код подтверждения не найден"))
+
+        return password_confirmation_object
+
+    def create(self, request, *args, **kwargs):
+        password_confirmation_object = self.get_object()
+        user = password_confirmation_object.user
+        new_password = password_confirmation_object.new_password
+
+        user.password = new_password
+        user.save()
+
+        password_confirmation_object.delete()
+        return Response(
+            {"message": _("Пароль успешно изменён")}, status=status.HTTP_200_OK
+        )
 
 
 class SettingsAPIView(RetrieveUpdateAPIView):
@@ -131,7 +173,7 @@ class SettingsConfirmCreateView(CreateAPIView):
 
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-
+        print(serializer.validated_data)
         settings_auth_code_object = SettingsAuthCodes.objects.filter(
             user=self.request.user,
             auth_code=serializer.validated_data.get("auth_code"),

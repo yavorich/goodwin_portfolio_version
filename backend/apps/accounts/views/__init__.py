@@ -5,5 +5,5 @@ from .login import LoginAPIView, LoginConfirmView, TokenRefreshAPIView, LogoutAP
 from .recover_password import RecoverPasswordAPIView, ResetPasswordAPIView
 from .confirm_email import EmailConfirmAPIView
 from .docs import DocsViewSet
-from .profile import ProfileAPIView, PasswordChangeAPIView
+from .profile import ProfileAPIView, PasswordChangeAPIView, PasswordChangeConfirmAPIView
 from .partner import PartnerGeneralStatisticsRetrieveView
