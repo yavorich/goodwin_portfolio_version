@@ -7,6 +7,7 @@ from apps.accounts.models import (
     Settings,
     SettingsAuthCodes,
     PasswordChangeConfirmation,
+    EmailChangeConfirmation,
 )
 from apps.accounts.serializers.partner import (
     PartnerSerializer,
@@ -89,7 +90,8 @@ class ProfileUpdateSerializer(ModelSerializer):
             instance.first_name, instance.last_name = values
 
         if "email" in validated_data:
-            instance.email = validated_data["email"]
+            # instance.email = validated_data["email"]
+            pass
 
         if "telegram" in validated_data:
             instance.telegram = validated_data["telegram"]
@@ -97,10 +99,6 @@ class ProfileUpdateSerializer(ModelSerializer):
         if "avatar" in validated_data:
             instance.avatar = validated_data["avatar"]
 
-        # for attr in validated_data["settings"].keys():
-        #     setattr(instance.settings, attr, validated_data["settings"][attr])
-        #
-        # instance.settings.save()
         instance.save()
 
         return instance
@@ -134,3 +132,11 @@ class PasswordAuthCodeSerializer(ModelSerializer):
     class Meta:
         model = PasswordChangeConfirmation
         fields = ["id", "user", "token", "auth_code", "created_at"]
+
+
+class EmailAuthCodeSerializer(ModelSerializer):
+    token = UUIDField(format="hex_verbose")
+
+    class Meta:
+        model = EmailChangeConfirmation
+        fields = ["id", "user", "token", "auth_code", "created_at", "email"]
