@@ -23,6 +23,7 @@ class AnswerSerializer(ModelSerializer):
     def get_enclosure(self, obj):
         language = translation.get_language() or settings.LANGUAGE_CODE
         if obj.image.get(language):
-            return self.context["request"].build_absolute_uri(obj.image.url)
+            uri = self.context["request"].build_absolute_uri(obj.image.url)
+            return uri.replace("http:", "https:")
         elif obj.video.get(language):
             return obj.video.translate()
