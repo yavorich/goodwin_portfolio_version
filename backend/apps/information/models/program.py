@@ -222,6 +222,9 @@ class UserProgramAccrual(models.Model):
         on_delete=models.CASCADE,
     )
     amount = models.DecimalField("Сумма начисления", **decimal_usdt)
+    percent_amount = models.DecimalField(
+        "Сумма начисления в процентах от депозита", **decimal_pct
+    )
     success_fee = models.DecimalField("Сумма Success Fee", **decimal_usdt)
     created_at = models.DateField(
         "Дата",
