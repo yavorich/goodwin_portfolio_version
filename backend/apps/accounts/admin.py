@@ -107,7 +107,7 @@ class UserAdmin(UserAdmin):
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Личная информация", {"fields": ("first_name", "last_name", "partner")}),
+        ("Личная информация", {"fields": ("first_name", "last_name", "avatar", "partner")}),
         ("Разрешения", {"fields": ("is_active", "is_staff", "is_superuser")}),
         (
             "Важные даты",
