@@ -1,6 +1,6 @@
 from django.contrib import admin
 from . import models
-from .models import UserProgramAccrual, WalletHistory
+from .models import UserProgramAccrual, WalletHistory, Holidays
 from ..accounts.models.user import Partner
 
 
@@ -129,3 +129,9 @@ class PartnerAccrualAdmin(admin.ModelAdmin):
     list_display = ["program", "amount", "success_fee"]
     readonly_fields = ["created_at"]
     # TODO валидация unique together program и created_at
+
+
+@admin.register(Holidays)
+class HolidaysAdmin(admin.ModelAdmin):
+    list_display = ["name", "start_date", "end_date"]
+    list_display_links = ["start_date"]
