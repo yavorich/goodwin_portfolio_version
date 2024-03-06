@@ -34,6 +34,7 @@ class GeneralInvestmentStatisticsSerializer(Serializer):
 
 class TableStatisticsSerializer(Serializer):
     day_of_week = IntegerField()
+    day_of_week_verbose = SerializerMethodField()
     created_at = DateField()
     trading_day = SerializerMethodField()
     funds = FloatField()
@@ -64,3 +65,7 @@ class TableStatisticsSerializer(Serializer):
                 holidays=holidays,
             ),
         )
+
+    def get_day_of_week_verbose(self, obj):
+        week_days_list = self.context.get("week_days_list")
+        return week_days_list[obj["day_of_week"] - 1]
