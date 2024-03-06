@@ -1,4 +1,11 @@
-from rest_framework.fields import FloatField, DateField, IntegerField, CharField
+import pandas as pd
+from rest_framework.fields import (
+    FloatField,
+    DateField,
+    IntegerField,
+    CharField,
+    SerializerMethodField,
+)
 from rest_framework.serializers import ModelSerializer, Serializer
 
 from apps.information.models import UserProgramAccrual
@@ -28,6 +35,7 @@ class GeneralInvestmentStatisticsSerializer(Serializer):
 class TableStatisticsSerializer(Serializer):
     day_of_week = IntegerField()
     created_at = DateField()
+    trading_day = SerializerMethodField()
     funds = FloatField()
     amount = FloatField()
     percent_amount = FloatField()
@@ -38,3 +46,21 @@ class TableStatisticsSerializer(Serializer):
     replenishment = FloatField()
     withdrawal = FloatField()
     status = CharField()
+
+    def get_trading_day(self, obj):
+        holidays = self.context.get("holidays")
+
+        if (
+            obj["created_at"].weekday() >= 5
+            or pd.Timestamp(obj["created_at"]) in holidays
+        ):
+            return None
+
+        return len(
+            pd.bdate_range(
+                obj["created_at"].replace(day=1),
+                obj["created_at"],
+                freq="C",
+                holidays=holidays,
+            ),
+        )
