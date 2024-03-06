@@ -7,7 +7,7 @@ from rest_framework.generics import RetrieveAPIView, ListAPIView
 
 from apps.accounts.models.user import Partner
 from apps.accounts.permissions import IsPartner
-from apps.accounts.serializers.date_range import DateRangeSerializer
+from core.serializers.date_range import DateRangeSerializer
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
     InvestorsSerializer,
@@ -16,6 +16,7 @@ from apps.accounts.serializers.partner import (
 )
 from apps.information.models import UserProgram, WalletHistory
 from core.pagination import PageNumberSetPagination
+from core.utils.get_dates_range import get_dates_range
 
 
 class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
@@ -82,15 +83,8 @@ class PartnerInvestmentGraph(ListAPIView):
     def get_queryset(self):
         investors = self.request.user.partner_profile.users.all()
 
-        serializer = DateRangeSerializer(data=self.request.query_params)
-        serializer.is_valid(raise_exception=True)
+        start_date, end_date = get_dates_range(WalletHistory, self.request.query_params)
 
-        start_date = serializer.validated_data.get(
-            "start_date", WalletHistory.objects.earliest("created_at").created_at
-        )
-        end_date = serializer.validated_data.get(
-            "end_date", WalletHistory.objects.latest("created_at").created_at
-        )
         all_dates = [
             start_date + timedelta(days=x)
             for x in range((end_date - start_date).days + 1)
