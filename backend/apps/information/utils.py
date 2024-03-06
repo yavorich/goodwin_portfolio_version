@@ -15,5 +15,8 @@ def create_accrual(
     amount -= success_fee + management_fee
     percent_amount = amount * 100 / user_program.funds
     return user_program.accruals.create(
-        amount=amount, percent_amount=percent_amount, success_fee=success_fee
+        amount=amount,
+        percent_amount=percent_amount,
+        success_fee=success_fee,
+        management_fee=management_fee,
     )
