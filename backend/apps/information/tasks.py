@@ -14,6 +14,7 @@ from apps.information.models import (
     WalletHistory,
     Wallet,
 )
+from apps.information.models.program import UserProgramHistory
 from apps.information.utils import create_accrual
 
 
@@ -112,3 +113,17 @@ def create_wallet_history():
         WalletHistory.objects.create(
             user=user, free=wallet.free, frozen=wallet.frozen, deposits=total_funds
         )
+
+
+@shared_task
+def create_user_program_history():
+    users = User.objects.all()
+    for user in users:
+        wallet: Wallet = user.wallet
+        for program in wallet.programs.all():
+            UserProgramHistory.objects.create(
+                user_program=program,
+                funds=program.funds,
+                profit=program.profit,
+                status=program.status,
+            )

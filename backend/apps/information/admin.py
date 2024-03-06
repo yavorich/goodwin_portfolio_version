@@ -87,7 +87,8 @@ class UserProgramAdmin(admin.ModelAdmin):
 
 class OperationActionsInline(admin.TabularInline):
     model = models.Action
-    fields = ["type", "name", "target", "target_name", "amount"]
+    fields = ["type", "name", "target", "target_name", "amount", "created_at"]
+    readonly_fields = ["created_at"]
     extra = 0
 
 

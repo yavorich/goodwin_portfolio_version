@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import DateField
