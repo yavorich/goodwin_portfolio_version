@@ -1,5 +1,6 @@
 from datetime import timedelta
 from decimal import Decimal
+import pandas as pd
 
 from django.db.models import (
     Sum,
@@ -9,7 +10,7 @@ from django.db.models import (
     Subquery,
     Func,
 )
-from django.db.models.functions import ExtractWeekDay, Coalesce, TruncDate, Extract
+from django.db.models.functions import ExtractWeekDay, Coalesce
 from django.forms import CharField
 from rest_framework.generics import ListAPIView, get_object_or_404, RetrieveAPIView
 
@@ -19,7 +20,7 @@ from apps.accounts.serializers.statistics import (
     GeneralInvestmentStatisticsSerializer,
     TableStatisticsSerializer,
 )
-from apps.information.models import UserProgramAccrual, UserProgram, Operation
+from apps.information.models import UserProgramAccrual, UserProgram, Operation, Holidays
 from apps.information.models.program import (
     UserProgramHistory,
     ProgramResult,
@@ -33,10 +34,9 @@ class TotalProfitStatisticsGraph(ListAPIView):
     serializer_class = TotalProfitStatisticsGraphSerializer
 
     def get_queryset(self):
-        user_program_id = self.kwargs.get("program_id")
         user = self.request.user
         user_program = get_object_or_404(
-            UserProgram, pk=user_program_id, wallet=user.wallet
+            UserProgram, pk=self.kwargs.get("program_id"), wallet=user.wallet
         )
 
         start_date, end_date = get_dates_range(
@@ -123,6 +123,12 @@ class TableStatisticsView(ListAPIView):
     permission_classes = [IsAuthenticatedAndVerified]
     serializer_class = TableStatisticsSerializer
 
+    # def __init__(self):
+    #     super().__init__()
+    #     self.start_date, self.end_date = get_dates_range(
+    #         UserProgramAccrual, self.request.query_params
+    #     )
+
     def get_queryset(self):
         user = self.request.user
         user_program = get_object_or_404(
@@ -131,7 +137,7 @@ class TableStatisticsView(ListAPIView):
 
         # week_days = {1: "Вс", 2: "Пн", 3: "Вт", 4: "Ср", 5: "Чт", 6: "Пт", 7: "Сб"}
 
-        start_date, end_date = get_dates_range(
+        self.start_date, self.end_date = get_dates_range(
             UserProgramAccrual, self.request.query_params
         )
 
@@ -167,7 +173,7 @@ class TableStatisticsView(ListAPIView):
 
         accrual_results = (
             UserProgramAccrual.objects.filter(
-                created_at__range=(start_date, end_date),
+                created_at__range=(self.start_date, self.end_date),
                 program=user_program,
             )
             .values(
@@ -191,5 +197,26 @@ class TableStatisticsView(ListAPIView):
             )
             .order_by("created_at")
         )
-
         return accrual_results
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        holidays = (
+            Holidays.objects.filter(start_date__range=(self.start_date, self.end_date))
+            .values("start_date", "end_date")
+            .order_by("start_date")
+        )
+
+        holiday_dates = []
+        for holiday in holidays:
+            start_date = holiday["start_date"]
+            end_date = holiday["end_date"]
+
+            if end_date is None or start_date == end_date:
+                holiday_dates.append(pd.Timestamp(start_date))
+            else:
+                date_range = pd.date_range(start_date, end_date).tolist()
+                holiday_dates.extend(date_range)
+
+        context["holidays"] = holiday_dates
+        return context
