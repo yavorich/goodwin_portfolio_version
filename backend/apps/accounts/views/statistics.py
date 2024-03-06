@@ -11,7 +11,7 @@ from django.db.models import (
     Func,
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
-from django.forms import CharField
+from django.utils import translation
 from rest_framework.generics import ListAPIView, get_object_or_404, RetrieveAPIView
 
 from apps.accounts.permissions import IsAuthenticatedAndVerified
@@ -123,19 +123,11 @@ class TableStatisticsView(ListAPIView):
     permission_classes = [IsAuthenticatedAndVerified]
     serializer_class = TableStatisticsSerializer
 
-    # def __init__(self):
-    #     super().__init__()
-    #     self.start_date, self.end_date = get_dates_range(
-    #         UserProgramAccrual, self.request.query_params
-    #     )
-
     def get_queryset(self):
         user = self.request.user
         user_program = get_object_or_404(
             UserProgram, pk=self.kwargs.get("program_id"), wallet=user.wallet
         )
-
-        # week_days = {1: "Вс", 2: "Пн", 3: "Вт", 4: "Ср", 5: "Чт", 6: "Пт", 7: "Сб"}
 
         self.start_date, self.end_date = get_dates_range(
             UserProgramAccrual, self.request.query_params
@@ -201,6 +193,13 @@ class TableStatisticsView(ListAPIView):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        week_days = {
+            "ru": ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
+            "en": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+            "cn": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"],
+        }
+        week_days_list = week_days.get(translation.get_language(), week_days["en"])
+
         holidays = (
             Holidays.objects.filter(start_date__range=(self.start_date, self.end_date))
             .values("start_date", "end_date")
@@ -219,4 +218,5 @@ class TableStatisticsView(ListAPIView):
                 holiday_dates.extend(date_range)
 
         context["holidays"] = holiday_dates
+        context["week_days_list"] = week_days_list
         return context
