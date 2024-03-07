@@ -1,35 +1,27 @@
 from datetime import timedelta
-from decimal import Decimal
 import pandas as pd
 
 from django.db.models import (
     Sum,
     F,
     Window,
-    OuterRef,
-    Subquery,
-    Func,
 )
-from django.db.models.functions import ExtractWeekDay, Coalesce
 from django.utils import translation
+from django.utils.translation import gettext_lazy as _
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, get_object_or_404, RetrieveAPIView
 from rest_framework.response import Response
-from rest_framework.viewsets import ViewSet, GenericViewSet, ReadOnlyModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from apps.accounts.excel.statistics import TableStatisticsExcel
 from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers.statistics import (
     TotalProfitStatisticsGraphSerializer,
     GeneralInvestmentStatisticsSerializer,
     TableStatisticsSerializer,
 )
-from apps.accounts.services.statistics import get_table_statistics
-from apps.information.models import UserProgramAccrual, UserProgram, Operation, Holidays
-from apps.information.models.program import (
-    UserProgramHistory,
-    ProgramResult,
-    UserProgramReplenishment,
-)
+from apps.accounts.services.statistics import get_table_statistics, get_holiday_dates
+from apps.information.models import UserProgramAccrual, UserProgram, Holidays
 from core.utils.get_dates_range import get_dates_range
 
 
@@ -144,40 +136,48 @@ class TableStatisticsViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        print(serializer.data)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["get"])
+    def export(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        excel = TableStatisticsExcel()
+        excel.to_excel(serializer.data)
+        path = excel.save()
+        response_data = {"url": self.request.build_absolute_uri(path)}
+        return Response(response_data)
+
     # @action(detail=True, methods=["get"])
-    # def export(self, request, *args, **kwargs):
+    # def total(self, request, *args, **kwargs):
     #     queryset = self.get_queryset()
+    #     last_status_subquery = (
+    #         queryset.filter(status=OuterRef("status"))  # Фильтр по текущему статусу
+    #         .order_by(
+    #             "-created_at"
+    #         )  # Сортировка по убыванию даты создания, чтобы получить последний объект
+    #         .values("status")[:1]  # Выбираем только одно значение
+    #     )
+    #     queryset = queryset.annotate(last_status=Subquery(last_status_subquery))
     #     print(queryset)
+    #     queryset = queryset.aggregate(
+    #         total_funds=Sum("funds"),
+    #         total_amount=Sum("amount"),
+    #         total_percent_amount=Sum("percent_amount"),
+    #         total_percent_total_amount=Sum("percent_amount"),
+    #         total_profitability=Sum("profitability"),
+    #         total_success_fee=Sum("success_fee"),
+    #         total_management_fee=Sum("management_fee"),
+    #         total_replenishment=Sum("replenishment"),
+    #         total_withdrawal=Sum("withdrawal"),
+    #     )
+    #
+    #     return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        week_days = {
-            "ru": ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
-            "en": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-            "cn": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"],
-        }
-        week_days_list = week_days.get(translation.get_language(), week_days["ru"])
+        week_days_list = [_("Вс"), _("Пн"), _("Вт"), _("Ср"), _("Чт"), _("Пт"), _("Сб")]
 
-        holidays = (
-            Holidays.objects.filter(start_date__range=(self.start_date, self.end_date))
-            .values("start_date", "end_date")
-            .order_by("start_date")
-        )
-
-        holiday_dates = []
-        for holiday in holidays:
-            start_date = holiday["start_date"]
-            end_date = holiday["end_date"]
-
-            if end_date is None or start_date == end_date:
-                holiday_dates.append(pd.Timestamp(start_date))
-            else:
-                date_range = pd.date_range(start_date, end_date).tolist()
-                holiday_dates.extend(date_range)
-
-        context["holidays"] = holiday_dates
+        context["holidays"] = get_holiday_dates(self.start_date, self.end_date)
         context["week_days_list"] = week_days_list
         return context
