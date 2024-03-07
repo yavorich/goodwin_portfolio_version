@@ -12,7 +12,10 @@ from django.db.models import (
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
 from django.utils import translation
+from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, get_object_or_404, RetrieveAPIView
+from rest_framework.response import Response
+from rest_framework.viewsets import ViewSet, GenericViewSet, ReadOnlyModelViewSet
 
 from apps.accounts.permissions import IsAuthenticatedAndVerified
 from apps.accounts.serializers.statistics import (
@@ -20,6 +23,7 @@ from apps.accounts.serializers.statistics import (
     GeneralInvestmentStatisticsSerializer,
     TableStatisticsSerializer,
 )
+from apps.accounts.services.statistics import get_table_statistics
 from apps.information.models import UserProgramAccrual, UserProgram, Operation, Holidays
 from apps.information.models.program import (
     UserProgramHistory,
@@ -119,77 +123,34 @@ class GeneralInvestmentStatisticsView(RetrieveAPIView):
         }
 
 
-class TableStatisticsView(ListAPIView):
+class TableStatisticsViewSet(ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedAndVerified]
     serializer_class = TableStatisticsSerializer
 
     def get_queryset(self):
         user = self.request.user
         user_program = get_object_or_404(
-            UserProgram, pk=self.kwargs.get("program_id"), wallet=user.wallet
+            UserProgram, pk=self.kwargs.get("pk"), wallet=user.wallet
         )
 
         self.start_date, self.end_date = get_dates_range(
             UserProgramAccrual, self.request.query_params
         )
-
-        program_history_subquery = UserProgramHistory.objects.filter(
-            user_program=OuterRef("program"),
-            created_at=OuterRef("created_at"),
-        ).values("funds", "status")
-
-        program_subquery = UserProgram.objects.filter(pk=OuterRef("program_id")).values(
-            "program"
-        )
-        program_result_subquery = ProgramResult.objects.filter(
-            program=Subquery(program_subquery), created_at=OuterRef("created_at")
-        ).values("result")
-
-        replenishment_subquery = (
-            UserProgramReplenishment.objects.filter(
-                program=OuterRef("program"), created_at=OuterRef("created_at")
-            )
-            .annotate(total_amount=Coalesce(Func("amount", function="Sum"), Decimal(0)))
-            .values("total_amount")
-        )
-
-        withdrawal_subquery = (
-            Operation.objects.filter(
-                user_program=OuterRef("program"),
-                created_at__date=OuterRef("created_at"),
-                type=Operation.Type.PROGRAM_CLOSURE,
-            )
-            .annotate(total_amount=Coalesce(Func("amount", function="Sum"), Decimal(0)))
-            .values("total_amount")
-        )
-
-        accrual_results = (
-            UserProgramAccrual.objects.filter(
-                created_at__range=(self.start_date, self.end_date),
-                program=user_program,
-            )
-            .values(
-                "created_at",
-                "amount",
-                "percent_amount",
-                "success_fee",
-                "management_fee",
-            )
-            .annotate(
-                percent_total_amount=Window(
-                    expression=Sum("percent_amount"),
-                    order_by=F("created_at").asc(),
-                ),
-                day_of_week=ExtractWeekDay("created_at"),
-                funds=Subquery(program_history_subquery.values("funds")),
-                profitability=Subquery(program_result_subquery),
-                withdrawal=Subquery(withdrawal_subquery),
-                replenishment=Subquery(replenishment_subquery),
-                status=Subquery(program_history_subquery.values("status")),
-            )
-            .order_by("created_at")
+        accrual_results = get_table_statistics(
+            self.start_date, self.end_date, user_program
         )
         return accrual_results
+
+    def retrieve(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        print(serializer.data)
+        return Response(serializer.data)
+
+    # @action(detail=True, methods=["get"])
+    # def export(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #     print(queryset)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -198,7 +159,7 @@ class TableStatisticsView(ListAPIView):
             "en": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
             "cn": ["星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"],
         }
-        week_days_list = week_days.get(translation.get_language(), week_days["en"])
+        week_days_list = week_days.get(translation.get_language(), week_days["ru"])
 
         holidays = (
             Holidays.objects.filter(start_date__range=(self.start_date, self.end_date))
