@@ -1,6 +1,7 @@
 import datetime
 from decimal import Decimal
 
+import pandas as pd
 from django.db.models import (
     Sum,
     F,
@@ -11,7 +12,7 @@ from django.db.models import (
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
 
-from apps.information.models import UserProgramAccrual, Operation
+from apps.information.models import UserProgramAccrual, Operation, Holidays
 from apps.information.models.program import (
     UserProgramHistory,
     UserProgram,
@@ -81,3 +82,24 @@ def get_table_statistics(
     )
 
     return accrual_results
+
+
+def get_holiday_dates(start_date, end_date):
+    holidays = (
+        Holidays.objects.filter(start_date__range=(start_date, end_date))
+        .values("start_date", "end_date")
+        .order_by("start_date")
+    )
+
+    holiday_dates = []
+    for holiday in holidays:
+        start_date = holiday["start_date"]
+        end_date = holiday["end_date"]
+
+        if end_date is None or start_date == end_date:
+            holiday_dates.append(pd.Timestamp(start_date))
+        else:
+            date_range = pd.date_range(start_date, end_date).tolist()
+            holiday_dates.extend(date_range)
+
+    return holiday_dates
