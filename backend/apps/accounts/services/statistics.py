@@ -9,6 +9,7 @@ from django.db.models import (
     OuterRef,
     Subquery,
     Func,
+    Max,
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
 
@@ -82,6 +83,37 @@ def get_table_statistics(
     )
 
     return accrual_results
+
+
+def get_table_total_statistics(
+    start_date: datetime.date, end_date: datetime.date, user_program: UserProgram
+):
+    accrual_results = get_table_statistics(start_date, end_date, user_program)
+    last_program_status = (
+        UserProgramHistory.objects.filter(
+            user_program=user_program,
+            created_at=accrual_results.latest("created_at")["created_at"],
+        )
+        .order_by("-created_at")
+        .values("status")
+        .first()["status"]
+    )
+
+    # Агрегация результатов
+    totals = accrual_results.aggregate(
+        total_funds=Sum("funds"),
+        total_amount=Sum("amount"),
+        total_percent_amount=Sum("percent_amount"),
+        total_profitability=Sum("profitability"),
+        total_success_fee=Sum("success_fee"),
+        total_management_fee=Sum("management_fee"),
+        total_replenishment=Sum("replenishment"),
+        total_withdrawal=Sum("withdrawal"),
+    )
+
+    totals["last_program_status"] = last_program_status
+
+    return totals
 
 
 def get_holiday_dates(start_date, end_date):

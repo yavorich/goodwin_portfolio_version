@@ -20,7 +20,11 @@ from apps.accounts.serializers.statistics import (
     GeneralInvestmentStatisticsSerializer,
     TableStatisticsSerializer,
 )
-from apps.accounts.services.statistics import get_table_statistics, get_holiday_dates
+from apps.accounts.services.statistics import (
+    get_table_statistics,
+    get_holiday_dates,
+    get_table_total_statistics,
+)
 from apps.information.models import UserProgramAccrual, UserProgram, Holidays
 from core.utils.get_dates_range import get_dates_range
 
@@ -121,7 +125,7 @@ class TableStatisticsViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        user_program = get_object_or_404(
+        self.user_program = get_object_or_404(
             UserProgram, pk=self.kwargs.get("pk"), wallet=user.wallet
         )
 
@@ -129,7 +133,7 @@ class TableStatisticsViewSet(ReadOnlyModelViewSet):
             UserProgramAccrual, self.request.query_params
         )
         accrual_results = get_table_statistics(
-            self.start_date, self.end_date, user_program
+            self.start_date, self.end_date, self.user_program
         )
         return accrual_results
 
@@ -148,31 +152,26 @@ class TableStatisticsViewSet(ReadOnlyModelViewSet):
         response_data = {"url": self.request.build_absolute_uri(path)}
         return Response(response_data)
 
-    # @action(detail=True, methods=["get"])
-    # def total(self, request, *args, **kwargs):
-    #     queryset = self.get_queryset()
-    #     last_status_subquery = (
-    #         queryset.filter(status=OuterRef("status"))  # Фильтр по текущему статусу
-    #         .order_by(
-    #             "-created_at"
-    #         )  # Сортировка по убыванию даты создания, чтобы получить последний объект
-    #         .values("status")[:1]  # Выбираем только одно значение
-    #     )
-    #     queryset = queryset.annotate(last_status=Subquery(last_status_subquery))
-    #     print(queryset)
-    #     queryset = queryset.aggregate(
-    #         total_funds=Sum("funds"),
-    #         total_amount=Sum("amount"),
-    #         total_percent_amount=Sum("percent_amount"),
-    #         total_percent_total_amount=Sum("percent_amount"),
-    #         total_profitability=Sum("profitability"),
-    #         total_success_fee=Sum("success_fee"),
-    #         total_management_fee=Sum("management_fee"),
-    #         total_replenishment=Sum("replenishment"),
-    #         total_withdrawal=Sum("withdrawal"),
-    #     )
-    #
-    #     return queryset
+    @action(detail=True, methods=["get"])
+    def total(self, request, *args, **kwargs):
+        user = self.request.user
+        user_program = get_object_or_404(
+            UserProgram, pk=self.kwargs.get("pk"), wallet=user.wallet
+        )
+
+        start_date, end_date = get_dates_range(
+            UserProgramAccrual, self.request.query_params
+        )
+        totals = get_table_total_statistics(start_date, end_date, user_program)
+        totals["total_trading_days"] = len(
+            pd.bdate_range(
+                start_date,
+                end_date,
+                freq="C",
+                holidays=get_holiday_dates(start_date, end_date),
+            ),
+        )
+        return Response(totals)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
