@@ -87,15 +87,15 @@ class EmailChangeConfirmAPIView(CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         if DEBUG:
-            email_confirmation_object = PasswordChangeConfirmation.objects.filter(
+            email_confirmation_object = EmailChangeConfirmation.objects.filter(
                 user=self.request.user,
-                auth_code=serializer.validated_data.get("auth_code"),
+                token=serializer.validated_data.get("token"),
             ).first()
         else:
-            email_confirmation_object = PasswordChangeConfirmation.objects.filter(
+            email_confirmation_object = EmailChangeConfirmation.objects.filter(
                 user=self.request.user,
-                auth_code=serializer.validated_data.get("auth_code"),
                 token=serializer.validated_data.get("token"),
+                auth_code=serializer.validated_data.get("auth_code"),
             ).first()
 
         if email_confirmation_object is None:
@@ -145,13 +145,13 @@ class PasswordChangeConfirmAPIView(CreateAPIView):
         if DEBUG:
             password_confirmation_object = PasswordChangeConfirmation.objects.filter(
                 user=self.request.user,
-                auth_code=serializer.validated_data.get("auth_code"),
+                token=serializer.validated_data.get("token"),
             ).first()
         else:
             password_confirmation_object = PasswordChangeConfirmation.objects.filter(
                 user=self.request.user,
-                auth_code=serializer.validated_data.get("auth_code"),
                 token=serializer.validated_data.get("token"),
+                auth_code=serializer.validated_data.get("auth_code"),
             ).first()
 
         if password_confirmation_object is None:
