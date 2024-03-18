@@ -2,6 +2,7 @@ from rest_framework.serializers import (
     ModelSerializer,
     DecimalField,
     FloatField,
+    CharField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -18,6 +19,8 @@ class ProgramSerializer(ModelSerializer):
     min_deposit = FloatField()
     success_fee = FloatField()
     management_fee = FloatField()
+    accrual_type = CharField(source="get_accrual_type_display")
+    withdrawal_type = CharField(source="get_accrual_type_display")
 
     class Meta:
         model = Program
