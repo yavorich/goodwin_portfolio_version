@@ -8,6 +8,7 @@ from django.utils.timezone import now
 from apps.information.models import Operation, Action
 from apps.information.serializers import OperationSerializer
 from apps.accounts.serializers import UserEmailConfirmSerializer
+from config.settings import DEBUG
 
 
 class OperationAPIView(ListAPIView):
@@ -40,7 +41,7 @@ class OperationConfirmAPIView(UpdateAPIView):
         code = serializer.data["confirmation_code"]
         operation: Operation = self.get_object()
 
-        if code != operation.confirmation_code:
+        if not DEBUG and code != operation.confirmation_code:
             raise ValidationError("Verification code is incorrect.")
 
         if now() > operation.confirmation_code_expires_at:
