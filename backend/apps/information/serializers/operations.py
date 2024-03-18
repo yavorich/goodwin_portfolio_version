@@ -9,8 +9,8 @@ from apps.information.models import Operation, Action
 
 
 class OperationSerializer(ModelSerializer):
-    operation_type = CharField(source="operation.type")
-    action_type = CharField(source="type")
+    operation_type = CharField(source="operation.get_type_display")
+    action_type = CharField(source="get_type_display")
 
     class Meta:
         model = Action
