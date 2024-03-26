@@ -91,6 +91,7 @@ class Operation(models.Model):
     )
     early_closure = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
+    expiration_date = models.DateField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Операция"
@@ -110,7 +111,7 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):
-        self._to_wallet()
+        pass
 
     def _apply_withdrawal(self):
         pass

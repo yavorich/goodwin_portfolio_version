@@ -1,13 +1,28 @@
-from rest_framework.generics import ListAPIView, UpdateAPIView
+from decimal import Decimal
+
+from rest_framework.generics import (
+    ListAPIView,
+    UpdateAPIView,
+    CreateAPIView,
+    get_object_or_404,
+    GenericAPIView,
+)
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.status import HTTP_200_OK
 from rest_framework.response import Response
 from django.utils.timezone import now
 
+
 from apps.information.models import Operation, Action
 from apps.information.serializers import OperationSerializer
 from apps.accounts.serializers import UserEmailConfirmSerializer
+from apps.information.serializers.operations import (
+    OperationReplenishmentConfirmSerializer,
+)
+from apps.information.services.operation_replenishment_confirmation import (
+    operation_replenishment_confirmation,
+)
 from config.settings import DEBUG
 
 
@@ -54,3 +69,24 @@ class OperationConfirmAPIView(UpdateAPIView):
         operation.apply()
 
         return Response(status=HTTP_200_OK)
+
+
+class OperationReplenishmentConfirmView(GenericAPIView):
+    serializer_class = OperationReplenishmentConfirmSerializer
+
+    def get_object(self):
+        return get_object_or_404(Operation, pk=self.kwargs["pk"])
+
+    def post(self, request, *args, **kwargs):
+        operation = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        amount = Decimal(serializer.data["amount"])
+
+        response_data = {
+            "amount_expected": operation.amount,
+            "amount_received": amount,
+            "message": operation_replenishment_confirmation(operation, amount),
+        }
+
+        return Response(response_data)
