@@ -27,6 +27,7 @@ from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateVi
 from apps.accounts.views.statistics import (
     TotalProfitStatisticsGraph,
     GeneralInvestmentStatisticsView,
+    TableStatisticsViewSet,
 )
 from apps.accounts.views.verification import (
     VerificationAPIView,
@@ -35,6 +36,9 @@ from apps.accounts.views.verification import (
 
 router = DefaultRouter()
 router.register("docs", DocsViewSet, basename="docs")
+router.register(
+    "statistics/table", TableStatisticsViewSet, basename="statistics/table/"
+)
 
 urlpatterns = [
     path("register/", RegisterAPIView.as_view(), name="register"),
@@ -110,6 +114,6 @@ urlpatterns = [
     path(
         "statistics/graph/<int:program_id>/",
         TotalProfitStatisticsGraph.as_view(),
-        name="total-profit",
+        name="graph-statistics",
     ),
 ] + router.urls
