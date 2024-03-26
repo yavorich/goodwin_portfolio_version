@@ -9,7 +9,9 @@ from apps.information.models import (
     FrozenItem,
     Action,
 )
-from apps.information.services import send_operation_confirm_email
+from apps.information.services.send_operation_confirm_email import (
+    send_operation_confirm_email,
+)
 
 
 @receiver(pre_save, sender=Operation)

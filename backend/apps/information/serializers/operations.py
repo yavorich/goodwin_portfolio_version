@@ -1,11 +1,14 @@
+from rest_framework.fields import DecimalField, IntegerField
 from rest_framework.serializers import (
     ModelSerializer,
     CharField,
     BooleanField,
+    Serializer,
 )
 from rest_framework.exceptions import ValidationError
 
 from apps.information.models import Operation, Action
+from core.utils import decimal_usdt
 
 
 class OperationSerializer(ModelSerializer):
@@ -27,6 +30,7 @@ class OperationSerializer(ModelSerializer):
 
 class OperationCreateSerializer(ModelSerializer):
     confirmed = BooleanField(read_only=True)
+    operation_type = None
 
     class Meta:
         model = Operation
@@ -44,6 +48,10 @@ class OperationCreateSerializer(ModelSerializer):
             raise ValidationError("Insufficient free funds.")
         if frozen and attrs["wallet"].frozen < frozen:
             raise ValidationError("Insufficient frozen funds.")
+
+    def create(self, validated_data):
+        validated_data["type"] = self.operation_type
+        return super().create(validated_data)
 
 
 class ProgramStartSerializer(OperationCreateSerializer):
@@ -175,13 +183,19 @@ class WalletTransferSerializer(OperationCreateSerializer):
 
 
 class WalletReplenishmentSerializer(OperationCreateSerializer):
+    operation_type = Operation.Type.REPLENISHMENT
+
     class Meta(OperationCreateSerializer.Meta):
-        fields = OperationCreateSerializer.Meta.fields + []
+        fields = OperationCreateSerializer.Meta.fields + ["amount"]
 
 
 class WalletWithdrawalSerializer(OperationCreateSerializer):
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + []
+
+
+class OperationReplenishmentConfirmSerializer(Serializer):
+    amount = DecimalField(**decimal_usdt)
 
 
 program_operations_serializers = {
