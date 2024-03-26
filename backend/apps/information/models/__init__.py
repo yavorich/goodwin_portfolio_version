@@ -10,3 +10,4 @@ from .program import (
 )
 from .wallet import Wallet, WalletHistory
 from .frozen import FrozenItem
+from .holidays import Holidays
