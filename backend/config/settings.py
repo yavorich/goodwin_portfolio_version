@@ -222,3 +222,6 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", None)
 MAIN_BOT = Bot(TELEGRAM_BOT_TOKEN, parse_mode="HTML") if TELEGRAM_BOT_TOKEN else None
 
 CORS_ALLOW_CREDENTIALS = True
+
+NODE_JS_HOST = os.environ.get("NODE_JS_HOST")
+NODE_JS_TOKEN = os.environ.get("NODE_JS_TOKEN")
