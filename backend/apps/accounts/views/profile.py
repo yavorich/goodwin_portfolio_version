@@ -34,6 +34,7 @@ from apps.accounts.services.email import (
 from apps.telegram.utils import (
     send_telegram_message,
 )
+from config.settings import DEBUG
 
 
 class ProfileAPIView(RetrieveUpdateAPIView):
@@ -85,11 +86,17 @@ class EmailChangeConfirmAPIView(CreateAPIView):
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        email_confirmation_object = EmailChangeConfirmation.objects.filter(
-            user=self.request.user,
-            auth_code=serializer.validated_data.get("auth_code"),
-            token=serializer.validated_data.get("token"),
-        ).first()
+        if DEBUG:
+            email_confirmation_object = EmailChangeConfirmation.objects.filter(
+                user=self.request.user,
+                token=serializer.validated_data.get("token"),
+            ).first()
+        else:
+            email_confirmation_object = EmailChangeConfirmation.objects.filter(
+                user=self.request.user,
+                token=serializer.validated_data.get("token"),
+                auth_code=serializer.validated_data.get("auth_code"),
+            ).first()
 
         if email_confirmation_object is None:
             raise ParseError(detail=_("Код подтверждения не найден"))
@@ -135,11 +142,17 @@ class PasswordChangeConfirmAPIView(CreateAPIView):
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        password_confirmation_object = PasswordChangeConfirmation.objects.filter(
-            user=self.request.user,
-            auth_code=serializer.validated_data.get("auth_code"),
-            token=serializer.validated_data.get("token"),
-        ).first()
+        if DEBUG:
+            password_confirmation_object = PasswordChangeConfirmation.objects.filter(
+                user=self.request.user,
+                token=serializer.validated_data.get("token"),
+            ).first()
+        else:
+            password_confirmation_object = PasswordChangeConfirmation.objects.filter(
+                user=self.request.user,
+                token=serializer.validated_data.get("token"),
+                auth_code=serializer.validated_data.get("auth_code"),
+            ).first()
 
         if password_confirmation_object is None:
             raise ParseError(detail=_("Код подтверждения не найден"))

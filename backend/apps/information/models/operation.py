@@ -111,15 +111,15 @@ class Operation(models.Model):
 
     def apply(self):
         with transaction.atomic():
-            getattr(self, f"_apply_{self.type}")()
-            self.done = True
+            done = getattr(self, f"_apply_{self.type}")()
+            self.done = done
             self.save()
 
     def _apply_replenishment(self):
-        pass
+        return False
 
     def _apply_withdrawal(self):
-        pass
+        return True
 
     def _apply_transfer(self):
         self._from_wallet()
@@ -131,6 +131,7 @@ class Operation(models.Model):
             amount_frozen=(1 - Decimal("0.005")) * self.amount_frozen,
             confirmed=True,
         )
+        return True
 
     def _apply_partner_bonus(self):
         self.actions.create(
@@ -138,6 +139,7 @@ class Operation(models.Model):
             target=Action.Target.WALLET,
             amount=self.amount,
         )
+        return True
 
     def _apply_program_start(self):
         self.user_program = UserProgram.objects.create(
@@ -145,6 +147,7 @@ class Operation(models.Model):
             program=self.program,
         )
         self._from_wallet_to_program()
+        return True
 
     def _apply_program_closure(self):
         self._from_program_to_wallet(frozen=True)
@@ -161,12 +164,14 @@ class Operation(models.Model):
                     amount=replenishment.amount,
                     confirmed=True,
                 )
+        return True
 
     def _apply_program_replenishment(self):
         self._from_wallet()
         self.user_program.replenishments.create(
             amount=self.amount_free + self.amount_frozen, operation=self
         )
+        return False
 
     def _apply_program_replenishment_cancel(self):
         self.user_program = self.replenishment.program
@@ -176,6 +181,7 @@ class Operation(models.Model):
         else:
             self.replenishment.cancel()
         self._to_wallet(frozen=True)
+        return True
 
     def _apply_defrost(self):
         if self.frozen_item:
@@ -191,6 +197,7 @@ class Operation(models.Model):
                 confirmed=True,
             )
         self._to_wallet(frozen=False)  # пополнение раздела "Доступно"
+        return True
 
     def _apply_extra_fee(self):
         self.actions.create(
@@ -198,6 +205,7 @@ class Operation(models.Model):
             target=Action.Target.WALLET,
             amount=-self.amount,
         )
+        return True
 
     def _apply_program_accrual(self):
         # начисление в profit программы
@@ -215,6 +223,7 @@ class Operation(models.Model):
             self.actions.create(
                 type=action_type, amount=self.amount, target=Action.Target.WALLET
             )
+        return True
 
     def _from_wallet(self):
         if self.amount_free:
