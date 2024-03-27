@@ -3,7 +3,6 @@ from decimal import Decimal
 from rest_framework.generics import (
     ListAPIView,
     UpdateAPIView,
-    CreateAPIView,
     get_object_or_404,
     GenericAPIView,
 )
@@ -20,9 +19,7 @@ from apps.accounts.serializers import UserEmailConfirmSerializer
 from apps.information.serializers.operations import (
     OperationReplenishmentConfirmSerializer,
 )
-from apps.information.services.operation_replenishment_confirmation import (
-    operation_replenishment_confirmation,
-)
+from apps.information.services import operation_replenishment_confirmation
 from config.settings import DEBUG
 
 
@@ -78,15 +75,22 @@ class OperationReplenishmentConfirmView(GenericAPIView):
         return get_object_or_404(Operation, pk=self.kwargs["pk"])
 
     def post(self, request, *args, **kwargs):
-        operation = self.get_object()
+        operation: Operation = self.get_object()
+
+        if operation.done:
+            raise ValidationError("Operation already done")
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         amount = Decimal(serializer.data["amount"])
+        message = operation_replenishment_confirmation(operation, amount)
 
         response_data = {
             "amount_expected": operation.amount,
             "amount_received": amount,
-            "message": operation_replenishment_confirmation(operation, amount),
+            "message": message,
+            "done": operation.done,
         }
 
         return Response(response_data)
