@@ -13,7 +13,7 @@ from rest_framework.status import HTTP_200_OK
 from rest_framework.response import Response
 from django.utils.timezone import now
 
-
+from apps.accounts.permissions import IsLocal
 from apps.information.models import Operation, Action
 from apps.information.serializers import OperationSerializer
 from apps.accounts.serializers import UserEmailConfirmSerializer
@@ -71,6 +71,7 @@ class OperationConfirmAPIView(UpdateAPIView):
 
 
 class OperationReplenishmentConfirmView(GenericAPIView):
+    permission_classes = [IsLocal]
     serializer_class = OperationReplenishmentConfirmSerializer
 
     def get_object(self):

@@ -1,5 +1,7 @@
 import random
 from decimal import Decimal
+from uuid import uuid4
+
 from django.db import models, transaction
 from django.utils.timezone import now, timedelta
 
@@ -27,6 +29,7 @@ class Operation(models.Model):
         EXTRA_FEE = "extra_fee", "Списание комиссии Extra Fee"
         PROGRAM_ACCRUAL = "program_accrual", "Начисление по программе"
 
+    uuid = models.UUIDField(default=uuid4, editable=False)
     type = models.CharField("Тип операции", choices=Type.choices)
     wallet = models.ForeignKey(
         Wallet,
@@ -91,7 +94,9 @@ class Operation(models.Model):
     )
     early_closure = models.BooleanField(default=False)
     partial = models.BooleanField(default=False)
-    expiration_date = models.DateField(null=True, blank=True)
+    expiration_date = models.DateField(null=True, blank=True)  # Пока что не
+    # используется нигде, будет нужно для отмены слишкомдолгих транзакций при
+    # начислении на кошелёк
 
     class Meta:
         verbose_name = "Операция"
