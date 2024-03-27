@@ -72,6 +72,7 @@ class OperationConfirmAPIView(UpdateAPIView):
 
 
 class OperationReplenishmentConfirmView(GenericAPIView):
+    permission_classes = [IsLocal]
     serializer_class = OperationReplenishmentConfirmSerializer
 
     def get_object(self):

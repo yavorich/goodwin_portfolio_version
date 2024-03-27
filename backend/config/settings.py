@@ -225,3 +225,4 @@ CORS_ALLOW_CREDENTIALS = True
 
 NODE_JS_HOST = os.environ.get("NODE_JS_HOST")
 NODE_JS_TOKEN = os.environ.get("NODE_JS_TOKEN")
+NODE_JS_HOOK_URL = os.environ.get("NODE_JS_HOOK_URL")
