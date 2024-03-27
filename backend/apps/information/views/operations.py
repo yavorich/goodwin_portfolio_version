@@ -3,7 +3,6 @@ from decimal import Decimal
 from rest_framework.generics import (
     ListAPIView,
     UpdateAPIView,
-    CreateAPIView,
     get_object_or_404,
     GenericAPIView,
 )
@@ -14,6 +13,7 @@ from rest_framework.response import Response
 from django.utils.timezone import now
 
 from apps.accounts.permissions import IsLocal
+
 from apps.information.models import Operation, Action
 from apps.information.serializers import OperationSerializer
 from apps.accounts.serializers import UserEmailConfirmSerializer
@@ -23,6 +23,7 @@ from apps.information.serializers.operations import (
 from apps.information.services.operation_replenishment_confirmation import (
     operation_replenishment_confirmation,
 )
+from config.settings import DEBUG
 
 
 class OperationAPIView(ListAPIView):
@@ -55,7 +56,7 @@ class OperationConfirmAPIView(UpdateAPIView):
         code = serializer.data["confirmation_code"]
         operation: Operation = self.get_object()
 
-        if code != operation.confirmation_code:
+        if not DEBUG and code != operation.confirmation_code:
             raise ValidationError("Verification code is incorrect.")
 
         if now() > operation.confirmation_code_expires_at:
@@ -71,22 +72,28 @@ class OperationConfirmAPIView(UpdateAPIView):
 
 
 class OperationReplenishmentConfirmView(GenericAPIView):
-    permission_classes = [IsLocal]
     serializer_class = OperationReplenishmentConfirmSerializer
 
     def get_object(self):
         return get_object_or_404(Operation, pk=self.kwargs["pk"])
 
     def post(self, request, *args, **kwargs):
-        operation = self.get_object()
+        operation: Operation = self.get_object()
+
+        if operation.done:
+            raise ValidationError("Operation already done")
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         amount = Decimal(serializer.data["amount"])
+        message = operation_replenishment_confirmation(operation, amount)
 
         response_data = {
             "amount_expected": operation.amount,
             "amount_received": amount,
-            "message": operation_replenishment_confirmation(operation, amount),
+            "message": message,
+            "done": operation.done,
         }
 
         return Response(response_data)
