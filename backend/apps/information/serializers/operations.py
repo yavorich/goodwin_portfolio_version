@@ -1,4 +1,4 @@
-from rest_framework.fields import DecimalField, IntegerField
+from rest_framework.fields import DecimalField
 from rest_framework.serializers import (
     ModelSerializer,
     CharField,
@@ -36,7 +36,6 @@ class OperationCreateSerializer(ModelSerializer):
         model = Operation
         fields = [
             "id",
-            "type",
             "wallet",
             "confirmed",
         ]
@@ -55,7 +54,7 @@ class OperationCreateSerializer(ModelSerializer):
 
 
 class ProgramStartSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_START)
+    operation_type = Operation.Type.PROGRAM_START
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -75,7 +74,7 @@ class ProgramStartSerializer(OperationCreateSerializer):
 
 
 class ProgramReplenishmentSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_REPLENISHMENT)
+    operation_type = Operation.Type.PROGRAM_REPLENISHMENT
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -93,7 +92,7 @@ class ProgramReplenishmentSerializer(OperationCreateSerializer):
 
 
 class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_REPLENISHMENT_CANCEL)
+    operation_type = Operation.Type.PROGRAM_REPLENISHMENT_CANCEL
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -120,7 +119,7 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
 
 
 class ProgramClosureSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_CLOSURE)
+    operation_type = Operation.Type.PROGRAM_CLOSURE
     early_closure = BooleanField(default=True)
 
     class Meta(OperationCreateSerializer.Meta):
@@ -150,7 +149,7 @@ class ProgramClosureSerializer(OperationCreateSerializer):
 
 
 class WalletDefrostSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.DEFROST)
+    operation_type = Operation.Type.DEFROST
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -164,7 +163,7 @@ class WalletDefrostSerializer(OperationCreateSerializer):
 
 
 class WalletTransferSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.TRANSFER)
+    operation_type = Operation.Type.TRANSFER
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -187,9 +186,12 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + ["amount"]
+        extra_kwargs = {f: {"required": True} for f in fields}
 
 
 class WalletWithdrawalSerializer(OperationCreateSerializer):
+    operation_type = Operation.Type.WITHDRAWAL
+
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + []
 
