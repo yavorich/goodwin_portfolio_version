@@ -1,3 +1,4 @@
+import requests
 from rest_framework.fields import DecimalField
 from rest_framework.serializers import (
     ModelSerializer,
@@ -8,6 +9,7 @@ from rest_framework.serializers import (
 from rest_framework.exceptions import ValidationError
 
 from apps.information.models import Operation, Action
+from config import settings
 from core.utils import decimal_usdt
 
 
@@ -187,6 +189,13 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + ["amount"]
         extra_kwargs = {f: {"required": True} for f in fields}
+
+    def create(self, validated_data):
+        operation: Operation = super().create(validated_data)
+        hook = f"{settings.NODE_JS_HOST}/{settings.NODE_JS_HOOK_URL}/"
+        data = {"uuid": operation.uuid, "amount": operation.amount}
+        requests.post(hook, data)
+        return operation
 
 
 class WalletWithdrawalSerializer(OperationCreateSerializer):
