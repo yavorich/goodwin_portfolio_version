@@ -23,7 +23,7 @@ urlpatterns = [
         name="operation-confirm",
     ),
     path(
-        "operations/replenishment/<int:pk>/",
+        "operations/replenishment/<str:uuid>/",
         OperationReplenishmentConfirmView.as_view(),
         name="operation-replenishment",
     ),
