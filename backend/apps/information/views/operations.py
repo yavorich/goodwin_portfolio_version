@@ -76,7 +76,7 @@ class OperationReplenishmentConfirmView(GenericAPIView):
     serializer_class = OperationReplenishmentConfirmSerializer
 
     def get_object(self):
-        return get_object_or_404(Operation, pk=self.kwargs["pk"])
+        return get_object_or_404(Operation, uuid=self.kwargs["uuid"])
 
     def post(self, request, *args, **kwargs):
         operation: Operation = self.get_object()
