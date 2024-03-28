@@ -192,9 +192,12 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
 
     def create(self, validated_data):
         operation: Operation = super().create(validated_data)
-        hook = f"{settings.NODE_JS_HOST}/{settings.NODE_JS_HOOK_URL}/"
-        data = {"uuid": operation.uuid, "amount": operation.amount}
-        requests.post(hook, data)
+        hook = f"http://{settings.NODE_JS_HOST}/{settings.NODE_JS_HOOK_URL}/"
+        data = {"operationId": operation.uuid, "expectedAmount": operation.amount}
+        result = requests.post(hook, data)
+        if result.status_code != 201:
+            operation.delete()
+            raise ValidationError("Server is busy")
         return operation
 
 
