@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.information.models import Operation, Action
 from config import settings
+from core.exceptions import ServiceUnavailable
 from core.utils import decimal_usdt
 
 
@@ -192,12 +193,15 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
 
     def create(self, validated_data):
         operation: Operation = super().create(validated_data)
-        hook = f"http://{settings.NODE_JS_HOST}/{settings.NODE_JS_HOOK_URL}/"
+        hook = f"{settings.NODE_JS_URL}/api/wallets/"
         data = {"operationId": operation.uuid, "expectedAmount": operation.amount}
         result = requests.post(hook, data)
+
         if result.status_code != 201:
             operation.delete()
-            raise ValidationError("Server is busy")
+            raise ServiceUnavailable(
+                detail="Сервис эквайринга временно не доступен, повторите попытку позже"
+            )
         return operation
 
 
@@ -210,6 +214,7 @@ class WalletWithdrawalSerializer(OperationCreateSerializer):
 
 class OperationReplenishmentConfirmSerializer(Serializer):
     amount = DecimalField(**decimal_usdt)
+    status = CharField(required=False)
 
 
 program_operations_serializers = {
