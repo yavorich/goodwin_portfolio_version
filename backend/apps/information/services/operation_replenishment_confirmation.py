@@ -6,6 +6,8 @@ from apps.information.models import Operation
 def operation_replenishment_confirmation(operation: Operation, amount):
     """Увеличивает баланс кошелька пользователя после подтверждения о получении суммы
     на криптокошелёк goodwin"""
+    if operation.done:
+        return _("Operation already done")
     if operation.amount > amount:
         return _("Insufficient amount transferred")
 

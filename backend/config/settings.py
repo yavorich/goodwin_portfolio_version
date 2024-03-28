@@ -224,5 +224,5 @@ MAIN_BOT = Bot(TELEGRAM_BOT_TOKEN, parse_mode="HTML") if TELEGRAM_BOT_TOKEN else
 CORS_ALLOW_CREDENTIALS = True
 
 NODE_JS_HOST = os.environ.get("NODE_JS_HOST")
+NODE_JS_URL = "http://" + NODE_JS_HOST
 NODE_JS_TOKEN = os.environ.get("NODE_JS_TOKEN")
-NODE_JS_HOOK_URL = os.environ.get("NODE_JS_HOOK_URL")
