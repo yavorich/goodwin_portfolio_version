@@ -3,10 +3,12 @@ from decimal import Decimal
 
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.exceptions import NotFound
+from rest_framework.generics import RetrieveAPIView, ListAPIView, get_object_or_404
 
 from apps.accounts.models.user import Partner
 from apps.accounts.permissions import IsPartner
+from apps.information.serializers import UserProgramSerializer
 from core.serializers.date_range import DateRangeSerializer
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
@@ -74,6 +76,18 @@ class PartnerInvestorsList(ListAPIView):
         )
 
         return queryset
+
+
+class PartnerInvestorPrograms(ListAPIView):
+    permission_classes = [IsPartner]
+    serializer_class = UserProgramSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        partner_profile = user.partner_profile
+        investors = partner_profile.users.all()
+        investor = get_object_or_404(investors, pk=self.kwargs["pk"])
+        return investor.wallet.programs.all()
 
 
 class PartnerInvestmentGraph(ListAPIView):
