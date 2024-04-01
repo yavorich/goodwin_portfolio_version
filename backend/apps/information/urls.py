@@ -2,6 +2,10 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .views.operations import (
+    OperationReplenishmentConfirmView,
+    OperationReplenishmentStatusView,
+)
 
 router = DefaultRouter()
 router.register("programs", views.ProgramViewSet, basename="programs")
@@ -20,6 +24,16 @@ urlpatterns = [
         "operations/<int:pk>/confirm/",
         views.OperationConfirmAPIView.as_view(),
         name="operation-confirm",
+    ),
+    path(
+        "operations/replenishment/<str:uuid>/",
+        OperationReplenishmentConfirmView.as_view(),
+        name="operation-replenishment",
+    ),
+    path(
+        "operations/replenishment/<int:pk>/status/",
+        OperationReplenishmentStatusView.as_view(),
+        name="operation-replenishment-status",
     ),
     path("wallet/", views.WalletAPIView.as_view(), name="wallet-detail"),
     path(

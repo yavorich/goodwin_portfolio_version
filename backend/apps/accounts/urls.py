@@ -22,6 +22,7 @@ from apps.accounts.views.partner import (
     PartnerInvestorsList,
     PartnerInvestmentGraph,
     PartnerList,
+    PartnerInvestorPrograms,
 )
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.statistics import (
@@ -105,6 +106,11 @@ urlpatterns = [
         name="partner-general-statistics",
     ),
     path("partner/investors/", PartnerInvestorsList.as_view(), name="investors"),
+    path(
+        "partner/investors/<int:pk>/",
+        PartnerInvestorPrograms.as_view(),
+        name="investor-programs",
+    ),
     path("partner/investment/", PartnerInvestmentGraph.as_view(), name="investment"),
     path(
         "statistics/general/",
