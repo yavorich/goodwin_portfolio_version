@@ -10,7 +10,7 @@ from apps.accounts.serializers import (
     RecoverPasswordSerializer,
     TokenSerializer,
 )
-from apps.accounts.services import send_email_recover_password
+from apps.accounts.services.email import send_email_recover_password
 
 
 class ResetPasswordAPIView(CreateAPIView):

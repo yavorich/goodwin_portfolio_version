@@ -1,11 +1,17 @@
+import requests
+from rest_framework.fields import DecimalField
 from rest_framework.serializers import (
     ModelSerializer,
     CharField,
     BooleanField,
+    Serializer,
 )
 from rest_framework.exceptions import ValidationError
 
 from apps.information.models import Operation, Action
+from config import settings
+from core.exceptions import ServiceUnavailable
+from core.utils import decimal_usdt
 
 
 class OperationSerializer(ModelSerializer):
@@ -27,12 +33,12 @@ class OperationSerializer(ModelSerializer):
 
 class OperationCreateSerializer(ModelSerializer):
     confirmed = BooleanField(read_only=True)
+    operation_type = None
 
     class Meta:
         model = Operation
         fields = [
             "id",
-            "type",
             "wallet",
             "confirmed",
         ]
@@ -45,9 +51,13 @@ class OperationCreateSerializer(ModelSerializer):
         if frozen and attrs["wallet"].frozen < frozen:
             raise ValidationError("Insufficient frozen funds.")
 
+    def create(self, validated_data):
+        validated_data["type"] = self.operation_type
+        return super().create(validated_data)
+
 
 class ProgramStartSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_START)
+    operation_type = Operation.Type.PROGRAM_START
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -67,7 +77,7 @@ class ProgramStartSerializer(OperationCreateSerializer):
 
 
 class ProgramReplenishmentSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_REPLENISHMENT)
+    operation_type = Operation.Type.PROGRAM_REPLENISHMENT
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -85,7 +95,7 @@ class ProgramReplenishmentSerializer(OperationCreateSerializer):
 
 
 class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_REPLENISHMENT_CANCEL)
+    operation_type = Operation.Type.PROGRAM_REPLENISHMENT_CANCEL
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -112,7 +122,7 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
 
 
 class ProgramClosureSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.PROGRAM_CLOSURE)
+    operation_type = Operation.Type.PROGRAM_CLOSURE
     early_closure = BooleanField(default=True)
 
     class Meta(OperationCreateSerializer.Meta):
@@ -142,7 +152,7 @@ class ProgramClosureSerializer(OperationCreateSerializer):
 
 
 class WalletDefrostSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.DEFROST)
+    operation_type = Operation.Type.DEFROST
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -156,7 +166,7 @@ class WalletDefrostSerializer(OperationCreateSerializer):
 
 
 class WalletTransferSerializer(OperationCreateSerializer):
-    type = CharField(default=Operation.Type.TRANSFER)
+    operation_type = Operation.Type.TRANSFER
 
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + [
@@ -175,13 +185,36 @@ class WalletTransferSerializer(OperationCreateSerializer):
 
 
 class WalletReplenishmentSerializer(OperationCreateSerializer):
+    operation_type = Operation.Type.REPLENISHMENT
+
     class Meta(OperationCreateSerializer.Meta):
-        fields = OperationCreateSerializer.Meta.fields + []
+        fields = OperationCreateSerializer.Meta.fields + ["amount"]
+        extra_kwargs = {f: {"required": True} for f in fields}
+
+    def create(self, validated_data):
+        operation: Operation = super().create(validated_data)
+        hook = f"{settings.NODE_JS_URL}/api/wallets/"
+        data = {"operationId": operation.uuid, "expectedAmount": operation.amount}
+        result = requests.post(hook, data)
+
+        if result.status_code != 201:
+            operation.delete()
+            raise ServiceUnavailable(
+                detail="Сервис эквайринга временно не доступен, повторите попытку позже"
+            )
+        return operation
 
 
 class WalletWithdrawalSerializer(OperationCreateSerializer):
+    operation_type = Operation.Type.WITHDRAWAL
+
     class Meta(OperationCreateSerializer.Meta):
         fields = OperationCreateSerializer.Meta.fields + []
+
+
+class OperationReplenishmentConfirmSerializer(Serializer):
+    amount = DecimalField(**decimal_usdt)
+    status = CharField(required=False)
 
 
 program_operations_serializers = {

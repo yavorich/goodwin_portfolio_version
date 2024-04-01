@@ -169,6 +169,27 @@ class UserProgram(models.Model):
         self.save()
 
 
+class UserProgramHistory(models.Model):
+    user_program = models.ForeignKey(
+        UserProgram, on_delete=models.CASCADE, related_name="user_program_history"
+    )
+    created_at = models.DateField(auto_now_add=True, verbose_name="Дата создания")
+    status = models.CharField(
+        "Статус", choices=UserProgram.Status.choices, default=UserProgram.Status.INITIAL
+    )
+    funds = models.DecimalField(
+        "Торговые средства", **decimal_usdt, default=Decimal("0.0")
+    )
+    profit = models.DecimalField(
+        "Суммарный доход", **decimal_usdt, default=Decimal("0.0")
+    )
+
+    class Meta:
+        unique_together = ("user_program", "created_at")
+        verbose_name = "История программы пользователя"
+        verbose_name_plural = "Истории программ пользователя"
+
+
 class UserProgramReplenishment(models.Model):
     class Status(models.TextChoices):
         INITIAL = "initial", "Ожидает исполнения"
@@ -182,10 +203,17 @@ class UserProgramReplenishment(models.Model):
         on_delete=models.CASCADE,
     )
     operation = models.OneToOneField(
-        "Operation", verbose_name="Операция", on_delete=models.CASCADE, **blank_and_null
+        "Operation",
+        verbose_name="Операция",
+        on_delete=models.CASCADE,
+        related_name="program_repl",
+        **blank_and_null,
     )
     amount = models.DecimalField("Сумма", **decimal_usdt)
     status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
+    created_at = models.DateField(
+        verbose_name="Дата создания вывода", auto_now_add=True
+    )
     apply_date = models.DateField(
         "Ожидаемая дата зачисления на счет программы", **blank_and_null
     )
@@ -222,7 +250,11 @@ class UserProgramAccrual(models.Model):
         on_delete=models.CASCADE,
     )
     amount = models.DecimalField("Сумма начисления", **decimal_usdt)
+    percent_amount = models.DecimalField(
+        "Сумма начисления в процентах от депозита", **decimal_pct
+    )
     success_fee = models.DecimalField("Сумма Success Fee", **decimal_usdt)
+    management_fee = models.DecimalField("Сумма Management Fee", **decimal_usdt)
     created_at = models.DateField(
         "Дата",
         auto_now_add=True,
