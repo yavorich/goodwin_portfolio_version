@@ -1,4 +1,4 @@
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.models import (
@@ -6,6 +6,7 @@ from apps.accounts.models import (
     AddressVerification,
     VerificationStatus,
 )
+from config import settings
 
 
 class IsAuthenticatedAndAcceptedOfferAgreement(IsAuthenticated):
@@ -64,3 +65,20 @@ class IsPartner(IsAuthenticatedAndVerified):
             return False
         self.message = super().message
         return super().has_permission(request, view)
+
+
+class IsLocal(BasePermission):
+    message = {
+        "code": "not_local",
+        "detail": _(
+            "Доступ к этой странице разрешён только для аутентифицированного "
+            "локального приложения"
+        ),
+    }
+
+    def has_permission(self, request, view):
+        token = request.headers.get("X-Auth-Token")
+        host = request.headers.get("Host")
+        if host and token:
+            return host == settings.NODE_JS_HOST and token == settings.NODE_JS_TOKEN
+        return False

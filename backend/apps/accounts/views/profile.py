@@ -26,7 +26,7 @@ from apps.accounts.serializers.profile import (
     PasswordAuthCodeSerializer,
     EmailAuthCodeSerializer,
 )
-from apps.accounts.services import (
+from apps.accounts.services.email import (
     send_email_change_settings,
     send_email_change_password,
     send_email_change_email,
