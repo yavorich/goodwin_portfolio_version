@@ -22,11 +22,13 @@ from apps.accounts.views.partner import (
     PartnerInvestorsList,
     PartnerInvestmentGraph,
     PartnerList,
+    PartnerInvestorPrograms,
 )
 from apps.accounts.views.profile import SettingsAPIView, SettingsConfirmCreateView
 from apps.accounts.views.statistics import (
     TotalProfitStatisticsGraph,
     GeneralInvestmentStatisticsView,
+    TableStatisticsViewSet,
 )
 from apps.accounts.views.verification import (
     VerificationAPIView,
@@ -35,6 +37,9 @@ from apps.accounts.views.verification import (
 
 router = DefaultRouter()
 router.register("docs", DocsViewSet, basename="docs")
+router.register(
+    "statistics/table", TableStatisticsViewSet, basename="statistics/table/"
+)
 
 urlpatterns = [
     path("register/", RegisterAPIView.as_view(), name="register"),
@@ -101,6 +106,11 @@ urlpatterns = [
         name="partner-general-statistics",
     ),
     path("partner/investors/", PartnerInvestorsList.as_view(), name="investors"),
+    path(
+        "partner/investors/<int:pk>/",
+        PartnerInvestorPrograms.as_view(),
+        name="investor-programs",
+    ),
     path("partner/investment/", PartnerInvestmentGraph.as_view(), name="investment"),
     path(
         "statistics/general/",
@@ -110,6 +120,6 @@ urlpatterns = [
     path(
         "statistics/graph/<int:program_id>/",
         TotalProfitStatisticsGraph.as_view(),
-        name="total-profit",
+        name="graph-statistics",
     ),
 ] + router.urls
