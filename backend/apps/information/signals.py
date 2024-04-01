@@ -9,7 +9,9 @@ from apps.information.models import (
     FrozenItem,
     Action,
 )
-from apps.information.services import send_operation_confirm_email
+from apps.information.services.send_operation_confirm_email import (
+    send_operation_confirm_email,
+)
 
 
 @receiver(pre_save, sender=Operation)
@@ -68,8 +70,9 @@ def save_frozen_item(sender, instance: FrozenItem, **kwargs):
 
 @receiver(pre_save, sender=Action)
 def handle_action(sender, instance: Action, **kwargs):
-    instance.apply()
-    if not instance.name:
-        instance.name = instance._get_name()
-    if not instance.target_name:
-        instance.target_name = instance._get_target_name()
+    if instance.pk is None:
+        instance.apply()
+        if not instance.name:
+            instance.name = instance._get_name()
+        if not instance.target_name:
+            instance.target_name = instance._get_target_name()
