@@ -3,11 +3,13 @@ from decimal import Decimal
 
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.exceptions import NotFound
+from rest_framework.generics import RetrieveAPIView, ListAPIView, get_object_or_404
 
 from apps.accounts.models.user import Partner
 from apps.accounts.permissions import IsPartner
-from apps.accounts.serializers.date_range import DateRangeSerializer
+from apps.information.serializers import UserProgramSerializer
+from core.serializers.date_range import DateRangeSerializer
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
     InvestorsSerializer,
@@ -16,6 +18,7 @@ from apps.accounts.serializers.partner import (
 )
 from apps.information.models import UserProgram, WalletHistory
 from core.pagination import PageNumberSetPagination
+from core.utils.get_dates_range import get_dates_range
 
 
 class PartnerGeneralStatisticsRetrieveView(RetrieveAPIView):
@@ -75,6 +78,18 @@ class PartnerInvestorsList(ListAPIView):
         return queryset
 
 
+class PartnerInvestorPrograms(ListAPIView):
+    permission_classes = [IsPartner]
+    serializer_class = UserProgramSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        partner_profile = user.partner_profile
+        investors = partner_profile.users.all()
+        investor = get_object_or_404(investors, pk=self.kwargs["pk"])
+        return investor.wallet.programs.all()
+
+
 class PartnerInvestmentGraph(ListAPIView):
     permission_classes = [IsPartner]
     serializer_class = PartnerInvestmentGraphSerializer
@@ -82,15 +97,8 @@ class PartnerInvestmentGraph(ListAPIView):
     def get_queryset(self):
         investors = self.request.user.partner_profile.users.all()
 
-        serializer = DateRangeSerializer(data=self.request.query_params)
-        serializer.is_valid(raise_exception=True)
+        start_date, end_date = get_dates_range(WalletHistory, self.request.query_params)
 
-        start_date = serializer.validated_data.get(
-            "start_date", WalletHistory.objects.earliest("created_at").created_at
-        )
-        end_date = serializer.validated_data.get(
-            "end_date", WalletHistory.objects.latest("created_at").created_at
-        )
         all_dates = [
             start_date + timedelta(days=x)
             for x in range((end_date - start_date).days + 1)
