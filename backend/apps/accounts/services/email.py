@@ -27,7 +27,7 @@ def send_auth_confirm_email(user):
         user.email,
         title,
         message,
-        from_email=None,
+        from_email="GOODWIN",
         html=False,
     )
 
