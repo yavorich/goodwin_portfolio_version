@@ -3,13 +3,11 @@ from decimal import Decimal
 
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
-from rest_framework.exceptions import NotFound
 from rest_framework.generics import RetrieveAPIView, ListAPIView, get_object_or_404
 
 from apps.accounts.models.user import Partner
 from apps.accounts.permissions import IsPartner
 from apps.information.serializers import UserProgramSerializer
-from core.serializers.date_range import DateRangeSerializer
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
     InvestorsSerializer,
