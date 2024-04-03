@@ -6,7 +6,6 @@ from django.db.models import (
     F,
     Window,
 )
-from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView, get_object_or_404, RetrieveAPIView
@@ -25,7 +24,7 @@ from apps.accounts.services.statistics import (
     get_holiday_dates,
     get_table_total_statistics,
 )
-from apps.information.models import UserProgramAccrual, UserProgram, Holidays
+from apps.information.models import UserProgramAccrual, UserProgram
 from core.utils.get_dates_range import get_dates_range
 
 
@@ -162,6 +161,10 @@ class TableStatisticsViewSet(ReadOnlyModelViewSet):
         start_date, end_date = get_dates_range(
             UserProgramAccrual, self.request.query_params
         )
+
+        if not start_date and not end_date:
+            return Response()
+
         totals = get_table_total_statistics(start_date, end_date, user_program)
         totals["total_trading_days"] = len(
             pd.bdate_range(

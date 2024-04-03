@@ -25,4 +25,24 @@ celery_app.conf.beat_schedule = {
         "task": "apps.accounts.tasks.delete_settings_auth_codes",
         "schedule": crontab(hour="0", minute="0"),
     },
+    "create_user_program_accrual_daily": {
+        "task": "apps.information.tasks.make_daily_programs_accruals",
+        "schedule": crontab(hour="0", minute="1"),
+    },
+    "start_user_program_daily": {
+        "task": "apps.information.tasks.apply_program_start",
+        "schedule": crontab(hour="0", minute="2"),
+    },
+    "replenish_user_program_daily": {
+        "task": "apps.information.tasks.apply_program_replenishments",
+        "schedule": crontab(hour="0", minute="3"),
+    },
+    "finish_user_program_daily": {
+        "task": "apps.information.tasks.apply_program_finish",
+        "schedule": crontab(hour="0", minute="4"),
+    },
+    "defrost_user_wallet_funds_daily": {
+        "task": "apps.information.tasks.defrost_funds",
+        "schedule": crontab(hour="0", minute="5"),
+    },
 }
