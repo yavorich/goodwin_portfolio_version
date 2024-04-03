@@ -14,6 +14,6 @@ def send_operation_confirm_email(operation: Operation):
         operation.wallet.user.email,
         title,
         message,
-        from_email=None,
+        from_email="GOODWIN",
         html=False,
     )
