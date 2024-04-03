@@ -50,7 +50,7 @@ class ProgramResult(models.Model):
 
     class Meta:
         get_latest_by = "created_at"
-        ordering = ["-created_at"]
+        ordering = ["created_at"]
         verbose_name = "Результат программы"
         verbose_name_plural = "Результаты программ"
         constraints = [
@@ -272,3 +272,4 @@ class UserProgramAccrual(models.Model):
                 name="unique_program_accrual_created_at",
             )
         ]
+        ordering = ["created_at"]
