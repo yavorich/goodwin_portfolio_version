@@ -208,21 +208,27 @@ class Operation(models.Model):
         return True
 
     def _apply_program_accrual(self):
-        # начисление в profit программы
+        withdrawal_type = self.user_program.program.withdrawal_type
+
         if self.amount >= 0:
             action_type = Action.Type.PROFIT_ACCRUAL
+            if withdrawal_type == Program.WithdrawalType.DAILY:
+                self.user_program.update_profit(amount=self.amount)
+                self.actions.create(
+                    type=action_type, amount=self.amount, target=Action.Target.WALLET
+                )
+            else:
+                self.actions.create(
+                    type=action_type,
+                    amount=self.amount,
+                    target=Action.Target.USER_PROGRAM,
+                )
         else:
             action_type = Action.Type.LOSS_CHARGEOFF
-        self.actions.create(
-            type=action_type, amount=self.amount, target=Action.Target.USER_PROGRAM
-        )
-
-        # ежедневные начисления начисляются в кошелёк пользователя
-        withdrawal_type = self.user_program.program.withdrawal_type
-        if withdrawal_type == Program.WithdrawalType.DAILY:
             self.actions.create(
-                type=action_type, amount=self.amount, target=Action.Target.WALLET
+                type=action_type, amount=self.amount, target=Action.Target.USER_PROGRAM
             )
+
         return True
 
     def _from_wallet(self):
