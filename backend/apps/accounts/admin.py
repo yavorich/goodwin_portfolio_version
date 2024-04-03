@@ -63,7 +63,7 @@ class AddressVerificationForm(ModelForm):
         ):
             self.add_error(
                 "file",
-                f"При постановке любого статуса кроме"
+                f"При постановке любого статуса кроме "
                 f"{VerificationStatus.APPROVED.label} это поле обязательно",
             )
 
