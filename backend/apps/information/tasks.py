@@ -76,11 +76,11 @@ def make_daily_programs_accruals():
             make_program_accruals(program)
 
 
-def make_program_accruals(program):
-    result = program.results.latest() or ProgramResult.objects.latest(
-        program__isnull=True
-    )
-    if not result or result.created_at < now() - timedelta(days=1):
+def make_program_accruals(program: Program):
+    result = program.results.last()
+    if not result:
+        result = ProgramResult.objects.filter(program__isnull=True).last()
+    if not result or result.created_at < now().date() - timedelta(days=1):
         result = ProgramResult.objects.create()
 
     user_programs = program.users.filter(status=UserProgram.Status.RUNNING)

@@ -9,7 +9,6 @@ from django.db.models import (
     OuterRef,
     Subquery,
     Func,
-    Max,
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
 
@@ -54,7 +53,6 @@ def get_table_statistics(
         .annotate(total_amount=Coalesce(Func("amount", function="Sum"), Decimal(0)))
         .values("total_amount")
     )
-
     accrual_results = (
         UserProgramAccrual.objects.filter(
             created_at__range=(start_date, end_date),
@@ -89,14 +87,21 @@ def get_table_total_statistics(
     start_date: datetime.date, end_date: datetime.date, user_program: UserProgram
 ):
     accrual_results = get_table_statistics(start_date, end_date, user_program)
-    last_program_status = (
-        UserProgramHistory.objects.filter(
-            user_program=user_program,
-            created_at=accrual_results.latest("created_at")["created_at"],
+    user_program_history = (
+        (
+            UserProgramHistory.objects.filter(
+                user_program=user_program,
+                created_at=accrual_results.last()["created_at"],
+            )
+            .values("status")
+            .first()
         )
-        .order_by("-created_at")
-        .values("status")
-        .first()["status"]
+        if accrual_results
+        else None
+    )
+
+    last_program_status = (
+        user_program_history["status"] if user_program_history else None
     )
 
     # Агрегация результатов
