@@ -116,7 +116,10 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):
-        return False
+        is_transfer = self.sender is not None
+        if is_transfer:
+            self._to_wallet()
+        return is_transfer
 
     def _apply_withdrawal(self):
         return True
