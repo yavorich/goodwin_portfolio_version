@@ -1,7 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth import get_user_model
 from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.forms import UserChangeForm
 from django.forms import ModelForm
 
 from . import models
@@ -65,7 +63,7 @@ class AddressVerificationForm(ModelForm):
         ):
             self.add_error(
                 "file",
-                f"При постановке любого статуса кроме"
+                f"При постановке любого статуса кроме "
                 f"{VerificationStatus.APPROVED.label} это поле обязательно",
             )
 
@@ -80,14 +78,15 @@ class PartnerInline(admin.StackedInline):
     fields = ["partner_id", "region"]
 
 
-class UserForm(UserChangeForm):
-    class Meta(UserChangeForm.Meta):
-        model = get_user_model()
+# class UserForm(UserChangeForm):
+#     class Meta(UserChangeForm.Meta):
+#         model = get_user_model()
 
 
 @admin.register(models.User)
 class UserAdmin(UserAdmin):
-    form = UserForm
+    # form = UserForm
+    list_display = ["id", "email", "first_name", "last_name", "is_staff"]
     inlines = [
         SettingsInline,
         PersonalVerificationInline,
