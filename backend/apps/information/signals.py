@@ -7,7 +7,7 @@ from apps.information.models import (
     UserProgram,
     UserProgramReplenishment,
     FrozenItem,
-    Action,
+    # Action,
 )
 from apps.information.services.send_operation_confirm_email import (
     send_operation_confirm_email,
@@ -56,11 +56,15 @@ def save_user_program(sender, instance: UserProgram, **kwargs):
         pass
 
 
-@receiver(pre_save, sender=UserProgramReplenishment)
+@receiver(post_save, sender=UserProgramReplenishment)
 def save_user_program_replenishment(
-    sender, instance: UserProgramReplenishment, **kwargs
+    sender, instance: UserProgramReplenishment, created: bool, **kwargs
 ):
-    instance._set_apply_date()
+    if created:
+        instance._set_apply_date()
+        instance.save()
+    elif not instance.done and instance.status == UserProgramReplenishment.Status.DONE:
+        instance.apply()
 
 
 @receiver(pre_save, sender=FrozenItem)
@@ -68,11 +72,11 @@ def save_frozen_item(sender, instance: FrozenItem, **kwargs):
     instance._set_defrost_date()
 
 
-@receiver(pre_save, sender=Action)
-def handle_action(sender, instance: Action, **kwargs):
-    if instance.pk is None:
-        instance.apply()
-        if not instance.name:
-            instance.name = instance._get_name()
-        if not instance.target_name:
-            instance.target_name = instance._get_target_name()
+# @receiver(pre_save, sender=Action)
+# def handle_action(sender, instance: Action, **kwargs):
+#     if instance.pk is None:
+#         instance.apply()
+#         if not instance.name:
+#             instance.name = instance._get_name()
+#         if not instance.target_name:
+#             instance.target_name = instance._get_target_name()
