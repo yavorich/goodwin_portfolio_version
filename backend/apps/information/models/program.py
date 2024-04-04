@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
+from .operation_history import OperationHistory
 
 
 class Program(models.Model):
@@ -112,9 +113,8 @@ class UserProgram(models.Model):
 
     @property
     def yesterday_profit(self):
-        yesterday = now().date() - timedelta(days=1)
         try:
-            accrual: UserProgramAccrual = self.accruals.get(created_at=yesterday)
+            accrual: UserProgramAccrual = self.accruals.get(created_at=now().date())
         except UserProgramAccrual.DoesNotExist:
             return None
         return accrual.amount
@@ -122,11 +122,11 @@ class UserProgram(models.Model):
     @property
     def yesterday_profit_percent(self):
         yesterday = now().date() - timedelta(days=1)
-        try:
-            result: ProgramResult = self.program.results.get(created_at=yesterday)
-        except ProgramResult.DoesNotExist:
-            return None
-        return result.result
+        yesterday_results = ProgramResult.objects.filter(created_at=yesterday)
+        result = yesterday_results.filter(program=self.program).first()
+        if not result:
+            result = yesterday_results.filter(program__isnull=True).first()
+        return getattr(result, "result", None)
 
     def _set_name(self):
         if not self.name:
@@ -156,8 +156,6 @@ class UserProgram(models.Model):
     def close(self):
         self.status = self.Status.FINISHED
         self.close_date = now().date()
-        self.deposit = 0
-        self.profit = 0
         self.save()
 
     def update_deposit(self, amount):
@@ -202,21 +200,15 @@ class UserProgramReplenishment(models.Model):
         related_name="replenishments",
         on_delete=models.CASCADE,
     )
-    operation = models.OneToOneField(
-        "Operation",
-        verbose_name="Операция",
-        on_delete=models.CASCADE,
-        related_name="program_repl",
-        **blank_and_null,
-    )
     amount = models.DecimalField("Сумма", **decimal_usdt)
     status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
     created_at = models.DateField(
         verbose_name="Дата создания вывода", auto_now_add=True
     )
     apply_date = models.DateField(
-        "Ожидаемая дата зачисления на счет программы", **blank_and_null
+        "Дата зачисления на счет программы", **blank_and_null
     )
+    done = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Пополнение {self.program.name}"
@@ -233,8 +225,17 @@ class UserProgramReplenishment(models.Model):
         self.status = self.Status.CANCELED
         self.save()
 
-    def done(self):
-        self.status = self.Status.DONE
+    def apply(self):
+        self.program.update_deposit(amount=self.amount)
+        OperationHistory.objects.create(
+            wallet=self.program.wallet,
+            type=OperationHistory.Type.TRANSFER_BETWEEN,
+            description=f"Program {self.program.name} has been replenished",
+            target_name=self.program.name,
+            amount=self.amount,
+        )
+        self.apply_date = now().date()
+        self.done = True
         self.save()
 
     def _set_apply_date(self, *args, **kwargs):

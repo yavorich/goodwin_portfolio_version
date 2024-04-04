@@ -16,8 +16,9 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
 
 from apps.accounts.permissions import IsLocal, IsAuthenticatedAndVerified
+
 from apps.accounts.serializers import UserEmailConfirmSerializer
-from apps.information.models import Operation, Action
+from apps.information.models import Operation, OperationHistory
 from apps.information.serializers import OperationSerializer
 from apps.information.serializers.operations import (
     OperationReplenishmentConfirmSerializer,
@@ -35,9 +36,7 @@ class OperationAPIView(ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Action.objects.filter(
-            operation__wallet=self.request.user.wallet,  # confirmed=True, done=True
-        )
+        return OperationHistory.objects.filter(wallet=self.request.user.wallet)
 
     def filter_queryset(self, queryset):
         _type = self.request.query_params.get("type")
@@ -55,10 +54,13 @@ class OperationConfirmAPIView(UpdateAPIView):
     queryset = Operation.objects.all()
 
     def post(self, request, *args, **kwargs):
+        operation: Operation = self.get_object()
+        if operation.confirmed:
+            raise ValidationError("Operation already confirmed.")
+
         serializer = self.get_serializer_class()(data=request.data)
         serializer.is_valid(raise_exception=True)
         code = serializer.data["confirmation_code"]
-        operation: Operation = self.get_object()
 
         if not DEBUG and code != operation.confirmation_code:
             raise ValidationError("Verification code is incorrect.")
@@ -109,7 +111,7 @@ class OperationReplenishmentStatusView(RetrieveAPIView):
         return operation
 
     def get(self, request, *args, **kwargs):
-        operation = self.get_object()
+        operation: Operation = self.get_object()
         url = f"{settings.NODE_JS_URL}/api/operations/{operation.uuid}/"
         response = requests.patch(url=url)
         if response.status_code != 200:

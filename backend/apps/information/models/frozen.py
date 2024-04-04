@@ -27,9 +27,11 @@ class FrozenItem(models.Model):
         verbose_name_plural = "Замороженные средства"
 
     def defrost(self, value: Decimal | None = None):
-        self.amount -= value or self.amount
-        if self.amount == 0:
+        if not value or value == self.amount:
             self.status = self.Status.DONE
+        else:
+            self.amount -= value
+
         self.save()
 
     def _set_defrost_date(self):
