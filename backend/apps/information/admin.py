@@ -13,6 +13,7 @@ class FrozenItemInline(admin.TabularInline):
 @admin.register(models.Wallet)
 class WalletAdmin(admin.ModelAdmin):
     list_display = [
+        "user_id",
         "user",
         "free",
         "frozen",

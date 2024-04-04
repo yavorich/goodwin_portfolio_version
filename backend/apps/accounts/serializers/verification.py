@@ -36,6 +36,7 @@ class PersonalVerificationSerializer(ModelSerializer):
 
     def create(self, validated_data):
         validated_data["status"] = VerificationStatus.CHECK
+        validated_data["reject_message"] = ""
         instance, created = PersonalVerification.objects.update_or_create(
             user=self.context.get("user"), defaults=validated_data
         )
@@ -43,6 +44,7 @@ class PersonalVerificationSerializer(ModelSerializer):
 
     def update(self, instance, validated_data):
         validated_data["status"] = VerificationStatus.CHECK
+        validated_data["reject_message"] = ""
         instance, created = PersonalVerification.objects.update_or_create(
             user=self.context.get("user"), defaults=validated_data
         )
