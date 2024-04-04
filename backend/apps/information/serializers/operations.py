@@ -8,23 +8,20 @@ from rest_framework.serializers import (
 )
 from rest_framework.exceptions import ValidationError
 
-from apps.information.models import Operation, Action
+from apps.information.models import Operation, OperationHistory
 from config import settings
 from core.exceptions import ServiceUnavailable
 from core.utils import decimal_usdt
 
 
 class OperationSerializer(ModelSerializer):
-    operation_type = CharField(source="operation.get_type_display")
-    action_type = CharField(source="get_type_display")
 
     class Meta:
-        model = Action
+        model = OperationHistory
         fields = [
             "id",
-            "operation_type",
-            "action_type",
-            "name",
+            "type",
+            "description",
             "target_name",
             "created_at",
             "amount",

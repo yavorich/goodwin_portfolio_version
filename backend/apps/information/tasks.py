@@ -19,9 +19,11 @@ from apps.information.utils import create_accrual
 
 
 @shared_task
-def defrost_funds(pk):
+def defrost_funds():
     with transaction.atomic():
-        items = FrozenItem.objects.filter(defrost_date=now().date())
+        items = FrozenItem.objects.filter(
+            status=FrozenItem.Status.INITIAL, defrost_date__lte=now().date()
+        )
         for item in items:
             Operation.objects.create(
                 type=Operation.Type.DEFROST,
@@ -36,28 +38,30 @@ def defrost_funds(pk):
 def apply_program_replenishments():
     with transaction.atomic():
         items = UserProgramReplenishment.objects.filter(
-            status=UserProgramReplenishment.Status.INITIAL, apply_date=now().date()
+            status=UserProgramReplenishment.Status.INITIAL, apply_date__lte=now().date()
         )
         for item in items:
-            item.operation.replenishment = item
-            item.operation.save()
-            item.operation._to_program()
+            item.status = UserProgramReplenishment.Status.DONE
+            item.save()
 
 
 @shared_task
 def apply_program_start():
     with transaction.atomic():
         items = UserProgram.objects.filter(
-            status=UserProgram.Status.INITIAL, start_date=now().date()
+            status=UserProgram.Status.INITIAL, start_date__lte=now().date()
         )
         for item in items:
-            item.start()
+            item.status = UserProgram.Status.RUNNING
+            item.save()
 
 
 @shared_task
 def apply_program_finish():
     with transaction.atomic():
-        items = UserProgram.objects.filter(end_date=now().date(), force_closed=False)
+        items = UserProgram.objects.filter(end_date__isnull=False).filter(
+            status=UserProgram.Status.RUNNING, end_date__lte=now().date()
+        )
         for item in items:
             Operation.objects.create(
                 type=Operation.Type.PROGRAM_CLOSURE,
@@ -81,18 +85,19 @@ def make_program_accruals(program: Program):
     if not result:
         result = ProgramResult.objects.filter(program__isnull=True).last()
     if not result or result.created_at < now().date() - timedelta(days=1):
-        result = ProgramResult.objects.create()
+        result = ProgramResult.objects.create(program=program)
 
     user_programs = program.users.filter(status=UserProgram.Status.RUNNING)
     for user_program in user_programs:
-        accrual = create_accrual(program, user_program, result)
-        Operation.objects.create(
-            type=Operation.Type.PROGRAM_ACCRUAL,
-            wallet=user_program.wallet,
-            user_program=user_program,
-            amount=accrual.amount,
-            confirmed=True,
-        )
+        if not user_program.accruals.filter(created_at=now().date()).exists():
+            accrual = create_accrual(program, user_program, result)
+            Operation.objects.create(
+                type=Operation.Type.PROGRAM_ACCRUAL,
+                wallet=user_program.wallet,
+                user_program=user_program,
+                amount=accrual.amount,
+                confirmed=True,
+            )
 
 
 @shared_task
