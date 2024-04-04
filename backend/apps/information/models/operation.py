@@ -10,6 +10,7 @@ from core.utils import blank_and_null, decimal_usdt
 from .program import Program, UserProgram, UserProgramReplenishment
 from .wallet import Wallet
 from .frozen import FrozenItem
+from .operation_history import OperationHistory
 
 
 class Operation(models.Model):
@@ -67,7 +68,7 @@ class Operation(models.Model):
     replenishment = models.ForeignKey(
         UserProgramReplenishment,
         verbose_name="Пополнение",
-        related_name="operations",
+        related_name="operation",
         on_delete=models.CASCADE,
         **blank_and_null,
     )
@@ -115,46 +116,88 @@ class Operation(models.Model):
             self.done = done
             self.save()
 
-    def _apply_replenishment(self):
-        is_transfer = self.sender is not None
-        if is_transfer:
-            self._to_wallet()
-        return is_transfer
-
-    def _apply_withdrawal(self):
+    def _apply_replenishment(self):  # ready
         return True
 
-    def _apply_transfer(self):
-        self._from_wallet()
-        Operation.objects.create(
-            type=Operation.Type.REPLENISHMENT,
-            wallet=self.receiver,
-            sender=self.wallet,
-            amount_free=(1 - Decimal("0.005")) * self.amount_free,
-            amount_frozen=(1 - Decimal("0.005")) * self.amount_frozen,
-            confirmed=True,
-        )
+    def _apply_withdrawal(self):  # soon
         return True
 
-    def _apply_partner_bonus(self):
-        self.actions.create(
-            type=Action.Type.LOYALTY_PROGRAM,
-            target=Action.Target.WALLET,
+    def _apply_transfer(self):  # ready
+        self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
+        self.receiver.update_balance(free=self.amount_free, frozen=self.amount_frozen)
+        if self.amount_free:
+            OperationHistory.objects.create(
+                wallet=self.wallet,
+                type=OperationHistory.Type.TRANSFER_FREE,
+                description=f"Transfer to GDW client ID{self.receiver.user.id}",
+                target_name=self.receiver.name,
+                amount=-self.amount_free,
+            )
+            OperationHistory.objects.create(
+                wallet=self.receiver,
+                type=OperationHistory.Type.TRANSFER_FREE,
+                description=f"Receipt from ID{self.wallet.user.id}",
+                target_name=self.receiver.name,
+                amount=self.amount_free,
+            )
+        if self.amount_frozen:
+            OperationHistory.objects.create(
+                wallet=self.wallet,
+                type=OperationHistory.Type.TRANSFER_FROZEN,
+                description=f"Transfer to GDW client ID{self.receiver.user.id}",
+                target_name=self.receiver.name,
+                amount=-self.amount_frozen,
+            )
+            OperationHistory.objects.create(
+                wallet=self.receiver,
+                type=OperationHistory.Type.TRANSFER_FROZEN,
+                description=f"Receipt from ID{self.wallet.user.id}",
+                target_name=self.receiver.name,
+                amount=self.amount_frozen,
+            )
+        return True
+
+    def _apply_partner_bonus(self):  # ready
+        self.wallet.update_balance(amount_free=self.amount)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.LOYALTY_PROGRAM,
+            description="Branch income",
+            target_name=self.wallet.name,
             amount=self.amount,
         )
         return True
 
-    def _apply_program_start(self):
+    def _apply_program_start(self):  # ready
+        self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
         self.user_program = UserProgram.objects.create(
             wallet=self.wallet,
             program=self.program,
         )
-        self._from_wallet_to_program()
+        self.user_program.update_deposit(amount=self.amount_free + self.amount_frozen)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.TRANSFER_BETWEEN,
+            description=(f"Start program {self.user_program.name}"),
+            target_name=self.wallet.name,
+            amount=-(self.amount_free + self.amount_frozen),
+        )
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.TRANSFER_BETWEEN,
+            description=(f"Program {self.user_program.name} has been replenished"),
+            target_name=self.user_program.name,
+            amount=self.amount_free + self.amount_frozen,
+        )
         return True
 
-    def _apply_program_closure(self):
-        self._from_program_to_wallet(frozen=True)
-        if not self.partial:
+    def _apply_program_closure(self):  # ready
+        message = f"Program {self.user_program.name} %sclosure"
+        if self.partial:
+            message = message % "partial "
+            self.user_program.update_deposit(amount=-self.amount)
+        else:
+            message = message % ("early " if self.early_closure else "")
             self.user_program.close()
             replenishments = self.user_program.replenishments.filter(
                 status=UserProgramReplenishment.Status.INITIAL
@@ -167,31 +210,74 @@ class Operation(models.Model):
                     amount=replenishment.amount,
                     confirmed=True,
                 )
+        self.wallet.update_balance(frozen=self.amount)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.SYSTEM_MESSAGE,
+            description=message,
+            target_name=self.user_program.name,
+            amount=-self.amount,
+        )
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.TRANSFER_FROZEN,
+            description=f"Deposit transfer {self.user_program.name}",
+            target_name=self.wallet.name,
+            amount=self.amount,
+        )
         return True
 
-    def _apply_program_replenishment(self):
-        self._from_wallet()
-        self.user_program.replenishments.create(
-            amount=self.amount_free + self.amount_frozen, operation=self
+    def _apply_program_replenishment(self):  # ready
+        self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
+        self.replenishment = UserProgramReplenishment.objects.create(
+            program=self.user_program,
+            amount=self.amount_free + self.amount_frozen,
+        )
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.TRANSFER_BETWEEN,
+            description=(f"Program {self.user_program.name} replenishment"),
+            target_name=self.wallet.name,
+            amount=-(self.amount_free + self.amount_frozen),
         )
         return False
 
-    def _apply_program_replenishment_cancel(self):
-        self.user_program = self.replenishment.program
-        self.save()
+    def _apply_program_replenishment_cancel(self):  # ready
+        program_name = self.replenishment.program.name
+        message = f"Program {program_name} replenishment has been %scanceled"
         if self.partial:
+            message = message % "partially "
             self.replenishment.decrease(self.amount)
         else:
+            message = message % ""
             self.replenishment.cancel()
-        self._to_wallet(frozen=True)
+        self.wallet.update_balance(frozen=self.amount)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.SYSTEM_MESSAGE,
+            description=message,
+            target_name=program_name,
+            amount=-self.amount,
+        )
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.TRANSFER_FROZEN,
+            description=f"Deposit transfer {program_name}",
+            target_name=self.wallet.name,
+            amount=self.amount,
+        )
         return True
 
-    def _apply_defrost(self):
+    def _apply_defrost(self):  # ready
         if self.frozen_item:
+            message = (
+                f"Frozen assets from {self.frozen_item.frost_date} have been defrosted"
+            )
             self.wallet.update_balance(
                 frozen=-self.amount, item=self.frozen_item  # разморозка frozen-item
             )
         else:
+            message = "The defrost request has been completed"
             self.wallet.update_balance(frozen=-self.amount)  # разморозка суммы
             Operation.objects.create(
                 type=Operation.Type.EXTRA_FEE,
@@ -199,100 +285,55 @@ class Operation(models.Model):
                 amount=Decimal("0.1") * self.amount,
                 confirmed=True,
             )
-        self._to_wallet(frozen=False)  # пополнение раздела "Доступно"
+        self.wallet.update_balance(free=self.amount)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.TRANSFER_BETWEEN,
+            description=message,
+            target_name=self.wallet.name,
+            amount=self.amount,
+        )
         return True
 
-    def _apply_extra_fee(self):
-        self.actions.create(
-            type=Action.Type.SYSTEM_MESSAGE,
-            target=Action.Target.WALLET,
+    def _apply_extra_fee(self):  # ready
+        self.wallet.update_balance(free=-self.amount)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.SYSTEM_MESSAGE,
+            description="Extra Fee commission write-off",
+            target_name=self.wallet.name,
             amount=-self.amount,
         )
         return True
 
-    def _apply_program_accrual(self):
+    def _apply_program_accrual(self):  # ready
         withdrawal_type = self.user_program.program.withdrawal_type
+        self.user_program.update_profit(amount=self.amount)
 
         if self.amount >= 0:
-            action_type = Action.Type.PROFIT_ACCRUAL
             if withdrawal_type == Program.WithdrawalType.DAILY:
-                self.user_program.update_profit(amount=self.amount)
-                self.actions.create(
-                    type=action_type, amount=self.amount, target=Action.Target.WALLET
-                )
-            else:
-                self.actions.create(
-                    type=action_type,
+                self.wallet.update_balance(free=self.amount)
+                OperationHistory.objects.create(
+                    wallet=self.wallet,
+                    type=OperationHistory.Type.SYSTEM_MESSAGE,
+                    description=f"Accrual by program {self.user_program.name}",
+                    target_name=self.wallet.name,
                     amount=self.amount,
-                    target=Action.Target.USER_PROGRAM,
                 )
         else:
-            action_type = Action.Type.LOSS_CHARGEOFF
-            self.actions.create(
-                type=action_type, amount=self.amount, target=Action.Target.USER_PROGRAM
+            self.user_program.update_profit(amount=self.amount)
+            OperationHistory.objects.create(
+                wallet=self.wallet,
+                type=OperationHistory.Type.SYSTEM_MESSAGE,
+                description=f"Loss by program {self.user_program.name}",
+                target_name=self.user_program.name,
+                amount=self.amount,
             )
 
         return True
 
-    def _from_wallet(self):
-        if self.amount_free:
-            self.actions.create(
-                type=Action.Type.TRANSFER_FREE,
-                target=Action.Target.WALLET,
-                amount=-self.amount_free,
-            )
-        if self.amount_frozen:
-            self.actions.create(
-                type=Action.Type.TRANSFER_FROZEN,
-                target=Action.Target.WALLET,
-                amount=-self.amount_frozen,
-            )
 
-    def _to_wallet(self, frozen: bool = False):
-        if self.amount:
-            _type = Action.Type.TRANSFER_FROZEN if frozen else Action.Type.TRANSFER_FREE
-            self.actions.create(
-                type=_type,
-                target=Action.Target.WALLET,
-                amount=self.amount,
-            )
-        if self.amount_free:
-            self.actions.create(
-                type=Action.Type.TRANSFER_FREE,
-                target=Action.Target.WALLET,
-                amount=self.amount_free,
-            )
-        if self.amount_frozen:
-            self.actions.create(
-                type=Action.Type.TRANSFER_FROZEN,
-                target=Action.Target.WALLET,
-                amount=self.amount_frozen,
-            )
-
-    def _from_program(self, type=None):
-        type = type or Action.Type.TRANSFER_BETWEEN
-        self.actions.create(
-            type=type,
-            target=Action.Target.USER_PROGRAM,
-            amount=-self.amount,
-        )
-
-    def _to_program(self):
-        self.actions.create(
-            type=Action.Type.TRANSFER_BETWEEN,
-            target=Action.Target.USER_PROGRAM,
-            amount=self.amount_free + self.amount_frozen,
-        )
-
-    def _from_wallet_to_program(self):
-        self._from_wallet()
-        self._to_program()
-
-    def _from_program_to_wallet(self, frozen: bool):
-        self._from_program(type=Action.Type.SYSTEM_MESSAGE)
-        self._to_wallet(frozen)
-
-
+# TODO: удалить модель
 class Action(models.Model):
     class Type(models.TextChoices):
         TRANSFER_FREE = "transfer_free", 'Перевод в раздел "Доступно"'
