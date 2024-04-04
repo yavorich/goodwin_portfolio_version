@@ -1,6 +1,6 @@
 from django.contrib import admin
 from . import models
-from .models import UserProgramAccrual, WalletHistory, Holidays
+from .models import UserProgramAccrual, WalletHistory, Holidays, OperationHistory
 from ..accounts.models.user import Partner
 
 
@@ -61,7 +61,9 @@ class ProgramResultAdmin(admin.ModelAdmin):
 
 class UserProgramReplenishmentInline(admin.TabularInline):
     model = models.UserProgramReplenishment
-    fields = ["amount", "status", "apply_date"]
+    fields = ["amount", "status", "apply_date", "done"]
+    readonly_fields = ("amount", "apply_date", "done")
+    can_delete = False
     extra = 0
 
 
@@ -86,11 +88,11 @@ class UserProgramAdmin(admin.ModelAdmin):
     inlines = [UserProgramReplenishmentInline, UserProgramAccrualInline]
 
 
-class OperationActionsInline(admin.TabularInline):
-    model = models.Action
-    fields = ["type", "name", "target", "target_name", "amount", "created_at"]
-    readonly_fields = ["created_at"]
-    extra = 0
+# class OperationActionsInline(admin.TabularInline):
+#     model = models.Action
+#     fields = ["type", "name", "target", "target_name", "amount", "created_at"]
+#     readonly_fields = ["created_at"]
+#     extra = 0
 
 
 @admin.register(models.Operation)
@@ -102,7 +104,7 @@ class OperationAdmin(admin.ModelAdmin):
         "amount",
         "created_at",
     ]
-    inlines = [OperationActionsInline]
+    # inlines = [OperationActionsInline]
 
 
 @admin.register(models.FrozenItem)
@@ -136,3 +138,15 @@ class PartnerAccrualAdmin(admin.ModelAdmin):
 class HolidaysAdmin(admin.ModelAdmin):
     list_display = ["name", "start_date", "end_date"]
     list_display_links = ["start_date"]
+
+
+@admin.register(OperationHistory)
+class OperationHistoryAdmin(admin.ModelAdmin):
+    list_display = [
+        "type",
+        "description",
+        "wallet",
+        "target_name",
+        "amount",
+        "created_at",
+    ]
