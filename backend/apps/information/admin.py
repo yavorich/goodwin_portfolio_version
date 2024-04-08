@@ -70,8 +70,7 @@ class UserProgramReplenishmentInline(admin.TabularInline):
 
 class UserProgramAccrualInline(admin.TabularInline):
     model = models.UserProgramAccrual
-    fields = ["amount", "success_fee", "created_at"]
-    # readonly_fields = ("created_at",)
+    fields = ["amount", "percent_amount", "success_fee", "management_fee", "created_at"]
     extra = 0
 
     def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
