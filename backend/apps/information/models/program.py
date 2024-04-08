@@ -205,9 +205,7 @@ class UserProgramReplenishment(models.Model):
     created_at = models.DateField(
         verbose_name="Дата создания вывода", auto_now_add=True
     )
-    apply_date = models.DateField(
-        "Дата зачисления на счет программы", **blank_and_null
-    )
+    apply_date = models.DateField("Дата зачисления на счет программы", **blank_and_null)
     done = models.BooleanField(default=False)
 
     def __str__(self):
@@ -256,11 +254,7 @@ class UserProgramAccrual(models.Model):
     )
     success_fee = models.DecimalField("Сумма Success Fee", **decimal_usdt)
     management_fee = models.DecimalField("Сумма Management Fee", **decimal_usdt)
-    created_at = models.DateField(
-        "Дата",
-        auto_now_add=True,
-        editable=True,
-    )
+    created_at = models.DateField("Дата")
 
     def __str__(self):
         return f"Начисление по {self.program.name}"
@@ -275,3 +269,8 @@ class UserProgramAccrual(models.Model):
             )
         ]
         ordering = ["created_at"]
+
+    def save(self, *args, **kwargs):
+        if self.created_at is None:
+            self.created_at = now().date()
+        super().save(*args, **kwargs)
