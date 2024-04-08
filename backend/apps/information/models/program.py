@@ -259,6 +259,7 @@ class UserProgramAccrual(models.Model):
     created_at = models.DateField(
         "Дата",
         auto_now_add=True,
+        editable=True,
     )
 
     def __str__(self):
