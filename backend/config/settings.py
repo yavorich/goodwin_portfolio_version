@@ -195,6 +195,7 @@ CELERY_BROKER_URL = (
     f"{RABBITMQ['PROTOCOL']}://{RABBITMQ['USER']}:"
     f"{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}"
 )
+CELERY_TIMEZONE = "UTC"
 
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
 FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")
