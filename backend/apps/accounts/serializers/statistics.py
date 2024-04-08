@@ -68,4 +68,4 @@ class TableStatisticsSerializer(Serializer):
 
     def get_day_of_week_verbose(self, obj):
         week_days_list = self.context.get("week_days_list")
-        return week_days_list[obj["day_of_week"] - 1]
+        return week_days_list[obj["day_of_week"] - 1].encode("utf-8")
