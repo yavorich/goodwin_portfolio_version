@@ -80,8 +80,8 @@ class UserProgramAccrualInline(admin.TabularInline):
     def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
         return False
 
-    def has_add_permission(self, request: HttpRequest, obj=...) -> bool:
-        return False
+    # def has_add_permission(self, request: HttpRequest, obj=...) -> bool:
+    #     return False
 
 
 @admin.register(models.UserProgram)
