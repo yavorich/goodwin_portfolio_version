@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.http import HttpRequest
 from . import models
 from .models import UserProgramAccrual, WalletHistory, Holidays, OperationHistory
 from ..accounts.models.user import Partner
@@ -69,8 +70,18 @@ class UserProgramReplenishmentInline(admin.TabularInline):
 
 class UserProgramAccrualInline(admin.TabularInline):
     model = models.UserProgramAccrual
-    fields = ["amount", "success_fee"]
+    fields = ["amount", "success_fee", "created_at"]
+    readonly_fields = ("created_at",)
     extra = 0
+
+    def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
+
+    def has_add_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
 
 
 @admin.register(models.UserProgram)
