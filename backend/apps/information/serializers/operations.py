@@ -1,3 +1,4 @@
+import json
 import requests
 from rest_framework.fields import DecimalField
 from rest_framework.serializers import (
@@ -190,9 +191,14 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
 
     def create(self, validated_data):
         operation: Operation = super().create(validated_data)
-        hook = f"{settings.NODE_JS_URL}/api/wallets/"
-        data = {"operationId": operation.uuid, "expectedAmount": operation.amount}
-        result = requests.post(hook, data)
+        hook = f"{settings.NODE_JS_URL}/api/operations/"
+        data = {"uuid": str(operation.uuid), "expectedAmount": str(operation.amount)}
+        headers = {
+            "Content-Type": "application/json",
+            "x-auth-token": settings.NODE_JS_TOKEN
+        }
+        print(data, headers)
+        result = requests.post(hook, json.dumps(data), headers=headers)
 
         if result.status_code != 201:
             operation.delete()
