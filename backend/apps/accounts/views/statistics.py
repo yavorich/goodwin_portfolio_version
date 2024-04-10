@@ -148,7 +148,9 @@ class TableStatisticsViewSet(ReadOnlyModelViewSet):
         excel = TableStatisticsExcel()
         excel.to_excel(serializer.data)
         path = excel.save()
-        response_data = {"url": self.request.build_absolute_uri(path)}
+        response_data = {
+            "url": self.request.build_absolute_uri(path).replace("http:", "https:")
+        }
         return Response(response_data)
 
     @action(detail=True, methods=["get"])
