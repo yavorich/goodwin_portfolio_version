@@ -80,5 +80,5 @@ class IsLocal(BasePermission):
         token = request.headers.get("X-Auth-Token")
         host = request.headers.get("Host")
         if host and token:
-            return host == settings.NODE_JS_HOST and token == settings.NODE_JS_TOKEN
+            return host == settings.NODE_JS_HOST and token == settings.LOCAL_TOKEN
         return False
