@@ -1,7 +1,14 @@
 from django.contrib import admin
+from django.forms import ModelForm, BaseModelFormSet, ValidationError
 from django.http import HttpRequest
 from . import models
-from .models import UserProgramAccrual, WalletHistory, Holidays, OperationHistory
+from .models import (
+    UserProgramAccrual,
+    WalletHistory,
+    Holidays,
+    OperationHistory,
+    WithdrawalRequest,
+)
 from ..accounts.models.user import Partner
 
 
@@ -160,3 +167,62 @@ class OperationHistoryAdmin(admin.ModelAdmin):
         "amount",
         "created_at",
     ]
+
+
+class WithdrawalRequestFormSet(BaseModelFormSet):
+    def clean(self):
+        form_set = self.cleaned_data
+        for form_data in form_set:
+            if (
+                form_data["status"] == WithdrawalRequest.Status.REJECTED
+                and form_data["reject_message"] == ""
+            ):
+                raise ValidationError(
+                    f"При постановке статуса {WithdrawalRequest.Status.REJECTED.label}"
+                    f" необходимо указать причину отказа.",
+                )
+
+        return form_set
+
+
+class WithdrawalRequestForm(ModelForm):
+    def clean(self):
+        super().clean()
+        if (
+            self.cleaned_data["status"] == WithdrawalRequest.Status.REJECTED
+            and self.cleaned_data["reject_message"] == ""
+        ):
+            self.add_error(
+                "reject_message",
+                f"При постановке статуса {WithdrawalRequest.Status.REJECTED.label}"
+                f" это поле не должно быть пустым.",
+            )
+
+        return self.cleaned_data
+
+
+@admin.register(WithdrawalRequest)
+class WithdrawalRequestAdmin(admin.ModelAdmin):
+    form = WithdrawalRequestForm
+    list_display = [
+        "done",
+        "address",
+        "original_amount",
+        "amount",
+        "status",
+        "reject_message",
+    ]
+    list_editable = ("status", "reject_message")
+    readonly_fields = ("address", "original_amount", "amount", "done")
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": list_display
+            },
+        ),
+    )
+
+    def get_changelist_formset(self, request, **kwargs):
+        kwargs["formset"] = WithdrawalRequestFormSet
+        return super().get_changelist_formset(request, **kwargs)
