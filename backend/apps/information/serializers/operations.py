@@ -195,7 +195,7 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
         data = {"uuid": str(operation.uuid), "expectedAmount": str(operation.amount)}
         headers = {
             "Content-Type": "application/json",
-            "x-auth-token": settings.NODE_JS_TOKEN
+            "x-auth-token": settings.NODE_JS_TOKEN,
         }
         print(data, headers)
         result = requests.post(hook, json.dumps(data), headers=headers)
@@ -212,7 +212,11 @@ class WalletWithdrawalSerializer(OperationCreateSerializer):
     operation_type = Operation.Type.WITHDRAWAL
 
     class Meta(OperationCreateSerializer.Meta):
-        fields = OperationCreateSerializer.Meta.fields + []
+        fields = OperationCreateSerializer.Meta.fields + ["amount"]
+
+    def validate(self, attrs):
+        self._validate_wallet(attrs, free=attrs["amount"])
+        return attrs
 
 
 class OperationReplenishmentConfirmSerializer(Serializer):

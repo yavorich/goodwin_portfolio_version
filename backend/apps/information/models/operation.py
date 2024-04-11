@@ -120,6 +120,14 @@ class Operation(models.Model):
         return True
 
     def _apply_withdrawal(self):  # soon
+        self.wallet.update_balance(free=-self.amount)
+        OperationHistory.objects.create(
+            wallet=self.wallet,
+            type=OperationHistory.Type.WITHDRAWAL,
+            description="Вывод средств",
+            target_name=self.wallet.name,
+            amount=-self.amount,
+        )
         return True
 
     def _apply_transfer(self):  # ready
