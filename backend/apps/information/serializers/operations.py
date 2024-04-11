@@ -205,7 +205,6 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
             "Content-Type": "application/json",
             "x-auth-token": settings.NODE_JS_TOKEN,
         }
-        print(data, headers)
         try:
             result = requests.post(hook, json.dumps(data), headers=headers)
         except requests.exceptions.ConnectionError:
@@ -214,7 +213,7 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
         if result.status_code != 201:
             self.cancel(operation)
 
-        operation.address = json.loads(result.text).get("address")
+        operation.address = json.loads(result.text).get("walletAddress")
         operation.save()
         return operation
 
