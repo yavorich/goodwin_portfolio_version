@@ -84,7 +84,10 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
             OperationHistory.objects.create(
                 wallet=instance.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description="Withdrawal request completed",
+                description=(
+                    "Request for withdrawal of "
+                    f"{instance.original_amount} USDT completed"
+                ),
                 target_name=None,
                 amount=None,
             )
