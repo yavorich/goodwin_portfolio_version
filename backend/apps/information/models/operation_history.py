@@ -26,7 +26,7 @@ class OperationHistory(models.Model):
     description = models.CharField("Описание", max_length=127, **blank_and_null)
     target_name = models.CharField("Название объекта", max_length=127, **blank_and_null)
     created_at = models.DateTimeField("Дата и время", auto_now_add=True)
-    amount = models.DecimalField("Сумма", **decimal_usdt)
+    amount = models.DecimalField("Сумма", **decimal_usdt, **blank_and_null)
 
     class Meta:
         verbose_name = "История операций"

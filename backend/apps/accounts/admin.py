@@ -66,6 +66,7 @@ class AddressVerificationForm(ModelForm):
                 f"При постановке любого статуса кроме "
                 f"{VerificationStatus.APPROVED.label} это поле обязательно",
             )
+        return self.cleaned_data
 
 
 class AddressVerificationInline(admin.StackedInline):
@@ -106,7 +107,10 @@ class UserAdmin(UserAdmin):
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Личная информация", {"fields": ("first_name", "last_name", "avatar", "partner")}),
+        (
+            "Личная информация",
+            {"fields": ("first_name", "last_name", "avatar", "partner")},
+        ),
         ("Разрешения", {"fields": ("is_active", "is_staff", "is_superuser")}),
         (
             "Важные даты",

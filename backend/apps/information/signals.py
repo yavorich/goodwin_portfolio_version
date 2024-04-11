@@ -1,12 +1,15 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 from django.utils.timezone import now
+from rest_framework.exceptions import ValidationError
 
 from apps.information.models import (
     Operation,
     UserProgram,
     UserProgramReplenishment,
     FrozenItem,
+    WithdrawalRequest,
+    OperationHistory,
     # Action,
 )
 from apps.information.services.send_operation_confirm_email import (
@@ -72,11 +75,32 @@ def save_frozen_item(sender, instance: FrozenItem, **kwargs):
     instance._set_defrost_date()
 
 
-# @receiver(pre_save, sender=Action)
-# def handle_action(sender, instance: Action, **kwargs):
-#     if instance.pk is None:
-#         instance.apply()
-#         if not instance.name:
-#             instance.name = instance._get_name()
-#         if not instance.target_name:
-#             instance.target_name = instance._get_target_name()
+@receiver(post_save, sender=WithdrawalRequest)
+def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
+    if not instance.done:
+        if instance.status == WithdrawalRequest.Status.PENDING:
+            return
+        if instance.status == WithdrawalRequest.Status.APPROVED:
+            OperationHistory.objects.create(
+                wallet=instance.wallet,
+                type=OperationHistory.Type.SYSTEM_MESSAGE,
+                description="Withdrawal request completed",
+                target_name=None,
+                amount=None,
+            )
+        if instance.status == WithdrawalRequest.Status.REJECTED:
+            if instance.reject_message == "":
+                raise ValidationError("Reject message is required for REJECTED status.")
+            instance.wallet.update_balance(free=instance.original_amount)
+            OperationHistory.objects.create(
+                wallet=instance.wallet,
+                type=OperationHistory.Type.SYSTEM_MESSAGE,
+                description=(
+                    "Withdrawal request rejected. "
+                    f'Reason: "{instance.reject_message}"'
+                ),
+                target_name=instance.wallet.name,
+                amount=instance.original_amount,
+            )
+        instance.done = True
+        instance.save()

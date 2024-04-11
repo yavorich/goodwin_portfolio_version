@@ -3,6 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from django.db import models, transaction
+from django.core.validators import RegexValidator
 from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, decimal_usdt
@@ -98,6 +99,10 @@ class Operation(models.Model):
     expiration_date = models.DateField(null=True, blank=True)  # Пока что не
     # используется нигде, будет нужно для отмены слишкомдолгих транзакций при
     # начислении на кошелёк
+    address = models.CharField(
+        validators=[RegexValidator(regex=r"T[A-Za-z1-9]{33}")],
+        **blank_and_null,
+    )
 
     class Meta:
         verbose_name = "Операция"
@@ -124,9 +129,16 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.WITHDRAWAL,
-            description="Вывод средств",
+            description="Withdrawal request accepted",
             target_name=self.wallet.name,
             amount=-self.amount,
+        )
+        WithdrawalRequest.objects.create(
+            wallet=self.wallet,
+            original_amount=self.amount,
+            amount=self.amount * Decimal(0.98),
+            address=self.address,
+            status=WithdrawalRequest.Status.PENDING,
         )
         return True
 
@@ -339,6 +351,35 @@ class Operation(models.Model):
             )
 
         return True
+
+
+class WithdrawalRequest(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Ожидание"
+        APPROVED = "approved", "Одобрена"
+        REJECTED = "rejected", "Отклонена"
+
+    wallet = models.ForeignKey(
+        Wallet,
+        on_delete=models.CASCADE,
+        verbose_name="Кошелёк",
+        related_name="withdrawal_requests",
+    )
+    original_amount = models.DecimalField("Сумма без учета комиссии", **decimal_usdt)
+    amount = models.DecimalField("Сумма c учётом комиссии", **decimal_usdt)
+    address = models.CharField(
+        "Адрес TRC-20", validators=[RegexValidator(regex=r"T[A-Za-z1-9]{33}")]
+    )
+    status = models.CharField(
+        choices=Status.choices,
+        verbose_name="Статус заявки",
+    )
+    reject_message = models.TextField(blank=True, verbose_name="Причина отказа")
+    done = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Заявка"
+        verbose_name_plural = "Заявки на вывод средств"
 
 
 # TODO: удалить модель
