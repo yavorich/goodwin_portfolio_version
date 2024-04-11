@@ -212,7 +212,8 @@ class WalletWithdrawalSerializer(OperationCreateSerializer):
     operation_type = Operation.Type.WITHDRAWAL
 
     class Meta(OperationCreateSerializer.Meta):
-        fields = OperationCreateSerializer.Meta.fields + ["amount"]
+        fields = OperationCreateSerializer.Meta.fields + ["amount", "address"]
+        extra_kwargs = {f: {"required": True} for f in fields}
 
     def validate(self, attrs):
         self._validate_wallet(attrs, free=attrs["amount"])

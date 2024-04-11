@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.utils.translation import gettext_lazy as _
 
 from apps.information.models import Operation
@@ -24,6 +25,6 @@ def operation_replenishment_confirmation(operation: Operation, amount):
 
     operation.done = True
     operation.save()
-    operation._to_wallet()
+    operation.wallet.update_balance(free=operation.amount * Decimal("0.985"))
 
     return message
