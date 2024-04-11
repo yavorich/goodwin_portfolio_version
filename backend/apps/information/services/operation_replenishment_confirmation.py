@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.utils.translation import gettext_lazy as _
 
-from apps.information.models import Operation
+from apps.information.models import Operation, OperationHistory
 from config.settings import DEBUG
 
 
@@ -26,6 +26,15 @@ def operation_replenishment_confirmation(operation: Operation, amount):
 
     operation.done = True
     operation.save()
-    operation.wallet.update_balance(free=operation.amount * Decimal("0.985"))
+    amount_with_commission = operation.amount * Decimal("0.985")
+    operation.wallet.update_balance(free=amount_with_commission)
+
+    OperationHistory.objects.create(
+        wallet=operation.wallet,
+        type=OperationHistory.Type.REPLENISHMENT,
+        description="Deposit",
+        target_name=operation.wallet.name,
+        amount=amount_with_commission,
+    )
 
     return message
