@@ -186,8 +186,16 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
     operation_type = Operation.Type.REPLENISHMENT
 
     class Meta(OperationCreateSerializer.Meta):
-        fields = OperationCreateSerializer.Meta.fields + ["amount"]
+        fields = OperationCreateSerializer.Meta.fields + ["amount", "address"]
         extra_kwargs = {f: {"required": True} for f in fields}
+        extra_kwargs["address"].update({"required": False})
+
+    @staticmethod
+    def cancel(instance: Operation):
+        instance.delete()
+        raise ServiceUnavailable(
+            detail="Сервис эквайринга временно не доступен, повторите попытку позже"
+        )
 
     def create(self, validated_data):
         operation: Operation = super().create(validated_data)
@@ -198,14 +206,21 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
             "x-auth-token": settings.NODE_JS_TOKEN,
         }
         print(data, headers)
-        result = requests.post(hook, json.dumps(data), headers=headers)
+        try:
+            result = requests.post(hook, json.dumps(data), headers=headers)
+        except requests.exceptions.ConnectionError:
+            self.cancel(operation)
 
         if result.status_code != 201:
-            operation.delete()
-            raise ServiceUnavailable(
-                detail="Сервис эквайринга временно не доступен, повторите попытку позже"
-            )
+            self.cancel(operation)
+
+        operation.address = json.loads(result.text).get("address")
+        operation.save()
         return operation
+
+    def to_representation(self, instance: Operation):
+        data = super().to_representation(instance)
+        return data | {"address": instance.address}
 
 
 class WalletWithdrawalSerializer(OperationCreateSerializer):
