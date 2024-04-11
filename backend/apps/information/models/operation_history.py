@@ -31,3 +31,4 @@ class OperationHistory(models.Model):
     class Meta:
         verbose_name = "История операций"
         verbose_name_plural = "Истории операций"
+        ordering = ["-created_at"]
