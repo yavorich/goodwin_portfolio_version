@@ -122,7 +122,7 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):  # ready
-        return True
+        return False
 
     def _apply_withdrawal(self):  # soon
         self.wallet.update_balance(free=-self.amount)
