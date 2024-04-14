@@ -3,7 +3,7 @@ loc_containers := db backend celery rabbit
 build:
 	docker-compose up --build --remove-orphans -d \
     && docker exec -it goodwin_backend python3 manage.py migrate \
-    && docker exec -it goodwin_backend django-admin compilemessages \
+    && docker exec -it goodwin_backend python3 manage.py compilemessages \
     && docker-compose up
 rebuild:
 	docker-compose -f docker-compose.yml up -d --build --force-recreate
@@ -52,6 +52,6 @@ shell:
 	docker exec -it goodwin_backend python3 manage.py shell
 
 makemessages:
-	docker exec -it goodwin_backend django-admin makemessages -a
+	docker exec -it goodwin_backend python3 manage.py makemessages -a
 compilemessages:
-	docker exec -it goodwin_backend django-admin compilemessages
+	docker exec -it goodwin_backend python3 manage.py compilemessages
