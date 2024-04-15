@@ -36,6 +36,7 @@ LOCAL_APPS = [
     "apps.finance",
     "apps.faq",
     "apps.telegram",
+    "apps.support",
 ]
 
 THIRD_PARTY_APPS = [
