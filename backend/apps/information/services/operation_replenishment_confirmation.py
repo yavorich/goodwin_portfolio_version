@@ -32,7 +32,11 @@ def operation_replenishment_confirmation(operation: Operation, amount):
     OperationHistory.objects.create(
         wallet=operation.wallet,
         type=OperationHistory.Type.REPLENISHMENT,
-        description="Deposit",
+        description=dict(
+            ru="Депозит",
+            en="Deposit",
+            cn=None,
+        ),
         target_name=operation.wallet.name,
         amount=amount_with_commission,
     )

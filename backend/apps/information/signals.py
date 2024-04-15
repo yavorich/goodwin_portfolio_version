@@ -84,9 +84,13 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
             OperationHistory.objects.create(
                 wallet=instance.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description=(
-                    "Request for withdrawal of "
-                    f"{instance.original_amount} USDT completed"
+                description=dict(
+                    ru=f"Заявка на вывод {instance.original_amount} USDT исполнена",
+                    en=(
+                        f"The withdrawal request of {instance.original_amount}"
+                        "USDT has been processed."
+                    ),
+                    cn=None,
                 ),
                 target_name=None,
                 amount=None,
@@ -98,9 +102,13 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
             OperationHistory.objects.create(
                 wallet=instance.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description=(
-                    "Withdrawal request rejected. "
-                    f'Reason: "{instance.reject_message}"'
+                description=dict(
+                    ru=f"Заявка на вывод {instance.original_amount} USDT отклонена",
+                    en=(
+                        f"The withdrawal request of {instance.original_amount}"
+                        "USDT has been rejected."
+                    ),
+                    cn=None,
                 ),
                 target_name=instance.wallet.name,
                 amount=instance.original_amount,
