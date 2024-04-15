@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED
 
-from apps.information.models import Program, UserProgram, UserProgramReplenishment
+from apps.finance.models import Program, UserProgram, UserProgramReplenishment
 
 
 class OperationViewMixin:

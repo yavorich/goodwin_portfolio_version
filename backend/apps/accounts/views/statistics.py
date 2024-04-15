@@ -24,7 +24,7 @@ from apps.accounts.services.statistics import (
     get_holiday_dates,
     get_table_total_statistics,
 )
-from apps.information.models import UserProgramAccrual, UserProgram
+from apps.finance.models import UserProgramAccrual, UserProgram
 from core.utils.get_dates_range import get_dates_range
 
 

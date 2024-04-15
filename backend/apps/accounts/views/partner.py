@@ -7,14 +7,14 @@ from rest_framework.generics import RetrieveAPIView, ListAPIView, get_object_or_
 
 from apps.accounts.models.user import Partner
 from apps.accounts.permissions import IsPartner
-from apps.information.serializers import UserProgramSerializer
+from apps.finance.serializers import UserProgramSerializer
 from apps.accounts.serializers.partner import (
     PartnerTotalFeeSerializer,
     InvestorsSerializer,
     PartnerInvestmentGraphSerializer,
     PartnerListSerializer,
 )
-from apps.information.models import UserProgram, WalletHistory
+from apps.finance.models import UserProgram, WalletHistory
 from core.pagination import PageNumberSetPagination
 from core.utils.get_dates_range import get_dates_range
 

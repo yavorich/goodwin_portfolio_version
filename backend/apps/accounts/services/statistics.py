@@ -12,8 +12,8 @@ from django.db.models import (
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
 
-from apps.information.models import UserProgramAccrual, Operation, Holidays
-from apps.information.models.program import (
+from apps.finance.models import UserProgramAccrual, Operation, Holidays
+from apps.finance.models.program import (
     UserProgramHistory,
     UserProgram,
     ProgramResult,
