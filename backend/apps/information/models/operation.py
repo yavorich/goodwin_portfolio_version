@@ -129,7 +129,11 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.WITHDRAWAL,
-            description="Withdrawal request accepted",
+            description=dict(
+                ru="Заявка на вывод принята",
+                en="Withdrawal request accepted",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=-self.amount,
         )
@@ -145,18 +149,30 @@ class Operation(models.Model):
     def _apply_transfer(self):  # ready
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
         self.receiver.update_balance(free=self.amount_free, frozen=self.amount_frozen)
+        description_to = (
+            dict(
+                ru=f"Перевод клиенту GDW ID{self.receiver.user.id}",
+                en=f"Transfer to GDW client ID{self.receiver.user.id}",
+                cn=None,
+            ),
+        )
+        description_from = dict(
+            ru=f"Поступление от ID{self.wallet.user.id}",
+            en=f"Receipt from ID{self.wallet.user.id}",
+            cn=None,
+        )
         if self.amount_free:
             OperationHistory.objects.create(
                 wallet=self.wallet,
                 type=OperationHistory.Type.TRANSFER_FREE,
-                description=f"Transfer to GDW client ID{self.receiver.user.id}",
+                description=description_to,
                 target_name=self.receiver.name,
                 amount=-self.amount_free,
             )
             OperationHistory.objects.create(
                 wallet=self.receiver,
                 type=OperationHistory.Type.TRANSFER_FREE,
-                description=f"Receipt from ID{self.wallet.user.id}",
+                description=description_from,
                 target_name=self.receiver.name,
                 amount=self.amount_free,
             )
@@ -164,14 +180,14 @@ class Operation(models.Model):
             OperationHistory.objects.create(
                 wallet=self.wallet,
                 type=OperationHistory.Type.TRANSFER_FROZEN,
-                description=f"Transfer to GDW client ID{self.receiver.user.id}",
+                description=description_to,
                 target_name=self.receiver.name,
                 amount=-self.amount_frozen,
             )
             OperationHistory.objects.create(
                 wallet=self.receiver,
                 type=OperationHistory.Type.TRANSFER_FROZEN,
-                description=f"Receipt from ID{self.wallet.user.id}",
+                description=description_from,
                 target_name=self.receiver.name,
                 amount=self.amount_frozen,
             )
@@ -198,26 +214,48 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=(f"Start program {self.user_program.name}"),
+            description=dict(
+                ru=f"Запуск программы {self.user_program.name}",
+                en=f"Starting the {self.user_program.name} program",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=-(self.amount_free + self.amount_frozen),
         )
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=(f"Program {self.user_program.name} has been replenished"),
+            description=dict(
+                ru=f"Программа {self.user_program.name} пополнена",
+                en=f"Program {self.user_program.name} has been replenished",
+                cn=None,
+            ),
             target_name=self.user_program.name,
             amount=self.amount_free + self.amount_frozen,
         )
         return True
 
     def _apply_program_closure(self):  # ready
-        message = f"Program {self.user_program.name} %sclosure"
         if self.partial:
-            message = message % "partial "
+            description = dict(
+                ru=f"Частичное закрытие программы {self.user_program.name}",
+                en=f"Partial closure of the {self.user_program.name} program",
+                cn=None,
+            )
             self.user_program.update_deposit(amount=-self.amount)
         else:
-            message = message % ("early " if self.early_closure else "")
+            if self.early_closure:
+                description = dict(
+                    ru=f"Программа {self.user_program.name} закрыта досрочно",
+                    en=f"The {self.user_program.name} program is closed early",
+                    cn=None,
+                )
+            else:
+                description = dict(
+                    ru=f"Программа {self.user_program.name} закрыта",
+                    en=f"{self.user_program.name} program is closed",
+                    cn=None,
+                )
             self.user_program.close()
             replenishments = self.user_program.replenishments.filter(
                 status=UserProgramReplenishment.Status.INITIAL
@@ -234,14 +272,18 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.SYSTEM_MESSAGE,
-            description=message,
+            description=description,
             target_name=self.user_program.name,
             amount=-self.amount,
         )
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_FROZEN,
-            description=f"Deposit transfer {self.user_program.name}",
+            description=dict(
+                ru=f"Перевод депозита {self.user_program.name}",
+                en=f"Transfer of deposit {self.user_program.name}",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=self.amount,
         )
@@ -256,7 +298,11 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=(f"Program {self.user_program.name} replenishment"),
+            description=dict(
+                ru=f"Перевод в программу {self.user_program.name}",
+                en=f"Transfer to program {self.user_program.name}",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=-(self.amount_free + self.amount_frozen),
         )
@@ -264,25 +310,42 @@ class Operation(models.Model):
 
     def _apply_program_replenishment_cancel(self):  # ready
         program_name = self.replenishment.program.name
-        message = f"Program {program_name} replenishment has been %scanceled"
         if self.partial:
-            message = message % "partially "
+            description = dict(
+                ru=f"Отмена пополнения программы {self.user_program.name}",
+                en=(
+                    "Cancellation of the replenishment "
+                    f"of program {self.user_program.name}"
+                ),
+                cn=None,
+            ),
             self.replenishment.decrease(self.amount)
         else:
-            message = message % ""
+            description = dict(
+                ru=f"Частичная отмена пополнения программы {self.user_program.name}",
+                en=(
+                    "Partial cancellation of the replenishment "
+                    f"of program {self.user_program.name}"
+                ),
+                cn=None,
+            ),
             self.replenishment.cancel()
         self.wallet.update_balance(frozen=self.amount)
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.SYSTEM_MESSAGE,
-            description=message,
+            description=description,
             target_name=program_name,
             amount=-self.amount,
         )
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_FROZEN,
-            description=f"Deposit transfer {program_name}",
+            description=dict(
+                ru=f"Перевод депозита {self.user_program.name}",
+                en=f"Transfer of deposit {self.user_program.name}",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=self.amount,
         )
@@ -290,14 +353,20 @@ class Operation(models.Model):
 
     def _apply_defrost(self):  # ready
         if self.frozen_item:
-            message = (
-                f"Frozen assets from {self.frozen_item.frost_date} have been defrosted"
+            description = dict(
+                ru=f"Замороженные активы от {self.frozen_item.frost_date} разморожены",
+                en=f"Frozen assets from {self.frozen_item.frost_date} defrosted",
+                cn=None,
             )
             self.wallet.update_balance(
                 frozen=-self.amount, item=self.frozen_item  # разморозка frozen-item
             )
         else:
-            message = "The defrost request has been completed"
+            description = dict(
+                ru="Заявка на разморозку активов исполнена",
+                en="The application for unfreezing of assets has been completed",
+                cn=None,
+            )
             self.wallet.update_balance(frozen=-self.amount)  # разморозка суммы
             Operation.objects.create(
                 type=Operation.Type.EXTRA_FEE,
@@ -309,7 +378,7 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=message,
+            description=description,
             target_name=self.wallet.name,
             amount=self.amount,
         )
@@ -320,7 +389,11 @@ class Operation(models.Model):
         OperationHistory.objects.create(
             wallet=self.wallet,
             type=OperationHistory.Type.SYSTEM_MESSAGE,
-            description="Extra Fee commission write-off",
+            description=dict(
+                ru="Списание комиссии Extra Fee",
+                en="Extra Fee commission write-off",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=-self.amount,
         )
@@ -336,7 +409,11 @@ class Operation(models.Model):
                 OperationHistory.objects.create(
                     wallet=self.wallet,
                     type=OperationHistory.Type.SYSTEM_MESSAGE,
-                    description=f"Accrual by program {self.user_program.name}",
+                    description=dict(
+                        ru=f"Начисление по программе {self.user_program.name}",
+                        en=f"Accrual under the {self.user_program.name} program",
+                        cn=None,
+                    ),
                     target_name=self.wallet.name,
                     amount=self.amount,
                 )
@@ -345,7 +422,11 @@ class Operation(models.Model):
             OperationHistory.objects.create(
                 wallet=self.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description=f"Loss by program {self.user_program.name}",
+                description=dict(
+                    ru="Списание отрицательной прибыли",
+                    en="Write-off of negative profit",
+                    cn=None,
+                ),
                 target_name=self.user_program.name,
                 amount=self.amount,
             )
