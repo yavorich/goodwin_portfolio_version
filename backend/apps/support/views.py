@@ -7,5 +7,7 @@ from apps.support.serializers import SupportContactSerializer
 
 class ListSupportView(ListAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = Support.objects.exclude(link="")
     serializer_class = SupportContactSerializer
+
+    def get_queryset(self):
+        return Support.objects.exclude(link="")
