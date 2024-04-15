@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-06 12:50+0000\n"
+"POT-Creation-Date: 2024-04-15 04:05+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,208 +17,252 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
 #: apps/accounts/models/pre_auth_token.py:47
+#: apps/accounts/models/register_confirmation.py:38
 msgid "Неверный код"
-msgstr ""
+msgstr "Invalid code"
 
 #: apps/accounts/models/pre_auth_token.py:149
 msgid "Код подтверждения входа"
-msgstr ""
+msgstr "Login confirmation code"
 
 #: apps/accounts/models/pre_auth_token.py:150
 #: apps/accounts/models/pre_auth_token.py:157
 #, python-brace-format
 msgid "Код подтверждения для входа в аккаунт: {code}"
-msgstr ""
+msgstr "Confirmation code for logging into your account: {code}"
 
-#: apps/accounts/models/user.py:63
-msgid "Inviter"
-msgstr ""
+#: apps/accounts/models/register_confirmation.py:58
+msgid "first name"
+msgstr "Имя"
 
-#: apps/accounts/models/user.py:96
-msgid "No data"
-msgstr ""
+#: apps/accounts/models/register_confirmation.py:59
+msgid "last name"
+msgstr "Фамилия"
 
-#: apps/accounts/models/user.py:97
-msgid "Check"
-msgstr ""
+#: apps/accounts/models/register_confirmation.py:66
+msgid "password"
+msgstr "Пароль"
 
-#: apps/accounts/models/user.py:98
-msgid "Approved"
-msgstr ""
+#: apps/accounts/models/register_confirmation.py:107
+msgid "Код подтверждения регистрации"
+msgstr "Registration confirmation code"
 
-#: apps/accounts/models/user.py:99
-msgid "Rejected"
-msgstr ""
+#: apps/accounts/models/register_confirmation.py:108
+#, python-brace-format
+msgid "Код подтверждения для регистрации: {code}"
+msgstr "Confirmation code for registration: {code}"
 
-#: apps/accounts/models/user.py:110
-msgid "Male"
-msgstr ""
-
-#: apps/accounts/models/user.py:111
-msgid "Female"
-msgstr ""
-
-#: apps/accounts/models/user.py:116
-msgid "First name"
-msgstr ""
-
-#: apps/accounts/models/user.py:117
-msgid "Last name"
-msgstr ""
-
-#: apps/accounts/models/user.py:118
-msgid "Gender"
-msgstr ""
-
-#: apps/accounts/models/user.py:119
-msgid "Date of birth"
-msgstr ""
-
-#: apps/accounts/models/user.py:120
-msgid "Document type"
-msgstr ""
-
-#: apps/accounts/models/user.py:121
-msgid "Document issue date"
-msgstr ""
-
-#: apps/accounts/models/user.py:123
-msgid "Document issue region/country"
-msgstr ""
-
-#: apps/accounts/models/user.py:125 apps/accounts/models/user.py:158
-msgid "File"
-msgstr ""
-
-#: apps/accounts/models/user.py:127 apps/accounts/models/user.py:160
-msgid "Status"
-msgstr ""
-
-#: apps/accounts/models/user.py:146
-msgid "Passport registration"
-msgstr ""
-
-#: apps/accounts/models/user.py:147
-msgid "Utility bill"
-msgstr ""
-
-#: apps/accounts/models/user.py:148
-msgid "Bank statement"
-msgstr ""
-
-#: apps/accounts/models/user.py:149
-msgid "Other document"
-msgstr ""
-
-#: apps/accounts/models/user.py:154
-msgid "Country"
-msgstr ""
-
-#: apps/accounts/models/user.py:155
-msgid "City"
-msgstr ""
-
-#: apps/accounts/models/user.py:156
-msgid "Address"
-msgstr ""
-
-#: apps/accounts/models/user.py:157
-msgid "Postal code"
-msgstr ""
-
-#: apps/accounts/permissions.py:15
+#: apps/accounts/permissions.py:16
 msgid "Для доступа к этой странице необходимо принять условия договора оферты"
-msgstr ""
+msgstr "To access this page you must accept the terms of the offer agreement"
 
-#: apps/accounts/permissions.py:30
+#: apps/accounts/permissions.py:31
 msgid ""
 "Для доступа к этой странице необходимо подтвердить свою личность и адрес"
-msgstr ""
+msgstr "To access this page you must verify your identity and address"
 
-#: apps/accounts/services.py:25
+#: apps/accounts/permissions.py:58
+msgid "Для доступа к этой странице необходимо иметь статус партнёра"
+msgstr "To access this page you must have partner status"
+
+#: apps/accounts/permissions.py:74
+msgid ""
+"Доступ к этой странице разрешён только для аутентифицированного локального "
+"приложения"
+msgstr "Access to this page is restricted to authenticated local "
+"application"
+
+#: apps/accounts/serializers/register.py:31
+msgid "Пользователь с данной почтой уже существует"
+msgstr "A user with this email already exists"
+
+#: apps/accounts/services/email.py:24
+msgid "GOODWIN - Подтверждение электронной почты"
+msgstr "GOODWIN - Email Verification"
+
+#: apps/accounts/services/email.py:25
 msgid ""
 "Здравствуйте!\n"
-"Ваш код подтверждения"
-msgstr ""
+"Ваш код для подтверждения почты"
+msgstr "Hello!\n"
+"Your email verification code"
 
-#: apps/accounts/services.py:28
-msgid "GOODWIN - Подтверждение электронной почты"
-msgstr ""
-
-#: apps/accounts/services.py:47
+#: apps/accounts/services/email.py:45
 msgid "Восстановление пароля"
-msgstr ""
+msgstr "Password recovery"
 
-#: apps/accounts/services.py:49
+#: apps/accounts/services/email.py:47
 #, python-brace-format
 msgid ""
 "Здравствуйте, {full_name}!\n"
 "Был отправлен запрос на сброс пароля для вашего аккаунта. Если это сделали "
 "не вы, проигнорируйте данное сообщение (Эта ссылка действует 1 раз и в "
 "течение 24 часов)"
-msgstr ""
+msgstr "Hello, {full_name}!\n"
+"A request has been sent to reset the password for your account. "
+"If you did not do this, ignore this message (This link is valid once and for 24 hours)"
 
-#: apps/accounts/services.py:54
+#: apps/accounts/services/email.py:52
 msgid "Сбросить пароль"
+msgstr "Reset password"
+
+#: apps/accounts/services/email.py:65
+msgid ""
+"Здравствуйте!\n"
+"Ваш код для подтверждения смены настроек"
+msgstr "Hello!\n"
+"Your code to confirm the change of settings"
+
+#: apps/accounts/services/email.py:68
+msgid "GOODWIN - Смена настроек"
+msgstr "GOODWIN - Change settings"
+
+#: apps/accounts/services/email.py:76
+msgid ""
+"Здравствуйте!\n"
+"Ваш код для подтверждения смены пароля"
+msgstr "Hello!\n"
+"Your code to confirm the password change"
+
+#: apps/accounts/services/email.py:79
+msgid "GOODWIN - Смена пароля"
+msgstr "GOODWIN - Change password"
+
+#: apps/accounts/services/email.py:88
+msgid ""
+"Здравствуйте!\n"
+"Ваш код для подтверждения смены адреса электронной почты"
+msgstr "Hello!\n"
+"Your code to confirm the change of email address"
+
+#: apps/accounts/services/email.py:93
+msgid "GOODWIN - Смена адреса электронной почты"
+msgstr "GOODWIN - Change email address"
+
+#: apps/accounts/views/profile.py:102 apps/accounts/views/profile.py:158
+#: apps/accounts/views/profile.py:257
+msgid "Код подтверждения не найден"
+msgstr "Verification code not found"
+
+#: apps/accounts/views/profile.py:115
+msgid "Почта успешно изменена"
+msgstr "Email successfully changed"
+
+#: apps/accounts/views/profile.py:171
+msgid "Пароль успешно изменён"
+msgstr "Password successfully changed"
+
+#: apps/accounts/views/profile.py:222
+msgid ""
+"Смена настроек\n"
+"Ваш код для подтверждения смены настроек"
+msgstr "Change settings\n"
+"Your code to confirm the change of settings"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Вс"
+msgstr "Sun"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Пн"
+msgstr "Mon"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Вт"
+msgstr "Tue"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Ср"
+msgstr "Wen"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Чт"
+msgstr "Thu"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Пт"
+msgstr "Fri"
+
+#: apps/accounts/views/statistics.py:183
+msgid "Сб"
+msgstr "Sat"
+
+#: apps/information/models/operation_history.py:11
+msgid "Перевод в раздел \"Доступно\""
+msgstr "Transfer to the \"Available\" section"
+
+#: apps/information/models/operation_history.py:12
+msgid "Перевод в раздел \"Заморожено\""
+msgstr "Transfer to the \"Frozen\" section"
+
+#: apps/information/models/operation_history.py:13
+msgid "Перевод между счетами"
+msgstr "Transfer between accounts"
+
+#: apps/information/models/operation_history.py:14
+msgid "Вывод"
+msgstr "Withdrawal"
+
+#: apps/information/models/operation_history.py:15
+msgid "Пополнение"
+msgstr "Top-up"
+
+#: apps/information/models/operation_history.py:16
+msgid "Начисление прибыли"
+msgstr "Profit accrual"
+
+#: apps/information/models/operation_history.py:17
+msgid "Фиксация убытка"
+msgstr "Fixation of loss"
+
+#: apps/information/models/operation_history.py:18
+msgid "Программа лояльности"
+msgstr "Loyalty program"
+
+#: apps/information/models/operation_history.py:19
+msgid "Системное сообщение"
+msgstr "System message"
+
+#: apps/information/services/operation_replenishment_confirmation.py:12
+msgid "Operation already done"
 msgstr ""
 
-#: apps/information/models/operation.py:23
-msgid "Operation type"
+#: apps/information/services/operation_replenishment_confirmation.py:14
+msgid "Insufficient amount transferred"
 msgstr ""
 
-#: apps/information/models/program.py:11 apps/information/models/program.py:15
-msgid "Daily"
+#: apps/information/services/operation_replenishment_confirmation.py:18
+msgid "The required amount has been transferred and credited to the account"
 msgstr ""
 
-#: apps/information/models/program.py:12 apps/information/models/program.py:16
-msgid "After end"
+#: apps/information/services/operation_replenishment_confirmation.py:22
+msgid ""
+"More than the required amount has been transferred and credited to the "
+"account"
 msgstr ""
 
-#: apps/information/models/program.py:18
-msgid "Program name"
-msgstr ""
+#: apps/information/services/send_operation_confirm_email.py:8
+msgid "GOODWIN - Подтверждение операции"
+msgstr "GOODWIN - Transaction confirmation"
 
-#: apps/information/models/program.py:19
-msgid "Duration (months)"
-msgstr ""
+#: apps/information/services/send_operation_confirm_email.py:10
+#, python-brace-format
+msgid ""
+"Здравствуйте!\n"
+"Ваш код для подтверждения операции \"{operation}\""
+msgstr "Hello!\n"
+"Your code to confirm the operation \"{operation}\""
 
-#: apps/information/models/program.py:20
-msgid "Expected profit"
-msgstr ""
-
-#: apps/information/models/program.py:21
-msgid "Minimum deposit"
-msgstr ""
-
-#: apps/information/models/program.py:22
-msgid "Accrual type"
-msgstr ""
-
-#: apps/information/models/program.py:24
-msgid "Withdrawal type"
-msgstr ""
-
-#: apps/information/models/program.py:26
-msgid "Maximum risk"
-msgstr ""
-
-#: apps/information/models/program.py:29
-msgid "Withdrawal term"
-msgstr ""
-
-#: apps/information/models/program.py:41
-msgid "Underlying funds"
-msgstr ""
-
-#: config/settings.py:133
+#: config/settings.py:140
 msgid "Russian"
-msgstr ""
+msgstr "Russian"
 
-#: config/settings.py:134
+#: config/settings.py:141
 msgid "English"
-msgstr ""
+msgstr "English"
 
-#: config/settings.py:135
+#: config/settings.py:142
 msgid "China"
-msgstr ""
+msgstr "China"

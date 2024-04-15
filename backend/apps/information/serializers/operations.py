@@ -16,6 +16,8 @@ from core.utils import decimal_usdt
 
 
 class OperationSerializer(ModelSerializer):
+    type = CharField(source="get_type_display")
+    description = CharField()
 
     class Meta:
         model = OperationHistory
