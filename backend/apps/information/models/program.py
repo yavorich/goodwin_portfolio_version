@@ -228,7 +228,11 @@ class UserProgramReplenishment(models.Model):
         OperationHistory.objects.create(
             wallet=self.program.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=f"Program {self.program.name} has been replenished",
+            description=dict(
+                ru=f"Программа {self.program.name} пополнена",
+                en=f"Program {self.program.name} has been replenished",
+                cn=None,
+            ),
             target_name=self.program.name,
             amount=self.amount,
         )
