@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from apps.information.models import WalletHistory
+from apps.finance.models import WalletHistory
 
 
 class WalletHistoryFilter(filters.FilterSet):

@@ -8,7 +8,7 @@ from rest_framework.fields import (
 )
 from rest_framework.serializers import ModelSerializer, Serializer
 
-from apps.information.models import UserProgramAccrual
+from apps.finance.models import UserProgramAccrual
 
 
 class TotalProfitStatisticsGraphSerializer(ModelSerializer):

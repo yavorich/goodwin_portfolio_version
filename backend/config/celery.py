@@ -10,11 +10,11 @@ celery_app.autodiscover_tasks()
 
 celery_app.conf.beat_schedule = {
     "create_wallet_history_daily": {
-        "task": "apps.information.tasks.create_wallet_history",
+        "task": "apps.finance.tasks.create_wallet_history",
         "schedule": crontab(hour="0", minute="20"),
     },
     "create_user_program_history_daily": {
-        "task": "apps.information.tasks.create_user_program_history",
+        "task": "apps.finance.tasks.create_user_program_history",
         "schedule": crontab(hour="0", minute="30"),
     },
     "delete_confirm_codes_daily": {
@@ -26,23 +26,23 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(hour="0", minute="0"),
     },
     "create_user_program_accrual_daily": {
-        "task": "apps.information.tasks.make_daily_programs_accruals",
+        "task": "apps.finance.tasks.make_daily_programs_accruals",
         "schedule": crontab(hour="0", minute="1"),
     },
     "start_user_program_daily": {
-        "task": "apps.information.tasks.apply_program_start",
+        "task": "apps.finance.tasks.apply_program_start",
         "schedule": crontab(hour="0", minute="2"),
     },
     "replenish_user_program_daily": {
-        "task": "apps.information.tasks.apply_program_replenishments",
+        "task": "apps.finance.tasks.apply_program_replenishments",
         "schedule": crontab(hour="0", minute="3"),
     },
     "finish_user_program_daily": {
-        "task": "apps.information.tasks.apply_program_finish",
+        "task": "apps.finance.tasks.apply_program_finish",
         "schedule": crontab(hour="0", minute="4"),
     },
     "defrost_user_wallet_funds_daily": {
-        "task": "apps.information.tasks.defrost_funds",
+        "task": "apps.finance.tasks.defrost_funds",
         "schedule": crontab(hour="0", minute="5"),
     },
 }

@@ -13,7 +13,7 @@ from apps.accounts.models import (
     Settings,
     Partner,
 )
-from apps.information.models import Wallet
+from apps.finance.models import Wallet
 
 
 @receiver(post_save, sender=User)
