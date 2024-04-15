@@ -9,7 +9,7 @@ from sqlite3 import connect
 from django.utils import timezone
 
 from apps.accounts.models import User, Settings
-from apps.information.models import Program, UserProgram, Operation, FrozenItem
+from apps.finance.models import Program, UserProgram, Operation, FrozenItem
 
 
 class Command(BaseCommand):
