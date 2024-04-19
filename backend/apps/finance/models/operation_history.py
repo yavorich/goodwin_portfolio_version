@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .wallet import Wallet
@@ -29,7 +30,9 @@ class OperationHistory(models.Model):
     type = models.CharField("Тип операции", choices=Type.choices)
     description = LocalizedCharField("Описание", max_length=127, **blank_and_null)
     target_name = models.CharField("Название объекта", max_length=127, **blank_and_null)
-    created_at = models.DateTimeField("Дата и время", auto_now_add=True)
+    created_at = models.DateTimeField(
+        "Дата и время", default=timezone.now  # для парсинга внешней базы
+    )
     amount = models.DecimalField("Сумма", **decimal_usdt, **blank_and_null)
 
     class Meta:
