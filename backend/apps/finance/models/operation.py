@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from django.db import models, transaction
 from django.core.validators import RegexValidator
+from django.utils import timezone
 from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, decimal_usdt
@@ -311,24 +312,28 @@ class Operation(models.Model):
     def _apply_program_replenishment_cancel(self):  # ready
         program_name = self.replenishment.program.name
         if self.partial:
-            description = dict(
-                ru=f"Отмена пополнения программы {self.user_program.name}",
-                en=(
-                    "Cancellation of the replenishment "
-                    f"of program {self.user_program.name}"
+            description = (
+                dict(
+                    ru=f"Отмена пополнения программы {self.user_program.name}",
+                    en=(
+                        "Cancellation of the replenishment "
+                        f"of program {self.user_program.name}"
+                    ),
+                    cn=None,
                 ),
-                cn=None,
-            ),
+            )
             self.replenishment.decrease(self.amount)
         else:
-            description = dict(
-                ru=f"Частичная отмена пополнения программы {self.user_program.name}",
-                en=(
-                    "Partial cancellation of the replenishment "
-                    f"of program {self.user_program.name}"
+            description = (
+                dict(
+                    ru=f"Частичная отмена пополнения программы {self.user_program.name}",
+                    en=(
+                        "Partial cancellation of the replenishment "
+                        f"of program {self.user_program.name}"
+                    ),
+                    cn=None,
                 ),
-                cn=None,
-            ),
+            )
             self.replenishment.cancel()
         self.wallet.update_balance(frozen=self.amount)
         OperationHistory.objects.create(
@@ -457,6 +462,9 @@ class WithdrawalRequest(models.Model):
     )
     reject_message = models.TextField(blank=True, verbose_name="Причина отказа")
     done = models.BooleanField(default=False)
+
+    # нужно для уникальности объектов при парсинге внешней базы
+    created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         verbose_name = "Заявка"
