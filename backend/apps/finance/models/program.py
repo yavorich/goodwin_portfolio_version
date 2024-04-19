@@ -1,6 +1,7 @@
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db import models
+from django.utils import timezone
 from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
@@ -99,6 +100,9 @@ class UserProgram(models.Model):
     profit = models.DecimalField(
         "Суммарный доход", **decimal_usdt, default=Decimal("0.0")
     )
+
+    # для уникальности программ во время парсинга из внешней базы
+    created_at = models.DateTimeField(default=timezone.now, null=True)
 
     class Meta:
         verbose_name = "Программа пользователя"
@@ -203,7 +207,8 @@ class UserProgramReplenishment(models.Model):
     amount = models.DecimalField("Сумма", **decimal_usdt)
     status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
     created_at = models.DateField(
-        verbose_name="Дата создания вывода", auto_now_add=True
+        verbose_name="Дата создания вывода",
+        default=timezone.now,  # для парсинга внешней базы
     )
     apply_date = models.DateField("Дата зачисления на счет программы", **blank_and_null)
     done = models.BooleanField(default=False)
