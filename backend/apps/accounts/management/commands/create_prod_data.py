@@ -17,6 +17,7 @@ from apps.accounts.models import (
     Region,
     PersonalVerification,
     VerificationStatus,
+    AddressVerification,
 )
 from apps.finance.models import (
     Program,
@@ -100,7 +101,7 @@ def create_users(cursor):
         if verified == 1 or commentary not in (None, ""):
             if not hasattr(user, "personal_verification"):
                 gender = NAME_TO_GENDER[user.first_name]
-                verification = PersonalVerification(
+                personal_verification = PersonalVerification(
                     user=user,
                     first_name=user.first_name,
                     last_name=user.last_name,
@@ -111,7 +112,19 @@ def create_users(cursor):
                     document_issue_region="ru",
                     status=VerificationStatus.APPROVED,
                 )
-                verification.save()
+                personal_verification.save()
+
+            if not hasattr(user, "address_verification"):
+                address_verification = AddressVerification(
+                    user=user,
+                    country="country",
+                    city="city",
+                    address="address",
+                    postal_code="0",
+                    document_type=AddressVerification.DocumentType.OTHER,
+                    status=VerificationStatus.APPROVED,
+                )
+                address_verification.save()
 
 
 def create_user_settings(cursor):
@@ -647,7 +660,10 @@ def create_operation_history_extra_fee(cursor):
 
 
 def create_operation_history_start_close_program(cursor):
-    for user in User.objects.all():
+    cursor.execute("SELECT email FROM user")
+    emails = [email for (email,) in cursor.fetchall()]
+
+    for user in User.objects.filter(email__in=emails):
         user_programs = UserProgram.objects.filter(wallet__user=user)
         if not user_programs.exists():
             continue
