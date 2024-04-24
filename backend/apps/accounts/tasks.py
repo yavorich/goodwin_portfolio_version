@@ -52,5 +52,7 @@ def delete_settings_auth_codes():
 def create_user_count_history():
     UserCountHistory.objects.create(
         total=User.objects.count(),
-        active=User.objects.filter(Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0)),
+        active=User.objects.filter(
+            Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0)
+        ).count(),
     )
