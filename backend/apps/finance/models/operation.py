@@ -448,20 +448,22 @@ class WithdrawalRequest(models.Model):
     wallet = models.ForeignKey(
         Wallet,
         on_delete=models.CASCADE,
-        verbose_name="Кошелёк",
+        verbose_name="ID",
         related_name="withdrawal_requests",
     )
-    original_amount = models.DecimalField("Сумма без учета комиссии", **decimal_usdt)
-    amount = models.DecimalField("Сумма c учётом комиссии", **decimal_usdt)
+    original_amount = models.DecimalField("Списать с кошелька", **decimal_usdt)
+    amount = models.DecimalField("Перевести инвестору", **decimal_usdt)
     address = models.CharField(
-        "Адрес TRC-20", validators=[RegexValidator(regex=r"T[A-Za-z1-9]{33}")]
+        "Адрес криптокошелька", validators=[RegexValidator(regex=r"T[A-Za-z1-9]{33}")]
     )
     status = models.CharField(
         choices=Status.choices,
-        verbose_name="Статус заявки",
+        verbose_name="Статус",
     )
-    reject_message = models.TextField(blank=True, verbose_name="Причина отказа")
-    done = models.BooleanField(default=False)
+    created_at = models.DateField("Поставлено на вывод", auto_now_add=True)
+    reject_message = models.TextField("Причина отказа", blank=True)
+    done = models.BooleanField("Отметка о выполнении", default=False)
+    done_at = models.DateField("Проведена транзакция", **blank_and_null)
 
     # нужно для уникальности объектов при парсинге внешней базы
     created_at = models.DateTimeField(default=timezone.now)

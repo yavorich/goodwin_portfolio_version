@@ -17,6 +17,10 @@ celery_app.conf.beat_schedule = {
         "task": "apps.finance.tasks.create_user_program_history",
         "schedule": crontab(hour="0", minute="30"),
     },
+    "create_user_count_history_daily": {
+        "task": "apps.accounts.tasks.create_user_count_history",
+        "schedule": crontab(hour="0", minute="40"),
+    },
     "delete_confirm_codes_daily": {
         "task": "apps.accounts.tasks.delete_confirm_codes",
         "schedule": crontab(hour="0", minute="10"),

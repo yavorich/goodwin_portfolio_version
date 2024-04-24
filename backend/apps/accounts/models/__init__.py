@@ -8,6 +8,7 @@ from .user import (
     VerificationStatus,
     Settings,
     Partner,
+    UserCountHistory,
 )
 from .docs import Docs
 from .region import Region

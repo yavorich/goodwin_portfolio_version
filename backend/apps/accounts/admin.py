@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.forms import ModelForm
+from django.db.models import Q
 
 from . import models
 from .models import VerificationStatus
@@ -84,6 +85,18 @@ class PartnerInline(admin.StackedInline):
 #         model = get_user_model()
 
 
+class StatusFilter(admin.SimpleListFilter):
+    title = "По активности"
+    parameter_name = "status"
+
+    def lookups(self, request, model_admin):
+        return (("active", "Активные"),)
+
+    def queryset(self, request, queryset):
+        if self.value() == "active":
+            return queryset.filter(Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0))
+
+
 @admin.register(models.User)
 class UserAdmin(UserAdmin):
     # form = UserForm
@@ -95,7 +108,7 @@ class UserAdmin(UserAdmin):
         PartnerInline,
     ]
 
-    list_filter = ["is_active", "is_staff", "partner"]
+    list_filter = ["is_active", "is_staff", "partner", StatusFilter]
     search_fields = [
         "email",
         "first_name",

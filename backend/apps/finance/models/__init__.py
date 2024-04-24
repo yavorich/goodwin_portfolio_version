@@ -8,7 +8,9 @@ from .program import (
     ProgramResult,
     UserProgramReplenishment,
     UserProgramAccrual,
+    UserProgramHistory,
 )
 from .wallet import Wallet, WalletHistory
 from .frozen import FrozenItem
 from .holidays import Holidays
+from .stats import Stats
