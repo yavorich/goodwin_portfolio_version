@@ -2,7 +2,6 @@ from pathlib import Path
 import os
 
 from aiogram import Bot
-from celery.schedules import crontab
 from django.utils.timezone import timedelta
 from django.utils.translation import gettext_lazy as _
 

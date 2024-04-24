@@ -273,3 +273,13 @@ class Partner(models.Model):
 
     def __str__(self):
         return f"{self.region} - {self.partner_id} ({self.user})"
+
+
+class UserCountHistory(models.Model):
+    total = models.PositiveIntegerField("Кол-во зарегистрированных пользователей")
+    active = models.PositiveIntegerField("Кол-во активных пользователей")
+    created_at = models.DateField(auto_now_add=True, unique=True)
+
+    class Meta:
+        verbose_name = "Запись"
+        verbose_name_plural = "История пользователей"

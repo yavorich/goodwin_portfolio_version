@@ -140,3 +140,22 @@ def get_holiday_dates(start_date, end_date):
             holiday_dates.extend(date_range)
 
     return holiday_dates
+
+
+def get_branch_general_statistics(partner_profile):
+    total_success_fee = (
+        partner_profile.users.all()
+        .annotate(user_total_success_fee=Sum("wallet__programs__accruals__success_fee"))
+        .aggregate(total_success_fee=Sum("user_total_success_fee"))
+    )["total_success_fee"] or 0
+
+    total_partner_fee = total_success_fee * partner_profile.partner_fee
+
+    data = {
+        "total_success_fee": total_success_fee or 0,
+        "total_partner_fee": total_partner_fee or 0,
+        "success_fee_percent": 0.3,  # TODO добавить обращение к Success fee
+        "partner_fee_percent": partner_profile.partner_fee or 0,
+    }
+
+    return data

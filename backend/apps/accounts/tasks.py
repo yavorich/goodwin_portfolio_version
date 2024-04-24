@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.html import strip_tags
 
@@ -9,7 +10,7 @@ from config.settings import (
     PRE_AUTH_CODE_EXPIRES,
     CHANGE_SETTINGS_CODE_EXPIRES,
 )
-from apps.accounts.models import PreAuthToken, SettingsAuthCodes
+from apps.accounts.models import PreAuthToken, SettingsAuthCodes, UserCountHistory, User
 
 
 @shared_task
@@ -45,3 +46,11 @@ def delete_settings_auth_codes():
     SettingsAuthCodes.objects.filter(
         created_at__lt=timezone.now() - CHANGE_SETTINGS_CODE_EXPIRES
     ).delete()
+
+
+@shared_task
+def create_user_count_history():
+    UserCountHistory.objects.create(
+        total=User.objects.count(),
+        active=User.objects.filter(Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0)),
+    )

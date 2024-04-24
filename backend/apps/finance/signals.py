@@ -95,6 +95,7 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
                 target_name=None,
                 amount=None,
             )
+            instance.done_at = now().date()
         if instance.status == WithdrawalRequest.Status.REJECTED:
             if instance.reject_message == "":
                 raise ValidationError("Reject message is required for REJECTED status.")

@@ -179,6 +179,7 @@ class UserProgramHistory(models.Model):
     status = models.CharField(
         "Статус", choices=UserProgram.Status.choices, default=UserProgram.Status.INITIAL
     )
+    deposit = models.DecimalField("Депозит", **decimal_usdt, default=Decimal("0.0"))
     funds = models.DecimalField(
         "Торговые средства", **decimal_usdt, default=Decimal("0.0")
     )

@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.forms import ModelForm, BaseModelFormSet, ValidationError
+from django.urls import reverse
+from django.utils.html import format_html
 from django.http import HttpRequest
 from . import models
 from .models import (
@@ -8,6 +10,7 @@ from .models import (
     Holidays,
     OperationHistory,
     WithdrawalRequest,
+    Stats,
 )
 from ..accounts.models.user import Partner
 
@@ -206,9 +209,13 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
     form = WithdrawalRequestForm
     list_display = [
         "done",
-        "address",
+        "created_at",
+        "done_at",
+        "wallet_id",
         "original_amount",
         "amount",
+        "commission",
+        "address",
         "status",
         "reject_message",
     ]
@@ -217,12 +224,42 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             None,
-            {
-                "fields": list_display
-            },
+            {"fields": list_display},
         ),
     )
 
     def get_changelist_formset(self, request, **kwargs):
         kwargs["formset"] = WithdrawalRequestFormSet
         return super().get_changelist_formset(request, **kwargs)
+
+    @admin.display(description="Удержать комиссию")
+    def commission(self, obj: WithdrawalRequest):
+        return obj.original_amount - obj.amount
+
+
+@admin.register(Stats)
+class StatsAdmin(admin.ModelAdmin):
+    list_display = ["get_name", "today", "this_month", "last_month", "two_months_ago"]
+
+    # def has_add_permission(self, request: HttpRequest) -> bool:
+    #     return False
+
+    # def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
+    #     return False
+
+    # def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+    #     return False
+
+    @admin.display(description="Показатель")
+    def get_name(self, obj: Stats):
+        url = reverse("admin:accounts_user_changelist")
+        if obj.name == Stats.Name.USERS_TOTAL:
+            return format_html('<a href="{}">{}</a>', url, Stats.Name(obj.name).label)
+        if obj.name == Stats.Name.USERS_ACTIVE:
+            return format_html(
+                '<a href="{}">{}</a>',
+                url + "?status=active",
+                Stats.Name(obj.name).label,
+            )
+        else:
+            return Stats.Name(obj.name).label
