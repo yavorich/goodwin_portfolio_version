@@ -34,7 +34,7 @@ class Stats(Model):
         )
         EXTRA_FEE = "extra_fee", _("Удержано Extra Fee")
         MANAGEMENT_FEE = "management_fee", _("Удержано Management Fee")
-        TOTAL_FUND_BALANCE = "total_fund_balance", _("Итого Баланс Фонда")
+        TOTAL_FUND_BALANCE = "total_fund_balance", _("ИТОГО БАЛАНС ФОНДА")
         USERS_TOTAL = "users_total", _("Кол-во зарегистрированных пользователей")
         USERS_ACTIVE = "users_active", _("Кол-во активных пользователей")
 
