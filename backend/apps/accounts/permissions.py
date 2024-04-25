@@ -1,11 +1,7 @@
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from django.utils.translation import gettext_lazy as _
 
-from apps.accounts.models import (
-    PersonalVerification,
-    AddressVerification,
-    VerificationStatus,
-)
+from apps.accounts.models import User
 from config import settings
 
 
@@ -33,23 +29,10 @@ class IsAuthenticatedAndVerified(IsAuthenticatedAndAcceptedOfferAgreement):
     }
 
     def has_permission(self, request, view):
-        user = request.user
-        personal_verification: PersonalVerification = getattr(
-            user, "personal_verification", None
-        )
-        address_verification: AddressVerification = getattr(
-            user, "address_verification", None
-        )
-
-        if personal_verification is None or address_verification is None:
-            return False
-
+        user: User = request.user
         self.message = super().message
-        return (
-            super().has_permission(request, view)
-            and personal_verification.status == VerificationStatus.APPROVED
-            and address_verification.status == VerificationStatus.APPROVED
-        )
+
+        return super().has_permission(request, view) and user.verified()
 
 
 class IsPartner(IsAuthenticatedAndVerified):

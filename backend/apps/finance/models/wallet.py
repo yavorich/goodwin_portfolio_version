@@ -29,6 +29,10 @@ class Wallet(models.Model):
     def name(self):
         return "Wallet GDW"
 
+    @property
+    def balance(self):
+        return self.free + self.frozen
+
     def update_balance(
         self,
         free: Decimal = Decimal("0.0"),

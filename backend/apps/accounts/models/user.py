@@ -89,6 +89,13 @@ class User(AbstractUser):
                 "Пользователя со статусом партнёра нельзя привязать к другому партнёру."
             )
 
+    def verified(self) -> bool:
+        personal = getattr(self, "personal_verification", None)
+        address = getattr(self, "address_verification", None)
+        personal_status = getattr(personal, "status", None)
+        address_status = getattr(address, "status", None)
+        return personal_status == address_status == VerificationStatus.APPROVED
+
 
 class Settings(models.Model):
     user = models.OneToOneField(User, related_name="settings", on_delete=models.CASCADE)
@@ -251,7 +258,7 @@ class Partner(models.Model):
     partner_id = models.IntegerField(
         unique=True,
         validators=[MinValueValidator(0)],
-        verbose_name="ID партнёра в системе GOODWIN",
+        verbose_name="ID филиала",
     )
     region = models.ForeignKey(
         Region,
@@ -268,8 +275,8 @@ class Partner(models.Model):
     )
 
     class Meta:
-        verbose_name = "Партнёр"
-        verbose_name_plural = "Партнёры"
+        verbose_name = "Филиал"
+        verbose_name_plural = "Филиалы"
 
     def __str__(self):
         return f"{self.region} - {self.partner_id} ({self.user})"
