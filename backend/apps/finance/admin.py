@@ -1,10 +1,15 @@
+from typing import Any
 from django.contrib import admin
+from django.db.models.query import QuerySet
 from django.forms import ModelForm, BaseModelFormSet, ValidationError
 from django.urls import reverse
 from django.utils.html import format_html
 from django.http import HttpRequest
+from django.db.models import Sum
 from . import models
 from .models import (
+    Program,
+    UserProgram,
     UserProgramAccrual,
     WalletHistory,
     Holidays,
@@ -40,25 +45,185 @@ class WalletHistoryAdmin(admin.ModelAdmin):
 
 class ProgramResultInline(admin.TabularInline):
     model = models.ProgramResult
-    fields = ["result"]
-    extra = 0
+    fields = ["created_at", "result"]
+    readonly_fields = fields
+    can_delete = False
+    max_num = 0
+    classes = ["collapse"]
+    verbose_name_plural = "РЕЗУЛЬТАТЫ"
 
 
-@admin.register(models.Program)
-class ProgramAdmin(admin.ModelAdmin):
-    list_display = [
-        "name",
-        "duration",
-        "exp_profit",
-        "min_deposit",
-        "accrual_type",
-        "withdrawal_type",
-        "max_risk",
-        "success_fee",
-        "management_fee",
-        "withdrawal_terms",
+class UserProgramInline(admin.TabularInline):
+    model = models.UserProgram
+    classes = ["collapse"]
+    max_num = 0
+    can_delete = False
+
+    def get_id(self, obj: UserProgram):
+        return obj.wallet.user.id
+
+    get_id.short_description = "ID"
+
+    def fio(self, obj: UserProgram):
+        return obj.wallet.user.full_name
+
+    fio.short_description = "ФИО"
+
+    def email(self, obj: UserProgram):
+        return obj.wallet.user.email
+
+    def total_accruals(self, obj: UserProgram):
+        return obj.accruals.aggregate(total=Sum("amount"))["total"]
+
+    def total_success_fee(self, obj: UserProgram):
+        return obj.accruals.aggregate(total=Sum("success_fee"))["total"]
+
+    def total_management_fee(self, obj: UserProgram):
+        return obj.accruals.aggregate(total=Sum("management_fee"))["total"]
+
+
+class UserProgramActiveInline(UserProgramInline):
+    fields = [
+        "get_id",
+        "fio",
+        "email",
+        "deposit",
+        "start_date",
+        "total_accruals",
+        "total_success_fee",
+        "total_management_fee",
     ]
-    inlines = [ProgramResultInline]
+    readonly_fields = fields
+    verbose_name_plural = "АКТИВНЫЕ ПРОГРАММЫ"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        queryset = super().get_queryset(request)
+        return queryset.filter(status=UserProgram.Status.RUNNING)
+
+
+class UserProgramClosedInline(UserProgramInline):
+    fields = [
+        "get_id",
+        "fio",
+        "email",
+        "deposit",
+        "start_date",
+        "close_date",
+        "total_accruals",
+        "total_success_fee",
+        "total_management_fee",
+    ]
+    readonly_fields = fields
+    verbose_name_plural = "ЗАКРЫТЫЕ ПРОГРАММЫ"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        queryset = super().get_queryset(request)
+        return queryset.filter(status=UserProgram.Status.FINISHED)
+
+
+@admin.register(Program)
+class ProgramAdmin(admin.ModelAdmin):
+    class Media:
+        css = {"all": ("admin/css/custom_admin.css",)}  # Include extra css
+
+    list_display = [
+        "get_name",
+        "count",
+        "total_deposit",
+        "total_accruals",
+        "total_success_fee",
+        "total_management_fee",
+    ]
+    ordering = ["name"]
+    inlines = [ProgramResultInline, UserProgramActiveInline, UserProgramClosedInline]
+    fieldsets = (
+        (
+            "ПАРАМЕТРЫ",
+            {
+                "classes": ("collapse",),
+                "fields": [
+                    "name",
+                    "duration",
+                    "exp_profit",
+                    "min_deposit",
+                    "accrual_type",
+                    "withdrawal_type",
+                    "max_risk",
+                    "success_fee",
+                    "management_fee",
+                    "withdrawal_terms",
+                ],
+            },
+        ),
+    )
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
+
+    @admin.display(description="Название")
+    def get_name(self, obj: Program):
+        return format_html('<h3 style="color: blue">{}</h3>', obj.name)
+
+    @admin.display(description="Количество программ")
+    def count(self, obj: Program):
+        active = obj.users.filter(status=UserProgram.Status.RUNNING).count()
+        closed = obj.users.filter(status=UserProgram.Status.FINISHED).count()
+        return format_html(
+            '<h3 style="color: blue">Активные: {}</h3><h3><br>Закрытые: {}</h3>',
+            active,
+            closed,
+        )
+
+    @admin.display(description="Базовый актив")
+    def total_deposit(self, obj: Program):
+        active = obj.users.filter(status=UserProgram.Status.RUNNING).aggregate(
+            total=Sum("deposit")
+        )["total"]
+        closed = obj.users.filter(status=UserProgram.Status.FINISHED).aggregate(
+            total=Sum("deposit")
+        )["total"]
+        return format_html(
+            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+        )
+
+    @admin.display(description="Начислено прибыли")
+    def total_accruals(self, obj: Program):
+        active = UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.RUNNING, program__program=obj
+        ).aggregate(total=Sum("amount"))["total"]
+        closed = UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.FINISHED, program__program=obj
+        ).aggregate(total=Sum("amount"))["total"]
+        return format_html(
+            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+        )
+
+    @admin.display(description="Удержано Success Fee")
+    def total_success_fee(self, obj: Program):
+        active = UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.RUNNING, program__program=obj
+        ).aggregate(total=Sum("success_fee"))["total"]
+        closed = UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.FINISHED, program__program=obj
+        ).aggregate(total=Sum("success_fee"))["total"]
+        return format_html(
+            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+        )
+
+    @admin.display(description="Удержано Management Fee")
+    def total_management_fee(self, obj: Program):
+        active = UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.RUNNING, program__program=obj
+        ).aggregate(total=Sum("management_fee"))["total"]
+        closed = UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.FINISHED, program__program=obj
+        ).aggregate(total=Sum("management_fee"))["total"]
+        return format_html(
+            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+        )
 
 
 @admin.register(models.ProgramResult)
@@ -239,27 +404,98 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
 
 @admin.register(Stats)
 class StatsAdmin(admin.ModelAdmin):
-    list_display = ["get_name", "today", "this_month", "last_month", "two_months_ago"]
+    list_display = [
+        "get_name",
+        "get_today",
+        "get_this_month",
+        "get_last_month",
+        "get_two_months_ago",
+    ]
 
-    # def has_add_permission(self, request: HttpRequest) -> bool:
-    #     return False
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
 
-    # def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
-    #     return False
+    def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
 
-    # def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
-    #     return False
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
 
     @admin.display(description="Показатель")
     def get_name(self, obj: Stats):
         url = reverse("admin:accounts_user_changelist")
         if obj.name == Stats.Name.USERS_TOTAL:
-            return format_html('<a href="{}">{}</a>', url, Stats.Name(obj.name).label)
+            return format_html(
+                '<div style="margin-top: 30px"><a href="{}">{}</a></div>',
+                url,
+                Stats.Name(obj.name).label,
+            )
         if obj.name == Stats.Name.USERS_ACTIVE:
             return format_html(
                 '<a href="{}">{}</a>',
                 url + "?status=active",
                 Stats.Name(obj.name).label,
             )
+        if obj.name == Stats.Name.TOTAL_FUND_BALANCE:
+            return format_html(
+                '<h3 style="margin-bottom: 30px; padding: 0">{}</h3>',
+                Stats.Name(obj.name).label,
+            )
         else:
             return Stats.Name(obj.name).label
+
+    @admin.display(description="Сегодня")
+    def get_today(self, obj: Stats):
+        if obj.name == Stats.Name.USERS_TOTAL:
+            return format_html(
+                '<div style="margin-top: 30px">{}</div>',
+                obj.today,
+            )
+        if obj.name == Stats.Name.TOTAL_FUND_BALANCE:
+            return format_html(
+                '<h3 style="margin-bottom: 30px; padding: 0">{}</h3>',
+                obj.today,
+            )
+        return obj.today
+
+    @admin.display(description="За текущий месяц")
+    def get_this_month(self, obj: Stats):
+        if obj.name == Stats.Name.USERS_TOTAL:
+            return format_html(
+                '<div style="margin-top: 30px">{}</div>',
+                obj.this_month,
+            )
+        if obj.name == Stats.Name.TOTAL_FUND_BALANCE:
+            return format_html(
+                '<h3 style="margin-bottom: 30px; padding: 0">{}</h3>',
+                obj.this_month,
+            )
+        return obj.this_month
+
+    @admin.display(description="За прошлый месяц")
+    def get_last_month(self, obj: Stats):
+        if obj.name == Stats.Name.USERS_TOTAL:
+            return format_html(
+                '<div style="margin-top: 30px">{}</div>',
+                obj.last_month,
+            )
+        if obj.name == Stats.Name.TOTAL_FUND_BALANCE:
+            return format_html(
+                '<h3 style="margin-bottom: 30px; padding: 0">{}</h3>',
+                obj.last_month,
+            )
+        return obj.last_month
+
+    @admin.display(description="За позапрошлый месяц")
+    def get_two_months_ago(self, obj: Stats):
+        if obj.name == Stats.Name.USERS_TOTAL:
+            return format_html(
+                '<div style="margin-top: 30px">{}</div>',
+                obj.two_months_ago,
+            )
+        if obj.name == Stats.Name.TOTAL_FUND_BALANCE:
+            return format_html(
+                '<h3 style="margin-bottom: 30px; padding: 0">{}</h3>',
+                obj.two_months_ago,
+            )
+        return obj.two_months_ago
