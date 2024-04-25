@@ -301,17 +301,6 @@ class FrozenItemAdmin(admin.ModelAdmin):
     ]
 
 
-@admin.register(Partner)
-class PartnerAdmin(admin.ModelAdmin):
-    def formfield_for_dbfield(self, db_field, **kwargs):
-        field = super().formfield_for_dbfield(db_field, **kwargs)
-        if db_field.name == "partner_id":
-            partner_ids = self.model.objects.values_list("partner_id", flat=True)
-            help_text = f"Занятые ID партнёров: {', '.join(map(str, partner_ids))}"
-            field.help_text = help_text
-        return field
-
-
 @admin.register(UserProgramAccrual)
 class PartnerAccrualAdmin(admin.ModelAdmin):
     list_display = ["program", "amount", "success_fee", "management_fee"]
