@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-15 04:05+0300\n"
+"POT-Creation-Date: 2024-04-26 16:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -56,20 +56,20 @@ msgstr ""
 msgid "Код подтверждения для регистрации: {code}"
 msgstr ""
 
-#: apps/accounts/permissions.py:16
+#: apps/accounts/permissions.py:12
 msgid "Для доступа к этой странице необходимо принять условия договора оферты"
 msgstr ""
 
-#: apps/accounts/permissions.py:31
+#: apps/accounts/permissions.py:27
 msgid ""
 "Для доступа к этой странице необходимо подтвердить свою личность и адрес"
 msgstr ""
 
-#: apps/accounts/permissions.py:58
+#: apps/accounts/permissions.py:41
 msgid "Для доступа к этой странице необходимо иметь статус партнёра"
 msgstr ""
 
-#: apps/accounts/permissions.py:74
+#: apps/accounts/permissions.py:57
 msgid ""
 "Доступ к этой странице разрешён только для аутентифицированного локального "
 "приложения"
@@ -137,7 +137,7 @@ msgid "GOODWIN - Смена адреса электронной почты"
 msgstr ""
 
 #: apps/accounts/views/profile.py:102 apps/accounts/views/profile.py:158
-#: apps/accounts/views/profile.py:257
+#: apps/accounts/views/profile.py:257 apps/finance/views/operations.py:78
 msgid "Код подтверждения не найден"
 msgstr ""
 
@@ -183,41 +183,153 @@ msgstr ""
 msgid "Сб"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:11
+#: apps/finance/models/operation_history.py:12
 msgid "Перевод в раздел \"Доступно\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:12
+#: apps/finance/models/operation_history.py:13
 msgid "Перевод в раздел \"Заморожено\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:13
+#: apps/finance/models/operation_history.py:14
 msgid "Перевод между счетами"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:14
+#: apps/finance/models/operation_history.py:15
 msgid "Вывод"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:15
+#: apps/finance/models/operation_history.py:16
 msgid "Пополнение"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:16
+#: apps/finance/models/operation_history.py:17
 msgid "Начисление прибыли"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:17
+#: apps/finance/models/operation_history.py:18
 msgid "Фиксация убытка"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:18
+#: apps/finance/models/operation_history.py:19
 msgid "Программа лояльности"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:19
+#: apps/finance/models/operation_history.py:20
 msgid "Системное сообщение"
 msgstr ""
+
+#: apps/finance/models/stats.py:19
+msgid "Сумма в кошельках"
+msgstr ""
+
+#: apps/finance/models/stats.py:20
+msgid "Сумма в программах ST-1"
+msgstr ""
+
+#: apps/finance/models/stats.py:21
+msgid "Сумма в программах ST-2"
+msgstr ""
+
+#: apps/finance/models/stats.py:22
+msgid "Сумма в программах ST-3"
+msgstr ""
+
+#: apps/finance/models/stats.py:23
+msgid "Поставлено на вывод (кошелёк)"
+msgstr ""
+
+#: apps/finance/models/stats.py:24
+msgid "Ожидает запуска"
+msgstr ""
+
+#: apps/finance/models/stats.py:25
+msgid "Ожидает пополнения"
+msgstr ""
+
+#: apps/finance/models/stats.py:26
+msgid "Доход филиала Россия"
+msgstr ""
+
+#: apps/finance/models/stats.py:27
+msgid "Доход филиала Китай"
+msgstr ""
+
+#: apps/finance/models/stats.py:28
+msgid "Доход филиала США"
+msgstr ""
+
+#: apps/finance/models/stats.py:29
+msgid "Начисленная прибыль (чистая)"
+msgstr ""
+
+#: apps/finance/models/stats.py:30
+msgid "Начисленная прибыль (базовая)"
+msgstr ""
+
+#: apps/finance/models/stats.py:31
+msgid "Удержано Success Fee"
+msgstr ""
+
+#: apps/finance/models/stats.py:33
+msgid "Удержано Success Fee после вычета дохода Филиала"
+msgstr ""
+
+#: apps/finance/models/stats.py:35
+msgid "Удержано Extra Fee"
+msgstr ""
+
+#: apps/finance/models/stats.py:36
+msgid "Удержано Management Fee"
+msgstr ""
+
+#: apps/finance/models/stats.py:37
+msgid "ИТОГО БАЛАНС ФОНДА"
+msgstr ""
+
+#: apps/finance/models/stats.py:38
+msgid "Кол-во зарегистрированных пользователей"
+msgstr ""
+
+#: apps/finance/models/stats.py:39
+msgid "Кол-во активных пользователей"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:50
+msgid "Insufficient free funds."
+msgstr "Недостаточно свободных средств"
+
+#: apps/finance/serializers/operations.py:52
+msgid "Insufficient frozen funds."
+msgstr "Недостаточно замороженных средств"
+
+#: apps/finance/serializers/operations.py:84
+msgid "Minimum program deposit"
+msgstr "Минимальный депозит программы"
+
+#: apps/finance/serializers/operations.py:103
+msgid "Minimum program replenishment"
+msgstr "Минимальная сумма пополнения программы"
+
+#: apps/finance/serializers/operations.py:121
+msgid "Minimum replenishment amount after cancellation"
+msgstr "Минимальная остаток суммы пополнения программы"
+
+#: apps/finance/serializers/operations.py:124
+msgid "Insufficient funds to cancel"
+msgstr "Указанная сумма больше текущей суммы пополнения"
+
+#: apps/finance/serializers/operations.py:151
+msgid "Minimum program deposit after cancellation"
+msgstr "Минимальный остаток депозита программы"
+
+#: apps/finance/serializers/operations.py:155
+msgid "Insufficient program deposit"
+msgstr "Указанная сумма больше текущего депозита программы"
+
+#: apps/finance/serializers/operations.py:210
+msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
+msgstr "Сервис эквайринга временно не доступен, повторите попытку позже"
 
 #: apps/finance/services/operation_replenishment_confirmation.py:12
 msgid "Operation already done"
@@ -242,10 +354,15 @@ msgid "GOODWIN - Подтверждение операции"
 msgstr ""
 
 #: apps/finance/services/send_operation_confirm_email.py:10
-#, python-brace-format
 msgid ""
 "Здравствуйте!\n"
-"Ваш код для подтверждения операции \"{operation}\""
+"Ваш код для подтверждения операции"
+msgstr ""
+
+#: apps/finance/signals.py:61
+msgid ""
+"Подтверждение операции\n"
+"Ваш код для подтверждения операции"
 msgstr ""
 
 #: config/settings.py:140

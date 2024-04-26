@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-15 04:05+0300\n"
+"POT-Creation-Date: 2024-04-26 16:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -54,25 +54,24 @@ msgstr "Registration confirmation code"
 msgid "Код подтверждения для регистрации: {code}"
 msgstr "Confirmation code for registration: {code}"
 
-#: apps/accounts/permissions.py:16
+#: apps/accounts/permissions.py:12
 msgid "Для доступа к этой странице необходимо принять условия договора оферты"
 msgstr "To access this page you must accept the terms of the offer agreement"
 
-#: apps/accounts/permissions.py:31
+#: apps/accounts/permissions.py:27
 msgid ""
 "Для доступа к этой странице необходимо подтвердить свою личность и адрес"
 msgstr "To access this page you must verify your identity and address"
 
-#: apps/accounts/permissions.py:58
+#: apps/accounts/permissions.py:41
 msgid "Для доступа к этой странице необходимо иметь статус партнёра"
 msgstr "To access this page you must have partner status"
 
-#: apps/accounts/permissions.py:74
+#: apps/accounts/permissions.py:57
 msgid ""
 "Доступ к этой странице разрешён только для аутентифицированного локального "
 "приложения"
-msgstr "Access to this page is restricted to authenticated local "
-"application"
+msgstr "Access to this page is restricted to authenticated local application"
 
 #: apps/accounts/serializers/register.py:31
 msgid "Пользователь с данной почтой уже существует"
@@ -86,7 +85,8 @@ msgstr "GOODWIN - Email Verification"
 msgid ""
 "Здравствуйте!\n"
 "Ваш код для подтверждения почты"
-msgstr "Hello!\n"
+msgstr ""
+"Hello!\n"
 "Your email verification code"
 
 #: apps/accounts/services/email.py:45
@@ -100,9 +100,10 @@ msgid ""
 "Был отправлен запрос на сброс пароля для вашего аккаунта. Если это сделали "
 "не вы, проигнорируйте данное сообщение (Эта ссылка действует 1 раз и в "
 "течение 24 часов)"
-msgstr "Hello, {full_name}!\n"
-"A request has been sent to reset the password for your account. "
-"If you did not do this, ignore this message (This link is valid once and for 24 hours)"
+msgstr ""
+"Hello, {full_name}!\n"
+"A request has been sent to reset the password for your account. If you did "
+"not do this, ignore this message (This link is valid once and for 24 hours)"
 
 #: apps/accounts/services/email.py:52
 msgid "Сбросить пароль"
@@ -112,7 +113,8 @@ msgstr "Reset password"
 msgid ""
 "Здравствуйте!\n"
 "Ваш код для подтверждения смены настроек"
-msgstr "Hello!\n"
+msgstr ""
+"Hello!\n"
 "Your code to confirm the change of settings"
 
 #: apps/accounts/services/email.py:68
@@ -123,7 +125,8 @@ msgstr "GOODWIN - Change settings"
 msgid ""
 "Здравствуйте!\n"
 "Ваш код для подтверждения смены пароля"
-msgstr "Hello!\n"
+msgstr ""
+"Hello!\n"
 "Your code to confirm the password change"
 
 #: apps/accounts/services/email.py:79
@@ -134,7 +137,8 @@ msgstr "GOODWIN - Change password"
 msgid ""
 "Здравствуйте!\n"
 "Ваш код для подтверждения смены адреса электронной почты"
-msgstr "Hello!\n"
+msgstr ""
+"Hello!\n"
 "Your code to confirm the change of email address"
 
 #: apps/accounts/services/email.py:93
@@ -142,7 +146,7 @@ msgid "GOODWIN - Смена адреса электронной почты"
 msgstr "GOODWIN - Change email address"
 
 #: apps/accounts/views/profile.py:102 apps/accounts/views/profile.py:158
-#: apps/accounts/views/profile.py:257
+#: apps/accounts/views/profile.py:257 apps/finance/views/operations.py:78
 msgid "Код подтверждения не найден"
 msgstr "Verification code not found"
 
@@ -158,7 +162,8 @@ msgstr "Password successfully changed"
 msgid ""
 "Смена настроек\n"
 "Ваш код для подтверждения смены настроек"
-msgstr "Change settings\n"
+msgstr ""
+"Change settings\n"
 "Your code to confirm the change of settings"
 
 #: apps/accounts/views/statistics.py:183
@@ -189,41 +194,159 @@ msgstr "Fri"
 msgid "Сб"
 msgstr "Sat"
 
-#: apps/finance/models/operation_history.py:11
+#: apps/finance/models/operation_history.py:12
 msgid "Перевод в раздел \"Доступно\""
 msgstr "Transfer to the \"Available\" section"
 
-#: apps/finance/models/operation_history.py:12
+#: apps/finance/models/operation_history.py:13
 msgid "Перевод в раздел \"Заморожено\""
 msgstr "Transfer to the \"Frozen\" section"
 
-#: apps/finance/models/operation_history.py:13
+#: apps/finance/models/operation_history.py:14
 msgid "Перевод между счетами"
 msgstr "Transfer between accounts"
 
-#: apps/finance/models/operation_history.py:14
+#: apps/finance/models/operation_history.py:15
 msgid "Вывод"
 msgstr "Withdrawal"
 
-#: apps/finance/models/operation_history.py:15
+#: apps/finance/models/operation_history.py:16
 msgid "Пополнение"
 msgstr "Top-up"
 
-#: apps/finance/models/operation_history.py:16
+#: apps/finance/models/operation_history.py:17
 msgid "Начисление прибыли"
 msgstr "Profit accrual"
 
-#: apps/finance/models/operation_history.py:17
+#: apps/finance/models/operation_history.py:18
 msgid "Фиксация убытка"
 msgstr "Fixation of loss"
 
-#: apps/finance/models/operation_history.py:18
+#: apps/finance/models/operation_history.py:19
 msgid "Программа лояльности"
 msgstr "Loyalty program"
 
-#: apps/finance/models/operation_history.py:19
+#: apps/finance/models/operation_history.py:20
 msgid "Системное сообщение"
 msgstr "System message"
+
+#: apps/finance/models/stats.py:19
+msgid "Сумма в кошельках"
+msgstr ""
+
+#: apps/finance/models/stats.py:20
+msgid "Сумма в программах ST-1"
+msgstr ""
+
+#: apps/finance/models/stats.py:21
+msgid "Сумма в программах ST-2"
+msgstr ""
+
+#: apps/finance/models/stats.py:22
+msgid "Сумма в программах ST-3"
+msgstr ""
+
+#: apps/finance/models/stats.py:23
+msgid "Поставлено на вывод (кошелёк)"
+msgstr ""
+
+#: apps/finance/models/stats.py:24
+msgid "Ожидает запуска"
+msgstr ""
+
+#: apps/finance/models/stats.py:25
+#, fuzzy
+#| msgid "Пополнение"
+msgid "Ожидает пополнения"
+msgstr "Top-up"
+
+#: apps/finance/models/stats.py:26
+msgid "Доход филиала Россия"
+msgstr ""
+
+#: apps/finance/models/stats.py:27
+msgid "Доход филиала Китай"
+msgstr ""
+
+#: apps/finance/models/stats.py:28
+msgid "Доход филиала США"
+msgstr ""
+
+#: apps/finance/models/stats.py:29
+#, fuzzy
+#| msgid "Начисление прибыли"
+msgid "Начисленная прибыль (чистая)"
+msgstr "Profit accrual"
+
+#: apps/finance/models/stats.py:30
+#, fuzzy
+#| msgid "Начисление прибыли"
+msgid "Начисленная прибыль (базовая)"
+msgstr "Profit accrual"
+
+#: apps/finance/models/stats.py:31
+msgid "Удержано Success Fee"
+msgstr ""
+
+#: apps/finance/models/stats.py:33
+msgid "Удержано Success Fee после вычета дохода Филиала"
+msgstr ""
+
+#: apps/finance/models/stats.py:35
+msgid "Удержано Extra Fee"
+msgstr ""
+
+#: apps/finance/models/stats.py:36
+msgid "Удержано Management Fee"
+msgstr ""
+
+#: apps/finance/models/stats.py:37
+msgid "ИТОГО БАЛАНС ФОНДА"
+msgstr ""
+
+#: apps/finance/models/stats.py:38
+msgid "Кол-во зарегистрированных пользователей"
+msgstr ""
+
+#: apps/finance/models/stats.py:39
+msgid "Кол-во активных пользователей"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:50
+msgid "Insufficient free funds."
+msgstr ""
+
+#: apps/finance/serializers/operations.py:52
+msgid "Insufficient frozen funds."
+msgstr ""
+
+#: apps/finance/serializers/operations.py:84
+msgid "Minimum program deposit"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:103
+msgid "Minimum program replenishment"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:121
+msgid "Minimum replenishment amount after cancellation"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:124
+msgid "Insufficient funds to cancel"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:151
+msgid "Minimum program deposit after cancellation"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:155
+msgid "Insufficient program deposit"
+msgstr ""
+
+#: apps/finance/serializers/operations.py:210
+msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
+msgstr ""
 
 #: apps/finance/services/operation_replenishment_confirmation.py:12
 msgid "Operation already done"
@@ -248,11 +371,27 @@ msgid "GOODWIN - Подтверждение операции"
 msgstr "GOODWIN - Transaction confirmation"
 
 #: apps/finance/services/send_operation_confirm_email.py:10
-#, python-brace-format
+#, fuzzy
+#| msgid ""
+#| "Здравствуйте!\n"
+#| "Ваш код для подтверждения операции \"{operation}\""
 msgid ""
 "Здравствуйте!\n"
-"Ваш код для подтверждения операции \"{operation}\""
-msgstr "Hello!\n"
+"Ваш код для подтверждения операции"
+msgstr ""
+"Hello!\n"
+"Your code to confirm the operation \"{operation}\""
+
+#: apps/finance/signals.py:61
+#, fuzzy
+#| msgid ""
+#| "Здравствуйте!\n"
+#| "Ваш код для подтверждения операции \"{operation}\""
+msgid ""
+"Подтверждение операции\n"
+"Ваш код для подтверждения операции"
+msgstr ""
+"Hello!\n"
 "Your code to confirm the operation \"{operation}\""
 
 #: config/settings.py:140
