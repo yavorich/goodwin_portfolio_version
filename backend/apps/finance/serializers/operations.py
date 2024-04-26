@@ -1,5 +1,7 @@
 import json
 import requests
+
+from django.utils.translation import gettext as _
 from rest_framework.fields import DecimalField
 from rest_framework.serializers import (
     ModelSerializer,
@@ -45,9 +47,9 @@ class OperationCreateSerializer(ModelSerializer):
         free = free or attrs.get("amount_free")
         frozen = frozen or attrs.get("amount_frozen")
         if free and attrs["wallet"].free < free:
-            raise ValidationError("Insufficient free funds.")
+            raise ValidationError(_("Insufficient free funds."))
         if frozen and attrs["wallet"].frozen < frozen:
-            raise ValidationError("Insufficient frozen funds.")
+            raise ValidationError(_("Insufficient frozen funds."))
 
     def create(self, validated_data):
         OperationConfirmation.objects.all().delete()
@@ -79,7 +81,7 @@ class ProgramStartSerializer(OperationCreateSerializer):
         self._validate_wallet(attrs)
         if attrs["amount_free"] + attrs["amount_frozen"] < attrs["program"].min_deposit:
             raise ValidationError(
-                f"Minimum program deposit = {attrs['program'].min_deposit}"
+                _("Minimum program deposit") + f" = {attrs['program'].min_deposit}"
             )
         return attrs
 
@@ -98,7 +100,7 @@ class ProgramReplenishmentSerializer(OperationCreateSerializer):
     def validate(self, attrs):
         self._validate_wallet(attrs)
         if attrs["amount_free"] + attrs["amount_frozen"] < 100:
-            raise ValidationError(f"Minimum program replenishment = {100}")
+            raise ValidationError(_("Minimum program replenishment") + " = 100")
         return attrs
 
 
@@ -116,10 +118,10 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
         remainder = attrs["replenishment"].amount - attrs["amount"]
         if 0 < remainder < 100:
             raise ValidationError(
-                "Minimum replenishment amount after cancellation - 100 USDT"
+                _("Minimum replenishment amount after cancellation") + " - 100 USDT"
             )
         if remainder < 0:
-            raise ValidationError("Insufficient funds to cancel")
+            raise ValidationError(_("Insufficient funds to cancel"))
         return attrs
 
     def create(self, validated_data):
@@ -146,10 +148,11 @@ class ProgramClosureSerializer(OperationCreateSerializer):
         remainder = attrs["user_program"].deposit - attrs["amount"]
         if 0 < remainder < min_deposit:
             raise ValidationError(
-                f"Minimum program deposit after cancellation - {min_deposit} USDT"
+                _("Minimum program deposit after cancellation")
+                + f" - {min_deposit} USDT"
             )
         if remainder < 0:
-            raise ValidationError("Insufficient program deposit")
+            raise ValidationError(_("Insufficient program deposit"))
         return attrs
 
     def create(self, validated_data):
@@ -204,7 +207,7 @@ class WalletReplenishmentSerializer(OperationCreateSerializer):
     def cancel(instance: Operation):
         instance.delete()
         raise ServiceUnavailable(
-            detail="Сервис эквайринга временно не доступен, повторите попытку позже"
+            detail=_("Сервис эквайринга временно не доступен, повторите попытку позже")
         )
 
     def create(self, validated_data):

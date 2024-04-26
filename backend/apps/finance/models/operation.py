@@ -1,11 +1,9 @@
-import random
 from decimal import Decimal
 from uuid import uuid4
 
 from django.db import models, transaction
 from django.core.validators import RegexValidator
 from django.utils import timezone
-from django.utils.timezone import now, timedelta
 
 from core.utils import blank_and_null, decimal_usdt
 
