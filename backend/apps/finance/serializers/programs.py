@@ -20,7 +20,7 @@ class ProgramSerializer(ModelSerializer):
     success_fee = FloatField()
     management_fee = FloatField()
     accrual_type = CharField(source="get_accrual_type_display")
-    withdrawal_type = CharField(source="get_accrual_type_display")
+    withdrawal_type = CharField(source="get_withdrawal_type_display")
 
     class Meta:
         model = Program
