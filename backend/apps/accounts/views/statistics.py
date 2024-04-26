@@ -96,7 +96,7 @@ class GeneralInvestmentStatisticsView(RetrieveAPIView):
         total_funds = (
             UserProgram.objects.filter(wallet=user.wallet)
             .exclude(status=UserProgram.Status.FINISHED)
-            .aggregate(total_funds=Sum("funds"))["total_funds"]
+            .aggregate(total=Sum("deposit"))["total"]
             or 0
         )
 
