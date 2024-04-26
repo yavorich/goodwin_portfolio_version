@@ -2,6 +2,7 @@ from decimal import Decimal
 
 import requests
 from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.exceptions import ValidationError, NotFound, ParseError
 from rest_framework.generics import (
@@ -70,6 +71,7 @@ class OperationConfirmAPIView(UpdateAPIView):
             operation=operation,
             code=serializer.validated_data.get("confirmation_code"),
             destination=destination,
+            created_at__gte=now() - settings.OPERATION_CONFIRM_CODE_EXPIRES,
         ).first()
 
         if confirmation_object is None:
