@@ -57,12 +57,14 @@ class OperationCreateSerializer(ModelSerializer):
         return super().create(validated_data)
 
     def to_representation(self, instance):
+        data = super().to_representation(instance)
         return {
             "id": instance.id,
             "confirmations": [
                 confirmation.destination
                 for confirmation in instance.confirmations.all()
             ],
+            **data,
         }
 
 
