@@ -21,7 +21,7 @@ router.register("wallet", views.WalletViewSet, basename="wallet")
 urlpatterns = [
     path("operations/", views.OperationAPIView.as_view(), name="operation-list"),
     path(
-        "operations/<int:pk>/confirm/",
+        "operations/<int:pk>/confirm/<str:destination>/",
         views.OperationConfirmAPIView.as_view(),
         name="operation-confirm",
     ),

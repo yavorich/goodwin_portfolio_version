@@ -1,17 +1,17 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.tasks import send_email_msg
-from apps.finance.models import Operation
+from apps.finance.models import OperationConfirmation
 
 
-def send_operation_confirm_email(operation: Operation):
+def send_operation_confirm_email(confirmation: OperationConfirmation):
     title = _("GOODWIN - Подтверждение операции")
     message = (
-        _(f'Здравствуйте!\nВаш код для подтверждения операции "{operation}"')
-        + f": {operation.confirmation_code}"
+        _("Здравствуйте!\nВаш код для подтверждения операции")
+        + f": {confirmation.code}"
     )
     send_email_msg.delay(
-        operation.wallet.user.email,
+        confirmation.operation.wallet.user.email,
         title,
         message,
         from_email="GOODWIN",

@@ -9,7 +9,7 @@ from rest_framework.serializers import (
 )
 from rest_framework.exceptions import ValidationError
 
-from apps.finance.models import Operation, OperationHistory
+from apps.finance.models import Operation, OperationHistory, OperationConfirmation
 from config import settings
 from core.exceptions import ServiceUnavailable
 from core.utils import decimal_usdt
@@ -32,7 +32,6 @@ class OperationSerializer(ModelSerializer):
 
 
 class OperationCreateSerializer(ModelSerializer):
-    confirmed = BooleanField(read_only=True)
     operation_type = None
 
     class Meta:
@@ -40,7 +39,6 @@ class OperationCreateSerializer(ModelSerializer):
         fields = [
             "id",
             "wallet",
-            "confirmed",
         ]
 
     def _validate_wallet(self, attrs, free=None, frozen=None):
@@ -52,8 +50,18 @@ class OperationCreateSerializer(ModelSerializer):
             raise ValidationError("Insufficient frozen funds.")
 
     def create(self, validated_data):
+        OperationConfirmation.objects.all().delete()
         validated_data["type"] = self.operation_type
         return super().create(validated_data)
+
+    def to_representation(self, instance):
+        return {
+            "id": instance.id,
+            "confirmations": [
+                confirmation.destination
+                for confirmation in instance.confirmations.all()
+            ],
+        }
 
 
 class ProgramStartSerializer(OperationCreateSerializer):

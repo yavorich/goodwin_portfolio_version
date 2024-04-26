@@ -1,9 +1,9 @@
 from decimal import Decimal
 
 import requests
-from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, NotFound, ParseError
 from rest_framework.generics import (
     ListAPIView,
     UpdateAPIView,
@@ -18,7 +18,12 @@ from rest_framework.status import HTTP_200_OK
 from apps.accounts.permissions import IsLocal, IsAuthenticatedAndVerified
 
 from apps.accounts.serializers import UserEmailConfirmSerializer
-from apps.finance.models import Operation, OperationHistory
+from apps.finance.models import (
+    Operation,
+    OperationHistory,
+    OperationConfirmation,
+    DestinationType,
+)
 from apps.finance.serializers import OperationSerializer
 from apps.finance.serializers.operations import (
     OperationReplenishmentConfirmSerializer,
@@ -27,7 +32,6 @@ from apps.finance.services.operation_replenishment_confirmation import (
     operation_replenishment_confirmation,
 )
 from config import settings
-from config.settings import DEBUG
 from core.exceptions import ServiceUnavailable
 
 
@@ -51,28 +55,35 @@ class OperationAPIView(ListAPIView):
 class OperationConfirmAPIView(UpdateAPIView):
     serializer_class = UserEmailConfirmSerializer
     permission_classes = [IsAuthenticated]
-    queryset = Operation.objects.all()
+
+    def get_object(self):
+        destination = self.kwargs.get("destination")
+        if destination not in DestinationType:
+            raise NotFound(f'Destination "{destination}" not found')
+
+        serializer = self.get_serializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+
+        operation = get_object_or_404(Operation, pk=self.kwargs.get("pk"))
+
+        confirmation_object = OperationConfirmation.objects.filter(
+            operation=operation,
+            code=serializer.validated_data.get("confirmation_code"),
+            destination=destination,
+        ).first()
+
+        if confirmation_object is None:
+            raise ParseError(detail=_("Код подтверждения не найден"))
+
+        confirmation_object.delete()
+
+        return operation
 
     def post(self, request, *args, **kwargs):
         operation: Operation = self.get_object()
+
         if operation.confirmed:
-            raise ValidationError("Operation already confirmed.")
-
-        serializer = self.get_serializer_class()(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        code = serializer.data["confirmation_code"]
-
-        if not DEBUG and code != operation.confirmation_code:
-            raise ValidationError("Verification code is incorrect.")
-
-        if now() > operation.confirmation_code_expires_at:
-            raise ValidationError(
-                "Verification code has expired. Repeat the operation."
-            )
-
-        operation.confirmed = True
-        operation.save()
-        operation.apply()
+            operation.apply()
 
         return Response(status=HTTP_200_OK)
 
