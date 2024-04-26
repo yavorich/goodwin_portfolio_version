@@ -1,6 +1,7 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.finance.models import (
@@ -10,38 +11,57 @@ from apps.finance.models import (
     FrozenItem,
     WithdrawalRequest,
     OperationHistory,
+    OperationConfirmation,
+    DestinationType,
     # Action,
 )
 from apps.finance.services.send_operation_confirm_email import (
     send_operation_confirm_email,
 )
-
-
-@receiver(pre_save, sender=Operation)
-def save_operation(sender, instance: Operation, **kwargs):
-    if (
-        instance.type
-        in [
-            Operation.Type.WITHDRAWAL,
-            Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
-            Operation.Type.PROGRAM_CLOSURE,
-        ]
-        and instance.wallet.user.settings.email_request_code_on_withdrawal
-        or instance.type == Operation.Type.TRANSFER
-        and instance.wallet.user.settings.email_request_code_on_transfer
-    ):
-        instance.set_code()
-    else:
-        instance.confirmed = True
+from apps.telegram.utils import send_telegram_message
 
 
 @receiver(post_save, sender=Operation)
 def handle_operation(sender, instance: Operation, created, **kwargs):
     if created:
-        if not instance.confirmed:
-            send_operation_confirm_email(instance)
-        else:
+        is_withdrawal = instance.type in [
+            Operation.Type.WITHDRAWAL,
+            Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
+            Operation.Type.PROGRAM_CLOSURE,
+        ]
+        is_transfer = instance.type == Operation.Type.TRANSFER
+        for destination in [DestinationType.EMAIL, DestinationType.TELEGRAM]:
+            if (
+                is_withdrawal
+                and getattr(
+                    instance.wallet.user.settings,
+                    f"{destination}_request_code_on_withdrawal",
+                )
+                or is_transfer
+                and getattr(
+                    instance.wallet.user.settings,
+                    f"{destination}_request_code_on_transfer",
+                )
+            ):
+                OperationConfirmation.objects.create(
+                    operation=instance, destination=destination
+                )
+        confirmations = instance.confirmations.all()
+        if not confirmations:
             instance.apply()
+        else:
+            for confirmation in confirmations:
+                confirmation.generate_code()
+                if confirmation.destination == DestinationType.EMAIL:
+                    send_operation_confirm_email(confirmation)
+                elif confirmation.destination == DestinationType.TELEGRAM:
+                    send_telegram_message(
+                        telegram_id=confirmation.operation.wallet.user.telegram_id,
+                        text=_(
+                            "Подтверждение операции\nВаш код для подтверждения операции"
+                        )
+                        + f": {confirmation.code}",
+                    )
 
 
 @receiver(pre_save, sender=UserProgram)

@@ -48,9 +48,6 @@ class Operation(models.Model):
         'Из раздела "Заморожено"', **decimal_usdt, **blank_and_null
     )
     created_at = models.DateTimeField("Дата и время", auto_now_add=True)
-    confirmation_code = models.CharField(**blank_and_null)
-    confirmation_code_expires_at = models.DateTimeField(**blank_and_null)
-    confirmed = models.BooleanField("Подтверждена", default=False)
     done = models.BooleanField("Исполнена", default=False)
 
     program = models.ForeignKey(
@@ -112,9 +109,9 @@ class Operation(models.Model):
     def __str__(self) -> str:
         return Operation.Type(self.type).label
 
-    def set_code(self):
-        self.confirmation_code = "".join([str(random.randint(0, 9)) for i in range(6)])
-        self.confirmation_code_expires_at = now() + timedelta(minutes=5)
+    @property
+    def confirmed(self):
+        return self.confirmations.count() == 0
 
     def apply(self):
         with transaction.atomic():
