@@ -137,7 +137,10 @@ class UserProgram(models.Model):
             count = UserProgram.objects.filter(
                 wallet=self.wallet, program=self.program
             ).count()
-            self.name = self.program.name + f"/{count + 1}"
+            if count == 0:
+                self.name == self.program.name
+            else:
+                self.name = self.program.name + f"/{count + 1}"
 
     def _set_start_date(self):
         if not self.start_date:
