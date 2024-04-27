@@ -164,14 +164,16 @@ class ProgramAdmin(admin.ModelAdmin):
 
     @admin.display(description="Название")
     def get_name(self, obj: Program):
-        return format_html('<h3 style="color: blue">{}</h3>', obj.name)
+        return format_html(
+            '<h3 style="color: green; font-size: 20px">{}</h3>', obj.name
+        )
 
     @admin.display(description="Количество программ")
     def count(self, obj: Program):
         active = obj.users.filter(status=UserProgram.Status.RUNNING).count()
         closed = obj.users.filter(status=UserProgram.Status.FINISHED).count()
         return format_html(
-            '<h3 style="color: blue">Активные: {}</h3><h3><br>Закрытые: {}</h3>',
+            '<h3 style="color: green">Активные: {}</h3><h3><br>Закрытые: {}</h3>',
             active,
             closed,
         )
@@ -185,7 +187,7 @@ class ProgramAdmin(admin.ModelAdmin):
             total=Sum("deposit")
         )["total"]
         return format_html(
-            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+            '<h3 style="color: green">{}</h3><br><h3>{}</h3>', active, closed
         )
 
     @admin.display(description="Начислено прибыли")
@@ -197,7 +199,7 @@ class ProgramAdmin(admin.ModelAdmin):
             program__status=UserProgram.Status.FINISHED, program__program=obj
         ).aggregate(total=Sum("amount"))["total"]
         return format_html(
-            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+            '<h3 style="color: green">{}</h3><br><h3>{}</h3>', active, closed
         )
 
     @admin.display(description="Удержано Success Fee")
@@ -209,7 +211,7 @@ class ProgramAdmin(admin.ModelAdmin):
             program__status=UserProgram.Status.FINISHED, program__program=obj
         ).aggregate(total=Sum("success_fee"))["total"]
         return format_html(
-            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+            '<h3 style="color: green">{}</h3><br><h3>{}</h3>', active, closed
         )
 
     @admin.display(description="Удержано Management Fee")
@@ -221,7 +223,7 @@ class ProgramAdmin(admin.ModelAdmin):
             program__status=UserProgram.Status.FINISHED, program__program=obj
         ).aggregate(total=Sum("management_fee"))["total"]
         return format_html(
-            '<h3 style="color: blue">{}</h3><br><h3>{}</h3>', active, closed
+            '<h3 style="color: green">{}</h3><br><h3>{}</h3>', active, closed
         )
 
 
