@@ -4,7 +4,7 @@ from typing import Any, Iterable
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
 from django.db.models.query import QuerySet
-from django.forms import ModelForm
+from django.forms import ModelForm, BaseInlineFormSet
 from django.db.models import Q, Sum, F
 from django.http import HttpRequest
 from nested_admin.nested import (
@@ -13,7 +13,13 @@ from nested_admin.nested import (
     NestedModelAdmin,
 )
 
-from apps.finance.models import Wallet, UserProgram, Operation, WithdrawalRequest
+from apps.finance.models import (
+    Wallet,
+    UserProgram,
+    Operation,
+    WithdrawalRequest,
+    UserProgramAccrual,
+)
 from core.utils import safe_zero_div
 from config.settings import LOGIN_AS_USER_TOKEN
 
@@ -178,19 +184,42 @@ class StatusFilter(admin.SimpleListFilter):
             return queryset.filter(Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0))
 
 
+class UserProgramFormSet(BaseInlineFormSet):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return list(queryset) + [
+            UserProgram(name="Итого", deposit="", start_date="", end_date="")
+        ]
+
+
 class UserProgramsInline(NestedTabularInline):
     model = UserProgram
+    formset = UserProgramFormSet
     can_delete = False
     classes = ["collapse"]
     max_num = 0
     sortable_field_name = "wallet"
 
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def get_all_accruals(self):
+        return NotImplementedError
+
     def total_accruals(self, obj: UserProgram):
-        return obj.accruals.aggregate(total=Sum("amount"))["total"] or 0
+        if obj.pk is None:
+            query = self.get_all_accruals()
+        else:
+            query = obj.accruals
+
+        return query.aggregate(total=Sum("amount"))["total"] or 0
 
     total_accruals.short_description = "Чистая прибыль (после удержания комиссий)"
 
     def total_accruals_percent(self, obj: UserProgram):
+        if obj.pk is None:
+            return ""
+
         total = obj.accruals.aggregate(total=Sum("amount"))["total"] or 0
         percent = round(safe_zero_div(total * 100, obj.deposit), 2)
         return f"{percent}%"
@@ -200,12 +229,22 @@ class UserProgramsInline(NestedTabularInline):
     )
 
     def total_success_fee(self, obj: UserProgram):
-        return obj.accruals.aggregate(total=Sum("success_fee"))["total"] or 0
+        if obj.pk is None:
+            query = self.get_all_accruals()
+        else:
+            query = obj.accruals
+
+        return query.aggregate(total=Sum("success_fee"))["total"] or 0
 
     total_success_fee.short_description = "Success fee"
 
     def total_management_fee(self, obj: UserProgram):
-        return obj.accruals.aggregate(total=Sum("management_fee"))["total"] or 0
+        if obj.pk is None:
+            query = self.get_all_accruals()
+        else:
+            query = obj.accruals
+
+        return query.aggregate(total=Sum("management_fee"))["total"] or 0
 
     total_management_fee.short_description = "Management fee"
 
@@ -227,6 +266,12 @@ class ActiveProgramsInline(UserProgramsInline):
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return super().get_queryset(request).filter(status=UserProgram.Status.RUNNING)
 
+    def get_all_accruals(self):
+        return UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.RUNNING,
+            program__wallet=self.user.wallet,
+        )
+
 
 class ClosedProgramsInline(UserProgramsInline):
     verbose_name_plural = "Закрытые программы"
@@ -244,6 +289,12 @@ class ClosedProgramsInline(UserProgramsInline):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return super().get_queryset(request).filter(status=UserProgram.Status.FINISHED)
+
+    def get_all_accruals(self):
+        return UserProgramAccrual.objects.filter(
+            program__status=UserProgram.Status.FINISHED,
+            program__wallet=self.user.wallet,
+        )
 
 
 class ReplenishmentsInline(NestedTabularInline):
@@ -473,7 +524,7 @@ class WalletInline(NestedTabularInline):
     can_delete = False
     classes = ["collapse"]
     max_num = 0
-    sortable_field_name = "user"
+    # sortable_field_name = "user"
     inlines = [
         ActiveProgramsInline,
         ClosedProgramsInline,
@@ -482,6 +533,13 @@ class WalletInline(NestedTabularInline):
         TransfersOutInline,
         TransfersIncInline,
     ]
+
+    def get_inlines(self, request, obj):
+        inlines = super().get_inlines(request, obj)
+        for inline in inlines:
+            inline.user = obj
+
+        return inlines
 
 
 @admin.register(models.User)
