@@ -1,12 +1,21 @@
-from typing import Any
+from decimal import Decimal
+from typing import Any, Iterable
+
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.admin.options import InlineModelAdmin
 from django.db.models.query import QuerySet
 from django.forms import ModelForm
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, F
 from django.http import HttpRequest
+from nested_admin.nested import (
+    NestedStackedInline,
+    NestedTabularInline,
+    NestedModelAdmin,
+)
 
+from apps.finance.models import Wallet, UserProgram, Operation, WithdrawalRequest
 from core.utils import safe_zero_div
+from config.settings import LOGIN_AS_USER_TOKEN
 
 from . import models
 from .models import (
@@ -41,6 +50,7 @@ class RegionAdmin(admin.ModelAdmin):
             or 0
         )
 
+    @admin.display(description="Средний чек")
     def average_bill(self, obj: Region):
         total_assets = User.objects.filter(partner__region=obj).aggregate(
             total=Sum("wallet__programs__deposit")
@@ -75,8 +85,10 @@ class PartnerAdmin(admin.ModelAdmin):
         return field
 
 
-class SettingsInline(admin.StackedInline):
+class SettingsInline(NestedStackedInline):
     model = models.Settings
+    classes = ["collapse"]
+    sortable_field_name = "user"
 
 
 class PersonalVerificationForm(ModelForm):
@@ -103,9 +115,11 @@ class PersonalVerificationForm(ModelForm):
             )
 
 
-class PersonalVerificationInline(admin.StackedInline):
+class PersonalVerificationInline(NestedStackedInline):
     model = PersonalVerification
     form = PersonalVerificationForm
+    classes = ["collapse"]
+    sortable_field_name = "user"
 
 
 class AddressVerificationForm(ModelForm):
@@ -133,14 +147,18 @@ class AddressVerificationForm(ModelForm):
         return self.cleaned_data
 
 
-class AddressVerificationInline(admin.StackedInline):
+class AddressVerificationInline(NestedStackedInline):
     model = AddressVerification
     form = AddressVerificationForm
+    classes = ["collapse"]
+    sortable_field_name = "user"
 
 
-class PartnerInline(admin.StackedInline):
+class PartnerInline(NestedStackedInline):
     model = models.Partner
     fields = ["partner_id", "region"]
+    classes = ["collapse"]
+    sortable_field_name = "user"
 
 
 # class UserForm(UserChangeForm):
@@ -160,12 +178,321 @@ class StatusFilter(admin.SimpleListFilter):
             return queryset.filter(Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0))
 
 
+class UserProgramsInline(NestedTabularInline):
+    model = UserProgram
+    can_delete = False
+    classes = ["collapse"]
+    max_num = 0
+    sortable_field_name = "wallet"
+
+    def total_accruals(self, obj: UserProgram):
+        return obj.accruals.aggregate(total=Sum("amount"))["total"] or 0
+
+    total_accruals.short_description = "Чистая прибыль (после удержания комиссий)"
+
+    def total_accruals_percent(self, obj: UserProgram):
+        total = obj.accruals.aggregate(total=Sum("amount"))["total"] or 0
+        percent = round(safe_zero_div(total * 100, obj.deposit), 2)
+        return f"{percent}%"
+
+    total_accruals_percent.short_description = (
+        "Чистая прибыль (после удержания комиссий), %"
+    )
+
+    def total_success_fee(self, obj: UserProgram):
+        return obj.accruals.aggregate(total=Sum("success_fee"))["total"] or 0
+
+    total_success_fee.short_description = "Success fee"
+
+    def total_management_fee(self, obj: UserProgram):
+        return obj.accruals.aggregate(total=Sum("management_fee"))["total"] or 0
+
+    total_management_fee.short_description = "Management fee"
+
+
+class ActiveProgramsInline(UserProgramsInline):
+    verbose_name_plural = "Активные программы"
+    fields = [
+        "name",
+        "start_date",
+        "end_date",
+        "deposit",
+        "total_accruals",
+        "total_accruals_percent",
+        "total_success_fee",
+        "total_management_fee",
+    ]
+    readonly_fields = fields
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return super().get_queryset(request).filter(status=UserProgram.Status.RUNNING)
+
+
+class ClosedProgramsInline(UserProgramsInline):
+    verbose_name_plural = "Закрытые программы"
+    fields = [
+        "name",
+        "start_date",
+        "close_date",
+        "deposit",
+        "total_accruals",
+        "total_accruals_percent",
+        "total_success_fee",
+        "total_management_fee",
+    ]
+    readonly_fields = fields
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return super().get_queryset(request).filter(status=UserProgram.Status.FINISHED)
+
+
+class ReplenishmentsInline(NestedTabularInline):
+    verbose_name_plural = "Пополнения"
+    model = Operation
+    fields = ["get_date", "get_amount", "get_commission", "get_amount_net"]
+    readonly_fields = fields
+    can_delete = False
+    classes = ["collapse"]
+    max_num = 0
+    fk_name = "wallet"
+    sortable_field_name = "wallet"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        return qs.filter(type=Operation.Type.REPLENISHMENT, done=True)
+
+    def get_date(self, obj: Operation):
+        done_at = getattr(obj, "done_at", None)
+        if done_at is None:
+            done_at = obj.created_at
+        return done_at.strftime("%d.%m.%Y")
+
+    get_date.short_description = "Дата"
+
+    def get_amount(self, obj: Operation):
+        try:
+            return obj.amount or 0
+        except TypeError:
+            return 0
+
+    get_amount.short_description = "Сумма перевода"
+
+    def get_commission(self, obj: Operation):
+        try:
+            return round(obj.amount * Decimal("0.015"), 2)
+        except TypeError:
+            return 0
+
+    get_commission.short_description = "Удержанная комиссия"
+
+    def get_amount_net(self, obj: Operation):
+        try:
+            return round(obj.amount * Decimal("0.985"), 2)
+        except TypeError:
+            return 0
+
+    get_amount_net.short_description = "Зачислено в кошелек"
+
+
+class WithdrawalsInline(NestedTabularInline):
+    verbose_name_plural = "Снятия"
+    model = WithdrawalRequest
+    fields = [
+        "get_date",
+        "get_amount",
+        "get_commission",
+        "get_amount_net",
+        "get_address",
+    ]
+    readonly_fields = fields
+    can_delete = False
+    classes = ["collapse"]
+    max_num = 0
+    fk_name = "wallet"
+    sortable_field_name = "wallet"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        return qs.filter(done=True)
+
+    def get_date(self, obj: WithdrawalRequest):
+        done_at = getattr(obj, "done_at", None)
+        if done_at is None:
+            done_at = obj.created_at
+        return done_at.strftime("%d.%m.%Y")
+
+    get_date.short_description = "Дата"
+
+    def get_amount(self, obj: WithdrawalRequest):
+        try:
+            return obj.original_amount
+        except TypeError:
+            return 0
+
+    get_amount.short_description = "Списано с кошелька GDW"
+
+    def get_commission(self, obj: WithdrawalRequest):
+        try:
+            return obj.original_amount - obj.amount
+        except TypeError:
+            return 0
+
+    get_commission.short_description = "Удержанная комиссия"
+
+    def get_amount_net(self, obj: WithdrawalRequest):
+        try:
+            return obj.amount
+        except TypeError:
+            return 0
+
+    get_amount_net.short_description = "Отправлено"
+
+    def get_address(self, obj: WithdrawalRequest):
+        return obj.address
+
+    get_address.short_description = "Адрес криптокошелька USDT"
+
+
+class TransfersOutInline(NestedTabularInline):
+    verbose_name_plural = "Исходящие переводы"
+    model = Operation
+    fields = [
+        "get_done_at",
+        "get_id",
+        "get_fio",
+        "get_amount",
+        "get_commission",
+        "get_amount_net",
+    ]
+    readonly_fields = fields
+    can_delete = False
+    classes = ["collapse"]
+    max_num = 0
+    fk_name = "wallet"
+    sortable_field_name = "wallet"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        return qs.filter(type=Operation.Type.TRANSFER, done=True)
+
+    def get_done_at(self, obj: Operation):
+        done_at = getattr(obj, "done_at", None)
+        if done_at is None:
+            done_at = obj.created_at
+        return done_at.strftime("%d.%m.%Y %H:%M")
+
+    get_done_at.short_description = "Дата и время перевода"
+
+    def get_id(self, obj: Operation):
+        return obj.receiver.user.id
+
+    get_id.short_description = "ID получателя"
+
+    def get_fio(self, obj: Operation):
+        return obj.receiver.user.full_name
+
+    get_fio.short_description = "ФИО получателя"
+
+    def get_amount(self, obj: Operation):
+        try:
+            return obj.amount_free + obj.amount_frozen
+        except TypeError:
+            return 0
+
+    get_amount.short_description = "Списано с кошелька"
+
+    def get_commission(self, obj: Operation):
+        try:
+            return round((obj.amount_free + obj.amount_frozen) * Decimal("0.005"), 2)
+        except TypeError:
+            return 0
+
+    get_commission.short_description = "Удержанная комиссия"
+
+    def get_amount_net(self, obj: Operation):
+        try:
+            return round((obj.amount_free + obj.amount_frozen) * Decimal("0.995"), 2)
+        except TypeError:
+            return 0
+
+    get_amount_net.short_description = "Переведено инвестору"
+
+
+class TransfersIncInline(NestedTabularInline):
+    verbose_name_plural = "Входящие переводы"
+    model = Operation
+    fields = [
+        "get_done_at",
+        "get_id",
+        "get_fio",
+        "get_amount_net",
+    ]
+    readonly_fields = fields
+    can_delete = False
+    classes = ["collapse"]
+    max_num = 0
+    fk_name = "receiver"
+    sortable_field_name = "receiver"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        qs = super().get_queryset(request)
+        return qs.filter(type=Operation.Type.TRANSFER, done=True)
+
+    def get_done_at(self, obj: Operation):
+        done_at = getattr(obj, "done_at", None)
+        if done_at is None:
+            done_at = obj.created_at
+        return done_at.strftime("%d.%m.%Y %H:%M")
+
+    get_done_at.short_description = "Дата и время перевода"
+
+    def get_id(self, obj: Operation):
+        return obj.wallet.user.id
+
+    get_id.short_description = "ID отправителя"
+
+    def get_fio(self, obj: Operation):
+        return obj.wallet.user.full_name
+
+    get_fio.short_description = "ФИО отправителя"
+
+    def get_amount_net(self, obj: Operation):
+        try:
+            return round((obj.amount_free + obj.amount_frozen) * Decimal("0.995"), 2)
+        except TypeError:
+            return 0
+
+    get_amount_net.short_description = "Получено"
+
+
+class WalletInline(NestedTabularInline):
+    verbose_name_plural = "Кошелёк"
+    model = Wallet
+    fields = ["free", "frozen"]
+    readonly_fields = fields
+    can_delete = False
+    classes = ["collapse"]
+    max_num = 0
+    sortable_field_name = "user"
+    inlines = [
+        ActiveProgramsInline,
+        ClosedProgramsInline,
+        ReplenishmentsInline,
+        WithdrawalsInline,
+        TransfersOutInline,
+        TransfersIncInline,
+    ]
+
+
 @admin.register(models.User)
-class UserAdmin(UserAdmin):
-    # form = UserForm
+class UserAdmin(NestedModelAdmin):
+    class Media:
+        css = {"all": ("custom_admin.css",)}  # Include extra css
+
+    change_form_template = "custom_user_change_form.html"
     list_display = [
-        "region",
         "id",
+        "region",
         "fio",
         "email",
         "date_joined",
@@ -176,45 +503,54 @@ class UserAdmin(UserAdmin):
         "funds_st_3",
         "funds_total",
     ]
+    readonly_fields = list_display
     inlines = [
         SettingsInline,
         PersonalVerificationInline,
         AddressVerificationInline,
         PartnerInline,
+        WalletInline,
     ]
 
     list_filter = [StatusFilter]
-    search_fields = ["email", "fio"]
+    search_fields = ["id", "email", "first_name", "last_name"]
     ordering = ["-date_joined"]
 
-    fieldsets = UserAdmin.fieldsets + ((None, {"fields": ("email", "password")}),)
-
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
         (
-            "Личная информация",
-            {"fields": ("first_name", "last_name", "avatar", "partner")},
-        ),
-        ("Разрешения", {"fields": ("is_active", "is_staff", "is_superuser")}),
-        (
-            "Важные даты",
-            {"fields": ("last_login", "date_joined", "agreement_date")},
+            "Основная информация",
+            {"fields": ("id", "email", "fio", "date_joined", "status", "funds_total")},
         ),
     )
-    add_fieldsets = (
-        (
-            None,
-            {
-                "classes": ("wide",),
-                "fields": ("email", "password1", "password2"),
-            },
-        ),
-    )
+    # add_fieldsets = (
+    #     (
+    #         None,
+    #         {
+    #             "classes": ("wide",),
+    #             "fields": ("email", "password1", "password2"),
+    #         },
+    #     ),
+    # )
+
+    def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
+        super().__init__(model, admin_site)
+        self.opts.verbose_name_plural = "Клиенты"
+        self.opts.verbose_name = "клиента"
 
     def get_form(self, request, obj=None, **kwargs):
         # Убедитесь, что не упоминается поле 'username'
         self.exclude = ("username",)
         return super().get_form(request, obj, **kwargs)
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["admin_token"] = LOGIN_AS_USER_TOKEN
+        return super(UserAdmin, self).change_view(
+            request,
+            object_id,
+            form_url,
+            extra_context=extra_context,
+        )
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return (

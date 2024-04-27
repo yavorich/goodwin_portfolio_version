@@ -144,7 +144,10 @@ class Operation(models.Model):
 
     def _apply_transfer(self):  # ready
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
-        self.receiver.update_balance(free=self.amount_free, frozen=self.amount_frozen)
+        self.receiver.update_balance(
+            free=self.amount_free * Decimal("0.995"),
+            frozen=self.amount_frozen * Decimal("0.995"),
+        )
         description_to = (
             dict(
                 ru=f"Перевод клиенту GDW ID{self.receiver.user.id}",

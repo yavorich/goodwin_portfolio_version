@@ -12,3 +12,4 @@ from .profile import (
     EmailChangeConfirmAPIView,
 )
 from .partner import PartnerGeneralStatisticsRetrieveView
+from .admin_login_as import LoginAsUserView

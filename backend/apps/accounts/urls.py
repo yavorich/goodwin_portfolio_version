@@ -17,6 +17,7 @@ from apps.accounts.views import (
     PartnerGeneralStatisticsRetrieveView,
     PasswordChangeConfirmAPIView,
     EmailChangeConfirmAPIView,
+    LoginAsUserView,
 )
 from apps.accounts.views.partner import (
     PartnerInvestorsList,
@@ -122,4 +123,5 @@ urlpatterns = [
         TotalProfitStatisticsGraph.as_view(),
         name="graph-statistics",
     ),
+    path("login-as/<int:pk>/<str:token>/", LoginAsUserView.as_view(), name="login-as"),
 ] + router.urls
