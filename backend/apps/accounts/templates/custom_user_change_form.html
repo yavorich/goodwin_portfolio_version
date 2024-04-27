@@ -1,0 +1,10 @@
+{% extends "admin/change_form.html" %}
+
+{% block field_sets %}
+{% for fieldset in adminform %}
+  {% if fieldset.name == "Основная информация" %}
+    <h1><a href={% url 'login-as' object_id admin_token %} class="button">Войти в систему</a></h1>
+  {% endif %}
+  {% include "admin/includes/fieldset.html" %}
+{% endfor %}
+{% endblock %}

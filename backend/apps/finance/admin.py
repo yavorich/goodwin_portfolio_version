@@ -17,7 +17,6 @@ from .models import (
     WithdrawalRequest,
     Stats,
 )
-from ..accounts.models.user import Partner
 
 
 class FrozenItemInline(admin.TabularInline):
@@ -124,7 +123,7 @@ class UserProgramClosedInline(UserProgramInline):
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
     class Media:
-        css = {"all": ("admin/css/custom_admin.css",)}  # Include extra css
+        css = {"all": ("custom_admin.css",)}  # Include extra css
 
     list_display = [
         "get_name",
@@ -261,16 +260,42 @@ class UserProgramAccrualInline(admin.TabularInline):
 @admin.register(models.UserProgram)
 class UserProgramAdmin(admin.ModelAdmin):
     list_display = [
-        "name",
-        "wallet",
+        "wallet_id",
+        "full_name",
+        "get_created_at",
+        "get_start_date",
+        "get_deposit",
+        "program_name",
         "status",
-        "start_date",
-        "end_date",
-        "deposit",
-        "profit",
-        "funds",
     ]
+
+    list_editable = ["status"]
     inlines = [UserProgramReplenishmentInline, UserProgramAccrualInline]
+
+    def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
+        super().__init__(model, admin_site)
+        self.opts.verbose_name_plural = "Запуск в программы"
+        self.opts.verbose_name = "программу пользователя"
+
+    @admin.display(description="ФИО")
+    def full_name(self, obj: UserProgram):
+        return obj.wallet.user.full_name
+
+    @admin.display(description="Дата списания с кошелька")
+    def get_created_at(self, obj: UserProgram):
+        return obj.created_at.date()
+
+    @admin.display(description="Дата запуска программы")
+    def get_start_date(self, obj: UserProgram):
+        return obj.start_date
+
+    @admin.display(description="Сумма перевода")
+    def get_deposit(self, obj: UserProgram):
+        return obj.deposit
+
+    @admin.display(description="Программа")
+    def program_name(self, obj: UserProgram):
+        return obj.program.name
 
 
 # class OperationActionsInline(admin.TabularInline):
@@ -374,7 +399,17 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
         "reject_message",
     ]
     list_editable = ("status", "reject_message")
-    readonly_fields = ("address", "original_amount", "amount", "done")
+    readonly_fields = (
+        "done",
+        "done_at",
+        "created_at",
+        "address",
+        "original_amount",
+        "amount",
+        "done",
+        "wallet_id",
+        "commission",
+    )
     fieldsets = (
         (
             None,

@@ -64,3 +64,16 @@ class IsLocal(BasePermission):
         if token:
             return token == settings.LOCAL_TOKEN
         return False
+
+
+class IsAdmin(BasePermission):
+    message = {
+        "code": "not_admin",
+        "detail": _("Действие доступно только администратору"),
+    }
+
+    def has_permission(self, request, view):
+        token = view.kwargs.get("token")
+        if token:
+            return token == settings.LOGIN_AS_USER_TOKEN
+        return False
