@@ -1,7 +1,7 @@
 {% extends "admin/change_form.html" %}
 
 {% block field_sets %}
-    <h1><input style="padding: 4px 5px;{% if not original.is_online %} background-color: #70db70;{% endif %}" type="submit" data-action="{% url 'login-as' object_id admin_token %}" value="Войти в систему"></h1>
+    <h1><input style="padding: 4px 5px;{% if not original.is_online %} background-color: #29a329;{% endif %}" type="submit" data-action="{% url 'login-as' object_id admin_token %}" value="Войти в систему"></h1>
 {% for fieldset in adminform %}
   {% include "admin/includes/fieldset.html" %}
 {% endfor %}
