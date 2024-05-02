@@ -2,7 +2,7 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db import models
 from django.utils import timezone
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now, timedelta, datetime, localtime
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 from .operation_history import OperationHistory
@@ -38,34 +38,23 @@ class Program(models.Model):
 
 
 class ProgramResult(models.Model):
-    program = models.ForeignKey(
-        Program,
-        verbose_name="Программа",
-        related_name="results",
-        on_delete=models.CASCADE,
-        **blank_and_null,
-    )
-    result = models.DecimalField(
-        "Результат программы за прошедшие сутки (%) ", **decimal_pct, default=1
-    )
-    created_at = models.DateField("Дата и время создания")
+    _singleton = models.BooleanField(default=True, editable=False, unique=True)
+    result = models.DecimalField("Дневная доходность (%) ", **decimal_pct)
+    until = models.DateField("Актуально до")
+    apply_time = models.TimeField("Время ежедневных начислений")
+    task_id = models.CharField(max_length=255, **blank_and_null)
 
     class Meta:
-        get_latest_by = "created_at"
-        ordering = ["created_at"]
-        verbose_name = "Результат программы"
-        verbose_name_plural = "Результаты программ"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["program", "created_at"],
-                name="unique_program_result_created_at",
-            )
-        ]
+        verbose_name = "настройки начислений"
+        verbose_name_plural = "Настройки начислений"
 
-    def save(self, *args, **kwargs):
-        if self.created_at is None:
-            self.created_at = now().date()
-        super().save(*args, **kwargs)
+    def get_apply_datetime(self):
+        apply_date = localtime().date() + timedelta(
+            days=int(localtime().time() > self.apply_time)
+        )
+        return datetime.combine(apply_date, self.apply_time).astimezone(
+            localtime().tzinfo
+        )
 
 
 class UserProgram(models.Model):

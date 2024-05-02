@@ -11,7 +11,11 @@ from rest_framework.serializers import (
 )
 from rest_framework.exceptions import ValidationError
 
-from apps.finance.models import Operation, OperationHistory, OperationConfirmation
+from apps.finance.models import (
+    Operation,
+    OperationHistory,
+    OperationConfirmation,
+)
 from config import settings
 from core.exceptions import ServiceUnavailable
 from core.utils import decimal_usdt

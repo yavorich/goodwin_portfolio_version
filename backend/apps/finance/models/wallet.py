@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import models
 
 from apps.accounts.models import User
-from core.utils import decimal_usdt
+from core.utils import decimal_usdt, blank_and_null, decimal_pct
 
 from .frozen import FrozenItem
 
@@ -84,3 +84,38 @@ class WalletHistory(models.Model):
 
     def __str__(self):
         return f"{self.user}"
+
+
+class WalletSettings(models.Model):
+    wallet = models.OneToOneField(
+        Wallet,
+        verbose_name="Настройки",
+        related_name="settings",
+        on_delete=models.CASCADE,
+        **blank_and_null,
+        unique=True,
+    )
+    defrost_days = models.PositiveIntegerField(
+        "Время разморозки Базовых Активов (дней)", **blank_and_null
+    )
+    commission_on_replenish = models.DecimalField(
+        "Комиссия за пополнение, %", **decimal_pct, **blank_and_null
+    )
+    commission_on_withdraw = models.DecimalField(
+        "Комиссия за вывод, %", **decimal_pct, **blank_and_null
+    )
+    success_fee = models.DecimalField("Success fee, %", **decimal_pct, **blank_and_null)
+    management_fee = models.DecimalField(
+        "Management fee, %", max_digits=6, decimal_places=4, **blank_and_null
+    )
+    extra_fee = models.DecimalField("Extra fee, %", **decimal_pct, **blank_and_null)
+    commission_on_transfer = models.DecimalField(
+        "Комиссия за внутренний перевод, %", **decimal_pct, **blank_and_null
+    )
+
+    class Meta:
+        verbose_name = "настройки"
+        verbose_name_plural = "Общие настройки"
+
+    def __str__(self) -> str:
+        return ""

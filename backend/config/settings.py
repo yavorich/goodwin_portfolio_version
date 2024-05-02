@@ -57,6 +57,7 @@ INSTALLED_APPS = (
         "django.contrib.sessions",
         "django.contrib.messages",
         "django.contrib.staticfiles",
+        "django.contrib.humanize",
     ]
     + THIRD_PARTY_APPS
     + LOCAL_APPS
@@ -211,7 +212,7 @@ CELERY_BROKER_URL = (
     f"{RABBITMQ['PROTOCOL']}://{RABBITMQ['USER']}:"
     f"{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}"
 )
-CELERY_TIMEZONE = "UTC"
+CELERY_TIMEZONE = "Europe/Moscow"
 
 MAIN_HOST = os.environ.get("MAIN_HOST", "")
 FRONT_URL = os.environ.get("FRONT_URL", "http://localhost:8000/")

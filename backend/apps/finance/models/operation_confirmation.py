@@ -10,7 +10,6 @@ from django.db.models import (
     CASCADE,
 )
 
-from apps.finance.models import Operation
 from core.utils import blank_and_null
 
 
@@ -20,7 +19,7 @@ class DestinationType(TextChoices):
 
 
 class OperationConfirmation(Model):
-    operation = ForeignKey(Operation, related_name="confirmations", on_delete=CASCADE)
+    operation = ForeignKey("Operation", related_name="confirmations", on_delete=CASCADE)
     destination = CharField(choices=DestinationType.choices)
     code = CharField(max_length=10, **blank_and_null)
     created_at = DateTimeField(auto_now_add=True)

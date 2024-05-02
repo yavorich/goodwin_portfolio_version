@@ -29,10 +29,10 @@ celery_app.conf.beat_schedule = {
         "task": "apps.accounts.tasks.delete_settings_auth_codes",
         "schedule": crontab(hour="0", minute="0"),
     },
-    "create_user_program_accrual_daily": {
-        "task": "apps.finance.tasks.make_daily_programs_accruals",
-        "schedule": crontab(hour="0", minute="1"),
-    },
+    # "create_user_program_accrual_daily": {
+    #     "task": "apps.finance.tasks.make_daily_programs_accruals",
+    #     "schedule": crontab(hour="0", minute="1"),
+    # },
     "start_user_program_daily": {
         "task": "apps.finance.tasks.apply_program_start",
         "schedule": crontab(hour="0", minute="2"),
