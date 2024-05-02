@@ -45,7 +45,7 @@ class Operation(models.Model):
     amount_frozen = models.DecimalField(
         'Из раздела "Заморожено"', **decimal_usdt, **blank_and_null
     )
-    created_at = models.DateTimeField("Дата и время", auto_now_add=True)
+    created_at = models.DateTimeField("Дата и время", default=timezone.now)
     done = models.BooleanField("Исполнена", default=False)
 
     program = models.ForeignKey(
