@@ -35,6 +35,7 @@ from apps.accounts.views.statistics import (
 from apps.accounts.views.verification import (
     VerificationAPIView,
     VerificationStatusAPIView,
+    VerificationCountryListView,
 )
 
 router = DefaultRouter()
@@ -74,6 +75,11 @@ urlpatterns = [
         "profile/verification/<verification_type>/",
         VerificationAPIView.as_view(),
         name="verification",
+    ),
+    path(
+        "countries/",
+        VerificationCountryListView.as_view(),
+        name="verification-countries",
     ),
     path(
         "profile/change_password/",

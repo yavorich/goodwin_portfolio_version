@@ -4,6 +4,7 @@ from apps.accounts.models import (
     AddressVerification,
     VerificationStatus,
     User,
+    Country,
 )
 
 from core.utils import validate_file_size
@@ -97,3 +98,9 @@ class VerificationStatusSerializer(ModelSerializer):
             "status_address",
             "address_reject_message",
         ]
+
+
+class VerificationCountrySerializer(ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ["name"]

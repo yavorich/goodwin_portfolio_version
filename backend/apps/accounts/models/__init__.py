@@ -11,7 +11,7 @@ from .user import (
     UserCountHistory,
 )
 from .docs import Docs
-from .region import Region
+from .region import Region, Country
 from .pre_auth_token import PreAuthToken
 from .settings_auth_codes import SettingsAuthCodes
 from .register_confirmation import RegisterConfirmation

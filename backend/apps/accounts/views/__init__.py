@@ -13,3 +13,4 @@ from .profile import (
 )
 from .partner import PartnerGeneralStatisticsRetrieveView
 from .admin_login_as import LoginAsUserView
+from .verification import VerificationCountryListView
