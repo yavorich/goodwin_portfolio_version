@@ -3,6 +3,7 @@ from rest_framework.generics import (
     CreateAPIView,
     RetrieveUpdateAPIView,
     RetrieveAPIView,
+    ListAPIView,
 )
 
 from apps.accounts.permissions import IsAuthenticatedAndAcceptedOfferAgreement
@@ -10,7 +11,9 @@ from apps.accounts.serializers import (
     PersonalVerificationSerializer,
     AddressVerificationSerializer,
     VerificationStatusSerializer,
+    VerificationCountrySerializer,
 )
+from apps.accounts.models import Country
 
 
 class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
@@ -70,3 +73,9 @@ class VerificationStatusAPIView(RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class VerificationCountryListView(ListAPIView):
+    permission_classes = [IsAuthenticatedAndAcceptedOfferAgreement]
+    serializer_class = VerificationCountrySerializer
+    queryset = Country.objects.filter(is_active=True)

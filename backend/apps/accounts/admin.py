@@ -817,3 +817,10 @@ class UserAdmin(NestedModelAdmin):
 @admin.register(models.Docs)
 class DocsAdmin(admin.ModelAdmin):
     list_display = ["document_type", "file"]
+
+
+@admin.register(models.Country)
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ["name", "is_active"]
+    list_editable = ["is_active"]
+    search_fields = ["name"]

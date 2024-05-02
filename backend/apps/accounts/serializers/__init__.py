@@ -17,6 +17,7 @@ from .verification import (
     PersonalVerificationSerializer,
     AddressVerificationSerializer,
     VerificationStatusSerializer,
+    VerificationCountrySerializer,
 )
 from .profile import (
     ProfileRetrieveSerializer,
