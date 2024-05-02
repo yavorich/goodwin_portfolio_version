@@ -43,6 +43,15 @@ services:
     networks:
       - goodwin_back_default
 
+  redis:
+    image: redis:7.0.10-alpine
+    restart: always
+    container_name: goodwin_redis
+    expose:
+      - 6379
+    networks:
+      - goodwin_back_default
+
   nginx:
     image: nginx:latest
     container_name: goodwin_nginx
