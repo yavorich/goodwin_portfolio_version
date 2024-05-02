@@ -1,4 +1,4 @@
-loc_containers := db backend celery rabbit
+loc_containers := db backend celery rabbit redis
 
 build:
 	docker-compose up --build --remove-orphans -d \

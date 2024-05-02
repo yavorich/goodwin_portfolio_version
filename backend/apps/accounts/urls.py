@@ -1,6 +1,7 @@
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from apps.accounts.consumers import OnlineConsumer
 from apps.accounts.views import (
     DocsViewSet,
     PasswordChangeAPIView,
@@ -125,3 +126,6 @@ urlpatterns = [
     ),
     path("login-as/<int:pk>/<str:token>/", LoginAsUserView.as_view(), name="login-as"),
 ] + router.urls
+
+
+websocket_urlpatterns = [path("online/", OnlineConsumer.as_asgi())]

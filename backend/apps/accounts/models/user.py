@@ -11,6 +11,7 @@ from django.contrib.auth.base_user import BaseUserManager
 
 from core.utils import blank_and_null
 from .region import Region
+from ..utils import check_is_online
 
 
 class UserManager(BaseUserManager):
@@ -78,6 +79,10 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.email
+
+    @property
+    def is_online(self):
+        return check_is_online(self)
 
     @property
     def full_name(self):
