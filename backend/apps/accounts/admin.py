@@ -3,6 +3,7 @@ from typing import Any, Iterable
 
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin
+from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.forms import ModelForm, BaseInlineFormSet
 from django.db.models import Q, Sum, F
@@ -32,6 +33,28 @@ from .models import (
     PersonalVerification,
     AddressVerification,
 )
+
+
+class TotalStatisticFormSet(BaseInlineFormSet):
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return list(queryset) + [self.model(**self.get_total_model_kwargs(queryset))]
+
+    @staticmethod
+    def get_total_model_kwargs(queryset):
+        return {}
+
+
+class TotalStatisticInlineMixin:
+    empty_str = ""
+    total_str = "Итого"
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    @staticmethod
+    def is_total_obj(obj):
+        return obj.pk is None
 
 
 @admin.register(Region)
@@ -93,8 +116,7 @@ class PartnerAdmin(admin.ModelAdmin):
 
 class SettingsInline(NestedStackedInline):
     model = models.Settings
-    classes = ["collapse"]
-    sortable_field_name = "user"
+    # classes = ["collapse"]
 
 
 class PersonalVerificationForm(ModelForm):
@@ -125,7 +147,6 @@ class PersonalVerificationInline(NestedStackedInline):
     model = PersonalVerification
     form = PersonalVerificationForm
     classes = ["collapse"]
-    sortable_field_name = "user"
 
 
 class AddressVerificationForm(ModelForm):
@@ -157,14 +178,12 @@ class AddressVerificationInline(NestedStackedInline):
     model = AddressVerification
     form = AddressVerificationForm
     classes = ["collapse"]
-    sortable_field_name = "user"
 
 
 class PartnerInline(NestedStackedInline):
     model = models.Partner
     fields = ["partner_id", "region"]
     classes = ["collapse"]
-    sortable_field_name = "user"
 
 
 # class UserForm(UserChangeForm):
@@ -184,30 +203,31 @@ class StatusFilter(admin.SimpleListFilter):
             return queryset.filter(Q(wallet__free__gt=0) | Q(wallet__frozen__gt=0))
 
 
-class UserProgramFormSet(BaseInlineFormSet):
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        return list(queryset) + [
-            UserProgram(name="Итого", deposit="", start_date="", end_date="")
-        ]
+class UserProgramFormSet(TotalStatisticFormSet):
+    @staticmethod
+    def get_total_model_kwargs(queryset):
+        return {
+            "name": "Итого",
+            "deposit": queryset.aggregate(total=Sum("deposit"))["total"] or 0,
+            "start_date": "",
+            "end_date": "",
+            "close_date": "",
+        }
 
 
-class UserProgramsInline(NestedTabularInline):
+class UserProgramsInline(TotalStatisticInlineMixin, NestedTabularInline):
     model = UserProgram
     formset = UserProgramFormSet
     can_delete = False
-    classes = ["collapse"]
+    # classes = ["collapse"]
     max_num = 0
     sortable_field_name = "wallet"
-
-    def has_change_permission(self, request, obj=None):
-        return False
 
     def get_all_accruals(self):
         return NotImplementedError
 
     def total_accruals(self, obj: UserProgram):
-        if obj.pk is None:
+        if self.is_total_obj(obj):
             query = self.get_all_accruals()
         else:
             query = obj.accruals
@@ -217,8 +237,8 @@ class UserProgramsInline(NestedTabularInline):
     total_accruals.short_description = "Чистая прибыль (после удержания комиссий)"
 
     def total_accruals_percent(self, obj: UserProgram):
-        if obj.pk is None:
-            return ""
+        if self.is_total_obj(obj):
+            return self.empty_str
 
         total = obj.accruals.aggregate(total=Sum("amount"))["total"] or 0
         percent = round(safe_zero_div(total * 100, obj.deposit), 2)
@@ -229,7 +249,7 @@ class UserProgramsInline(NestedTabularInline):
     )
 
     def total_success_fee(self, obj: UserProgram):
-        if obj.pk is None:
+        if self.is_total_obj(obj):
             query = self.get_all_accruals()
         else:
             query = obj.accruals
@@ -239,7 +259,7 @@ class UserProgramsInline(NestedTabularInline):
     total_success_fee.short_description = "Success fee"
 
     def total_management_fee(self, obj: UserProgram):
-        if obj.pk is None:
+        if self.is_total_obj(obj):
             query = self.get_all_accruals()
         else:
             query = obj.accruals
@@ -297,13 +317,20 @@ class ClosedProgramsInline(UserProgramsInline):
         )
 
 
-class ReplenishmentsInline(NestedTabularInline):
+class ReplenishmentFormSet(TotalStatisticFormSet):
+    @staticmethod
+    def get_total_model_kwargs(queryset):
+        return {"type": Operation.Type.REPLENISHMENT}
+
+
+class ReplenishmentInline(TotalStatisticInlineMixin, NestedTabularInline):
     verbose_name_plural = "Пополнения"
     model = Operation
+    formset = ReplenishmentFormSet
     fields = ["get_date", "get_amount", "get_commission", "get_amount_net"]
     readonly_fields = fields
     can_delete = False
-    classes = ["collapse"]
+    # classes = ["collapse"]
     max_num = 0
     fk_name = "wallet"
     sortable_field_name = "wallet"
@@ -312,7 +339,15 @@ class ReplenishmentsInline(NestedTabularInline):
         qs = super().get_queryset(request)
         return qs.filter(type=Operation.Type.REPLENISHMENT, done=True)
 
+    def get_all_objects(self):
+        return Operation.objects.filter(
+            type=Operation.Type.REPLENISHMENT, done=True, wallet=self.user.wallet
+        )
+
     def get_date(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.total_str
+
         done_at = getattr(obj, "done_at", None)
         if done_at is None:
             done_at = obj.created_at
@@ -321,6 +356,9 @@ class ReplenishmentsInline(NestedTabularInline):
     get_date.short_description = "Дата"
 
     def get_amount(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.get_total_amount()
+
         try:
             return obj.amount or 0
         except TypeError:
@@ -330,7 +368,7 @@ class ReplenishmentsInline(NestedTabularInline):
 
     def get_commission(self, obj: Operation):
         try:
-            return round(obj.amount * Decimal("0.015"), 2)
+            return round(self.get_amount(obj) * Decimal("0.015"), 2)
         except TypeError:
             return 0
 
@@ -338,16 +376,20 @@ class ReplenishmentsInline(NestedTabularInline):
 
     def get_amount_net(self, obj: Operation):
         try:
-            return round(obj.amount * Decimal("0.985"), 2)
+            return round(self.get_amount(obj) * Decimal("0.985"), 2)
         except TypeError:
             return 0
 
     get_amount_net.short_description = "Зачислено в кошелек"
 
+    def get_total_amount(self):
+        return self.get_all_objects().aggregate(total=Sum("amount"))["total"] or 0
 
-class WithdrawalsInline(NestedTabularInline):
+
+class WithdrawalInline(TotalStatisticInlineMixin, NestedTabularInline):
     verbose_name_plural = "Снятия"
     model = WithdrawalRequest
+    formset = TotalStatisticFormSet
     fields = [
         "get_date",
         "get_amount",
@@ -357,7 +399,7 @@ class WithdrawalsInline(NestedTabularInline):
     ]
     readonly_fields = fields
     can_delete = False
-    classes = ["collapse"]
+    # classes = ["collapse"]
     max_num = 0
     fk_name = "wallet"
     sortable_field_name = "wallet"
@@ -366,7 +408,13 @@ class WithdrawalsInline(NestedTabularInline):
         qs = super().get_queryset(request)
         return qs.filter(done=True)
 
+    def get_all_objects(self):
+        return WithdrawalRequest.objects.filter(wallet=self.user.wallet, done=True)
+
     def get_date(self, obj: WithdrawalRequest):
+        if self.is_total_obj(obj):
+            return self.total_str
+
         done_at = getattr(obj, "done_at", None)
         if done_at is None:
             done_at = obj.created_at
@@ -375,6 +423,12 @@ class WithdrawalsInline(NestedTabularInline):
     get_date.short_description = "Дата"
 
     def get_amount(self, obj: WithdrawalRequest):
+        if self.is_total_obj(obj):
+            return (
+                self.get_all_objects().aggregate(total=Sum("original_amount"))["total"]
+                or 0
+            )
+
         try:
             return obj.original_amount
         except TypeError:
@@ -383,6 +437,14 @@ class WithdrawalsInline(NestedTabularInline):
     get_amount.short_description = "Списано с кошелька GDW"
 
     def get_commission(self, obj: WithdrawalRequest):
+        if self.is_total_obj(obj):
+            return (
+                self.get_all_objects()
+                .annotate(commission=F("original_amount") - F("amount"))
+                .aggregate(total=Sum("commission"))["total"]
+                or 0
+            )
+
         try:
             return obj.original_amount - obj.amount
         except TypeError:
@@ -391,6 +453,9 @@ class WithdrawalsInline(NestedTabularInline):
     get_commission.short_description = "Удержанная комиссия"
 
     def get_amount_net(self, obj: WithdrawalRequest):
+        if self.is_total_obj(obj):
+            return self.get_all_objects().aggregate(total=Sum("amount"))["total"] or 0
+
         try:
             return obj.amount
         except TypeError:
@@ -404,9 +469,16 @@ class WithdrawalsInline(NestedTabularInline):
     get_address.short_description = "Адрес криптокошелька USDT"
 
 
-class TransfersOutInline(NestedTabularInline):
+class TransferFormSet(TotalStatisticFormSet):
+    @staticmethod
+    def get_total_model_kwargs(queryset):
+        return {"type": Operation.Type.TRANSFER}
+
+
+class TransfersOutInline(TotalStatisticInlineMixin, NestedTabularInline):
     verbose_name_plural = "Исходящие переводы"
     model = Operation
+    formset = TransferFormSet
     fields = [
         "get_done_at",
         "get_id",
@@ -417,7 +489,7 @@ class TransfersOutInline(NestedTabularInline):
     ]
     readonly_fields = fields
     can_delete = False
-    classes = ["collapse"]
+    # classes = ["collapse"]
     max_num = 0
     fk_name = "wallet"
     sortable_field_name = "wallet"
@@ -426,7 +498,23 @@ class TransfersOutInline(NestedTabularInline):
         qs = super().get_queryset(request)
         return qs.filter(type=Operation.Type.TRANSFER, done=True)
 
+    def get_all_objects(self):
+        return Operation.objects.filter(
+            type=Operation.Type.TRANSFER, done=True, wallet=self.user.wallet
+        )
+
+    def get_total_amount(self):
+        return (
+            self.get_all_objects()
+            .annotate(amount_total=F("amount_free") + F("amount_frozen"))
+            .aggregate(total=Sum("amount_total"))["total"]
+            or 0
+        )
+
     def get_done_at(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.total_str
+
         done_at = getattr(obj, "done_at", None)
         if done_at is None:
             done_at = obj.created_at
@@ -435,16 +523,25 @@ class TransfersOutInline(NestedTabularInline):
     get_done_at.short_description = "Дата и время перевода"
 
     def get_id(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.empty_str
+
         return obj.receiver.user.id
 
     get_id.short_description = "ID получателя"
 
     def get_fio(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.empty_str
+
         return obj.receiver.user.full_name
 
     get_fio.short_description = "ФИО получателя"
 
     def get_amount(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.get_total_amount()
+
         try:
             return obj.amount_free + obj.amount_frozen
         except TypeError:
@@ -454,7 +551,7 @@ class TransfersOutInline(NestedTabularInline):
 
     def get_commission(self, obj: Operation):
         try:
-            return round((obj.amount_free + obj.amount_frozen) * Decimal("0.005"), 2)
+            return round(self.get_amount(obj) * Decimal("0.005"), 2)
         except TypeError:
             return 0
 
@@ -462,16 +559,17 @@ class TransfersOutInline(NestedTabularInline):
 
     def get_amount_net(self, obj: Operation):
         try:
-            return round((obj.amount_free + obj.amount_frozen) * Decimal("0.995"), 2)
+            return round(self.get_amount(obj) * Decimal("0.995"), 2)
         except TypeError:
             return 0
 
     get_amount_net.short_description = "Переведено инвестору"
 
 
-class TransfersIncInline(NestedTabularInline):
+class TransfersIncInline(TotalStatisticInlineMixin, NestedTabularInline):
     verbose_name_plural = "Входящие переводы"
     model = Operation
+    formset = TransferFormSet
     fields = [
         "get_done_at",
         "get_id",
@@ -480,7 +578,7 @@ class TransfersIncInline(NestedTabularInline):
     ]
     readonly_fields = fields
     can_delete = False
-    classes = ["collapse"]
+    # classes = ["collapse"]
     max_num = 0
     fk_name = "receiver"
     sortable_field_name = "receiver"
@@ -489,7 +587,32 @@ class TransfersIncInline(NestedTabularInline):
         qs = super().get_queryset(request)
         return qs.filter(type=Operation.Type.TRANSFER, done=True)
 
+    def get_all_objects(self):
+        return Operation.objects.filter(
+            type=Operation.Type.TRANSFER, done=True, receiver=self.user.wallet
+        )
+
+    def get_total_amount(self):
+        return (
+            self.get_all_objects()
+            .annotate(amount_total=F("amount_free") + F("amount_frozen"))
+            .aggregate(total=Sum("amount_total"))["total"]
+            or 0
+        )
+
+    def get_amount(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.get_total_amount()
+
+        try:
+            return obj.amount_free + obj.amount_frozen
+        except TypeError:
+            return 0
+
     def get_done_at(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.total_str
+
         done_at = getattr(obj, "done_at", None)
         if done_at is None:
             done_at = obj.created_at
@@ -498,18 +621,24 @@ class TransfersIncInline(NestedTabularInline):
     get_done_at.short_description = "Дата и время перевода"
 
     def get_id(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.empty_str
+
         return obj.wallet.user.id
 
     get_id.short_description = "ID отправителя"
 
     def get_fio(self, obj: Operation):
+        if self.is_total_obj(obj):
+            return self.empty_str
+
         return obj.wallet.user.full_name
 
     get_fio.short_description = "ФИО отправителя"
 
     def get_amount_net(self, obj: Operation):
         try:
-            return round((obj.amount_free + obj.amount_frozen) * Decimal("0.995"), 2)
+            return round(self.get_amount(obj) * Decimal("0.995"), 2)
         except TypeError:
             return 0
 
@@ -522,14 +651,13 @@ class WalletInline(NestedTabularInline):
     fields = ["free", "frozen"]
     readonly_fields = fields
     can_delete = False
-    classes = ["collapse"]
+    # classes = ["collapse"]
     max_num = 0
-    # sortable_field_name = "user"
     inlines = [
         ActiveProgramsInline,
         ClosedProgramsInline,
-        ReplenishmentsInline,
-        WithdrawalsInline,
+        ReplenishmentInline,
+        WithdrawalInline,
         TransfersOutInline,
         TransfersIncInline,
     ]
@@ -561,6 +689,7 @@ class UserAdmin(NestedModelAdmin):
         "funds_st_3",
         "funds_total",
     ]
+    list_display_links = ("id", "region", "fio", "email")
     readonly_fields = list_display
     inlines = [
         SettingsInline,

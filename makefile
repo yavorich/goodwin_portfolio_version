@@ -16,6 +16,8 @@ up:
 	docker-compose -f docker-compose.yml up -d
 up-loc:
 	docker-compose -f docker-compose.yml up -d $(loc_containers)
+up-light:
+	docker-compose -f docker-compose.yml up -d db backend
 down:
 	docker-compose -f docker-compose.yml down
 reup-loc:
@@ -36,6 +38,9 @@ restart:
 restart-loc:
 	docker-compose -f docker-compose.yml stop
 	docker-compose -f docker-compose.yml up -d $(loc_containers)
+restart-light:
+	docker-compose -f docker-compose.yml stop
+	docker-compose -f docker-compose.yml up -d db backend
 
 
 check:

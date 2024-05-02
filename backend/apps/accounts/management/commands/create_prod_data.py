@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 from sqlite3 import connect
 
 from django.db.models import Q, F
+from django.db.models.signals import post_save
 from django.utils import timezone
 
 from apps.accounts.models import (
@@ -26,7 +27,10 @@ from apps.finance.models import (
     OperationHistory,
     WithdrawalRequest,
     UserProgramReplenishment,
+    Operation,
 )
+from apps.finance.signals import handle_operation
+from core.utils import DisconnectSignal
 
 
 class Command(BaseCommand):
@@ -613,24 +617,32 @@ def create_operation_history_replenishment(cursor):
         "JOIN user ON invoice.user_id = user.id "
         "WHERE invoice.status = '2'"
     )
-    for email, amount_gc, finished in cursor.fetchall():
-        user = User.objects.get(email=email)
-        wallet = user.wallet
+    with DisconnectSignal(post_save, handle_operation, Operation):
+        for email, amount_gc, finished in cursor.fetchall():
+            user = User.objects.get(email=email)
+            wallet = user.wallet
+            created_at = get_datetime_from_timestamp(finished)
 
-        OperationHistory.objects.update_or_create(
-            wallet=wallet,
-            type=OperationHistory.Type.REPLENISHMENT,
-            created_at=get_datetime_from_timestamp(finished),
-            defaults={
-                "description": dict(
-                    ru="Депозит",
-                    en="Deposit",
-                    cn=None,
-                ),
-                "target_name": wallet.name,
-                "amount": amount_gc,
-            },
-        )
+            Operation.objects.update_or_create(
+                created_at=created_at,
+                wallet=wallet,
+                type=Operation.Type.REPLENISHMENT,
+                defaults={"amount": amount_gc, "done": True},
+            )
+            OperationHistory.objects.update_or_create(
+                wallet=wallet,
+                type=OperationHistory.Type.REPLENISHMENT,
+                created_at=get_datetime_from_timestamp(finished),
+                defaults={
+                    "description": dict(
+                        ru="Депозит",
+                        en="Deposit",
+                        cn=None,
+                    ),
+                    "target_name": wallet.name,
+                    "amount": amount_gc,
+                },
+            )
 
 
 def create_operation_history_extra_fee(cursor):
