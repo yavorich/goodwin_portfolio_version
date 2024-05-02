@@ -22,3 +22,4 @@ class Country(models.Model):
     class Meta:
         verbose_name = "страну"
         verbose_name_plural = "Страны (для верификации)"
+        ordering = ["name"]
