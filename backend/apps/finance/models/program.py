@@ -115,11 +115,11 @@ class UserProgram(models.Model):
     @property
     def yesterday_profit_percent(self):
         yesterday = now().date() - timedelta(days=1)
-        yesterday_results = ProgramResult.objects.filter(created_at=yesterday)
-        result = yesterday_results.filter(program=self.program).first()
-        if not result:
-            result = yesterday_results.filter(program__isnull=True).first()
-        return getattr(result, "result", None)
+        try:
+            accrual: UserProgramAccrual = self.accruals.get(created_at=yesterday)
+        except UserProgramAccrual.DoesNotExist:
+            return None
+        return accrual.amount / self.deposit
 
     def _set_name(self):
         if not self.name:
