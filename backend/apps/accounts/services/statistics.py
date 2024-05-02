@@ -29,13 +29,6 @@ def get_table_statistics(
         created_at=OuterRef("created_at"),
     ).values("funds", "status")
 
-    program_subquery = UserProgram.objects.filter(pk=OuterRef("program_id")).values(
-        "program"
-    )
-    program_result_subquery = ProgramResult.objects.filter(
-        program=Subquery(program_subquery), created_at=OuterRef("created_at")
-    ).values("result")
-
     replenishment_subquery = (
         UserProgramReplenishment.objects.filter(
             program=OuterRef("program"), created_at=OuterRef("created_at")
@@ -50,7 +43,7 @@ def get_table_statistics(
             created_at__date=OuterRef("created_at"),
             type=Operation.Type.PROGRAM_CLOSURE,
         )
-        .annotate(total_amount=Coalesce(Func("amount", function="Sum"), Decimal(0)))
+        .annotate(total_amount=Coalesce(Sum("amount"), Decimal("0.0")))
         .values("total_amount")
     )
     accrual_results = (
@@ -72,7 +65,7 @@ def get_table_statistics(
             ),
             day_of_week=ExtractWeekDay("created_at"),
             funds=Subquery(program_history_subquery.values("funds")),
-            profitability=Subquery(program_result_subquery),
+            profitability=F("percent_amount"),
             withdrawal=Subquery(withdrawal_subquery),
             replenishment=Subquery(replenishment_subquery),
             status=Subquery(program_history_subquery.values("status")),
