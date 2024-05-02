@@ -1,10 +1,28 @@
 {% extends "admin/change_form.html" %}
 
 {% block field_sets %}
+    <h1><input style="padding: 4px 5px" type="submit" data-action="{% url 'login-as' object_id admin_token %}" value="Войти в систему"></h1>
 {% for fieldset in adminform %}
-  {% if fieldset.name == "Основная информация" %}
-    <h1><a href={% url 'login-as' object_id admin_token %} class="button">Войти в систему</a></h1>
-  {% endif %}
   {% include "admin/includes/fieldset.html" %}
 {% endfor %}
+
+    <script>
+    document.querySelectorAll("input[data-action]").forEach(item => {
+        item.addEventListener("click", function(event) {
+            //Get the form element
+            let form = this.closest("form");
+            //Set the action from the data attribute
+            form.action = this.dataset.action;
+
+            //loop top level fieldsets
+            form.querySelectorAll("fieldset").forEach(fieldset =>  {
+            //if the fieldset doesn't conttain the clicked button
+            if(fieldset.querySelector("input[data-action]") != this) {
+                //Iterate the inputs and disable them to remove from form submit
+                fieldset.querySelectorAll("input, select, textbox").forEach(item => item.disabled = true);
+            }
+            });
+        });
+    });
+    </script>
 {% endblock %}
