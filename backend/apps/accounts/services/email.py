@@ -41,7 +41,7 @@ def send_email_recover_password(user, request):
     user.temp.save()
 
     message_template_context = {
-        "confirmation_url": f"{FRONT_URL}auth/new-password/{code}/",
+        "confirmation_url": f"{FRONT_URL}/auth/new-password/{code}/",
         "title": _("Восстановление пароля"),
         "description": _(
             "Здравствуйте, {full_name}!\n"
