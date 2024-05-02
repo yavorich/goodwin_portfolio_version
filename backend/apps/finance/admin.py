@@ -1,59 +1,33 @@
+from decimal import Decimal
 from typing import Any
 from django.contrib import admin
 from django.db.models.query import QuerySet
-from django.forms import ModelForm, BaseModelFormSet, ValidationError
+from django.forms import (
+    ModelForm,
+    BaseModelFormSet,
+    ValidationError,
+    TextInput,
+    Textarea,
+)
 from django.urls import reverse
 from django.utils.html import format_html
 from django.http import HttpRequest
-from django.db.models import Sum
+from django.db.models import Sum, Count, F, CharField, TextField
+from django.db.models.functions import Coalesce
 from . import models
 from .models import (
     Program,
     UserProgram,
     UserProgramAccrual,
-    WalletHistory,
     Holidays,
-    OperationHistory,
     WithdrawalRequest,
     Stats,
+    Operation,
 )
 
 
-class FrozenItemInline(admin.TabularInline):
-    model = models.FrozenItem
-    fields = ["amount", "defrost_date"]
-    classes = ["collapse"]
-
-
-@admin.register(models.Wallet)
-class WalletAdmin(admin.ModelAdmin):
-    list_display = [
-        "user_id",
-        "user",
-        "free",
-        "frozen",
-    ]
-    inlines = [FrozenItemInline]
-
-
-@admin.register(WalletHistory)
-class WalletHistoryAdmin(admin.ModelAdmin):
-    list_display = ["user", "free", "frozen", "deposits"]
-    readonly_fields = ("created_at",)
-
-
-class ProgramResultInline(admin.TabularInline):
-    model = models.ProgramResult
-    fields = ["created_at", "result"]
-    readonly_fields = fields
-    can_delete = False
-    max_num = 0
-    classes = ["collapse"]
-    verbose_name_plural = "РЕЗУЛЬТАТЫ"
-
-
 class UserProgramInline(admin.TabularInline):
-    model = models.UserProgram
+    model = UserProgram
     classes = ["collapse"]
     max_num = 0
     can_delete = False
@@ -123,7 +97,7 @@ class UserProgramClosedInline(UserProgramInline):
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
     class Media:
-        css = {"all": ("custom_admin.css",)}  # Include extra css
+        css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
 
     list_display = [
         "get_name",
@@ -134,7 +108,11 @@ class ProgramAdmin(admin.ModelAdmin):
         "total_management_fee",
     ]
     ordering = ["name"]
-    inlines = [ProgramResultInline, UserProgramActiveInline, UserProgramClosedInline]
+    inlines = [
+        # ProgramResultInline,
+        UserProgramActiveInline,
+        UserProgramClosedInline,
+    ]
     fieldsets = (
         (
             "ПАРАМЕТРЫ",
@@ -231,9 +209,32 @@ class ProgramAdmin(admin.ModelAdmin):
 class ProgramResultAdmin(admin.ModelAdmin):
     list_display = [
         "result",
-        "created_at",
-        "program",
+        "until",
+        "apply_time",
     ]
+    list_editable = [
+        "result",
+        "until",
+        "apply_time",
+    ]
+    fieldsets = (
+        (
+            None,
+            {"fields": list_display},
+        ),
+    )
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.list_display_links = None
 
 
 class UserProgramReplenishmentInline(admin.TabularInline):
@@ -261,6 +262,7 @@ class UserProgramAccrualInline(admin.TabularInline):
 
 @admin.register(models.UserProgram)
 class UserProgramAdmin(admin.ModelAdmin):
+    change_list_template = "pagination_on_top.html"
     list_display = [
         "wallet_id",
         "full_name",
@@ -299,58 +301,155 @@ class UserProgramAdmin(admin.ModelAdmin):
     def program_name(self, obj: UserProgram):
         return obj.program.name
 
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
 
-# class OperationActionsInline(admin.TabularInline):
-#     model = models.Action
-#     fields = ["type", "name", "target", "target_name", "amount", "created_at"]
-#     readonly_fields = ["created_at"]
-#     extra = 0
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+
+class TypeFilter(admin.SimpleListFilter):
+    title = "По типу операции"
+    parameter_name = "type"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("withdrawal", "Вывод"),
+            ("replenishment", "Пополнение"),
+            ("transfer", "Перевод"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(type=self.value())
+        return queryset
 
 
 @admin.register(models.Operation)
 class OperationAdmin(admin.ModelAdmin):
+    actions = None
     list_display = [
-        "id",
-        "type",
-        "wallet",
-        "amount",
+        "get_type",
         "created_at",
+        "wallet_id",
+        "fio",
+        "get_amount",
+        "commission",
+        "amount_net",
     ]
-    # inlines = [OperationActionsInline]
-
-
-@admin.register(models.FrozenItem)
-class FrozenItemAdmin(admin.ModelAdmin):
-    list_display = [
-        "wallet",
-        "amount",
-        "defrost_date",
+    readonly_fields = list_display
+    date_hierarchy = "created_at"
+    list_filter = [TypeFilter]
+    search_fields = [
+        "wallet__user__first_name",
+        "wallet__user__last_name",
+        "wallet__user__id",
     ]
 
+    def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
+        super().__init__(model, admin_site)
+        self.opts.verbose_name_plural = "Транзакции (список)"
+        self.opts.verbose_name = "транзакции"
 
-@admin.register(UserProgramAccrual)
-class PartnerAccrualAdmin(admin.ModelAdmin):
-    list_display = ["program", "amount", "success_fee", "management_fee"]
-    readonly_fields = ["created_at"]
-    # TODO валидация unique together program и created_at
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return (
+            super()
+            .get_queryset(request)
+            .filter(
+                type__in=[
+                    Operation.Type.REPLENISHMENT,
+                    Operation.Type.WITHDRAWAL,
+                    Operation.Type.TRANSFER,
+                ],
+                done=True,
+            )
+        )
+
+    @admin.display(description="Тип транзакции")
+    def get_type(self, obj: Operation):
+        return obj.get_type_display()
+
+    @admin.display(description="Сумма")
+    def get_amount(self, obj: Operation):
+        if obj.amount is not None:
+            return obj.amount
+        return obj.amount_free + obj.amount_frozen
+
+    @admin.display(description="ФИО")
+    def fio(self, obj: Operation):
+        return obj.wallet.user.full_name
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_change_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+
+@admin.register(models.OperationSummary)
+class OperationSummaryAdmin(admin.ModelAdmin):
+    change_list_template = "grouped_operations.html"
+
+    def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
+        super().__init__(model, admin_site)
+        self.opts.verbose_name_plural = "Транзакции (статистика)"
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return (
+            super()
+            .get_queryset(request)
+            .filter(
+                type__in=[
+                    Operation.Type.REPLENISHMENT,
+                    Operation.Type.WITHDRAWAL,
+                    Operation.Type.TRANSFER,
+                ],
+                done=True,
+            )
+        )
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(
+            request,
+            extra_context=extra_context,
+        )
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+
+        metrics = {
+            "total": Count("id"),
+            "total_amount": Sum(
+                Coalesce(F("amount_free"), Decimal("0.0"))
+                + Coalesce(F("amount_frozen"), Decimal("0.0"))
+                + Coalesce(F("amount"), Decimal("0.0"))
+            ),
+            "total_commission": Sum(Coalesce(F("commission"), Decimal("0.0"))),
+            "total_amount_net": Sum(Coalesce(F("amount_net"), Decimal("0.0"))),
+        }
+        response.context_data["summary"] = list(
+            qs.values("type").annotate(**metrics).order_by("type")
+        )
+        for item in response.context_data["summary"]:
+            item["type"] = Operation.Type(item["type"]).label
+
+        response.context_data["summary_total"] = dict(qs.aggregate(**metrics))
+
+        return response
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
 
 
 @admin.register(Holidays)
 class HolidaysAdmin(admin.ModelAdmin):
     list_display = ["name", "start_date", "end_date"]
     list_display_links = ["start_date"]
-
-
-@admin.register(OperationHistory)
-class OperationHistoryAdmin(admin.ModelAdmin):
-    list_display = [
-        "type",
-        "description",
-        "wallet",
-        "target_name",
-        "amount",
-        "created_at",
-    ]
 
 
 class WithdrawalRequestFormSet(BaseModelFormSet):
@@ -387,6 +486,12 @@ class WithdrawalRequestForm(ModelForm):
 
 @admin.register(WithdrawalRequest)
 class WithdrawalRequestAdmin(admin.ModelAdmin):
+    formfield_overrides = {
+        CharField: {"widget": TextInput(attrs={"size": "10"})},
+        TextField: {"widget": Textarea(attrs={"rows": 3, "cols": 30})},
+    }
+    change_list_template = "pagination_on_top.html"
+
     form = WithdrawalRequestForm
     list_display = [
         "done",
@@ -427,6 +532,14 @@ class WithdrawalRequestAdmin(admin.ModelAdmin):
     def commission(self, obj: WithdrawalRequest):
         return obj.original_amount - obj.amount
 
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
 
 @admin.register(Stats)
 class StatsAdmin(admin.ModelAdmin):
@@ -437,6 +550,10 @@ class StatsAdmin(admin.ModelAdmin):
         "get_last_month",
         "get_two_months_ago",
     ]
+
+    def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
+        super().__init__(model, admin_site)
+        self.opts.verbose_name_plural = "Общая статистика"
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
@@ -525,3 +642,29 @@ class StatsAdmin(admin.ModelAdmin):
                 obj.two_months_ago,
             )
         return obj.two_months_ago
+
+
+@admin.register(models.WalletSettings)
+class WalletSettingsAdmin(admin.ModelAdmin):
+    list_display = [
+        "defrost_days",
+        "commission_on_replenish",
+        "commission_on_withdraw",
+        "commission_on_transfer",
+        "success_fee",
+        "management_fee",
+        "extra_fee",
+    ]
+    list_display_links = None
+    list_editable = list_display
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return super().get_queryset(request).filter(wallet__isnull=True)
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False

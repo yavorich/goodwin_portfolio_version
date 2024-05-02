@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.accounts.tasks import send_email_msg
-from apps.finance.models import OperationConfirmation
+from apps.finance.models.operation_confirmation import OperationConfirmation
 
 
 def send_operation_confirm_email(confirmation: OperationConfirmation):

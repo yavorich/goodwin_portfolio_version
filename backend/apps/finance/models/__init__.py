@@ -1,7 +1,14 @@
 # flake8: noqa: F401
 
-from .operation import Operation, Action, OperationHistory, WithdrawalRequest
+from .operation import (
+    Operation,
+    Action,
+    OperationHistory,
+    WithdrawalRequest,
+    OperationSummary,
+)
 from .operation_confirmation import OperationConfirmation, DestinationType
+
 # from .operation_history import OperationHistory
 from .program import (
     Program,
@@ -11,7 +18,7 @@ from .program import (
     UserProgramAccrual,
     UserProgramHistory,
 )
-from .wallet import Wallet, WalletHistory
+from .wallet import Wallet, WalletHistory, WalletSettings
 from .frozen import FrozenItem
 from .holidays import Holidays
 from .stats import Stats

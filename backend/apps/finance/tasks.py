@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.db import transaction
 from django.db.models import Sum
-from django.utils.timezone import now, timedelta
+from django.utils.timezone import now, localdate
 
 from apps.accounts.models import User
 from apps.finance.models import (
@@ -13,6 +13,7 @@ from apps.finance.models import (
     ProgramResult,
     WalletHistory,
     Wallet,
+    Holidays,
 )
 from apps.finance.models.program import UserProgramHistory
 from apps.finance.utils import create_accrual
@@ -30,7 +31,6 @@ def defrost_funds():
                 wallet=item.wallet,
                 frozen_item=item,
                 amount=item.amount,
-                confirmed=True,
             )
 
 
@@ -68,28 +68,26 @@ def apply_program_finish():
                 wallet=item.wallet,
                 user_program=item,
                 amount=item.funds,
-                confirmed=True,
             )
 
 
 @shared_task
 def make_daily_programs_accruals():
     with transaction.atomic():
+        if Holidays.objects.filter(
+            start_date__lte=localdate(), end_date__gte=localdate()
+        ).exists():
+            return "No accruals because of holiday"
+        result = ProgramResult.objects.first()
+        if not result:
+            return "No program result found"
         programs = Program.objects.filter(accrual_type=Program.AccrualType.DAILY)
         for program in programs:
-            make_program_accruals(program)
+            make_program_accruals(program, result)
+        result.save()
 
 
-def make_program_accruals(program: Program):
-    yesterday = now().date() - timedelta(days=1)
-    result = ProgramResult.objects.filter(program=program, created_at=yesterday).first()
-    if not result:
-        result = ProgramResult.objects.filter(
-            program__isnull=True, created_at=yesterday
-        ).first()
-    if not result:
-        result = ProgramResult.objects.create(program=program, created_at=yesterday)
-
+def make_program_accruals(program: Program, result: ProgramResult):
     user_programs = UserProgram.objects.filter(
         program=program, status=UserProgram.Status.RUNNING
     )
@@ -101,7 +99,6 @@ def make_program_accruals(program: Program):
                 wallet=user_program.wallet,
                 user_program=user_program,
                 amount=accrual.amount,
-                confirmed=True,
             )
 
 

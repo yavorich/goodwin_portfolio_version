@@ -18,3 +18,8 @@ class Holidays(Model):
 
     def __str__(self):
         return f"{self.start_date} - {self.end_date or self.start_date}"
+
+    def save(self, *args, **kwargs):
+        if not self.end_date:
+            self.end_date = self.start_date
+        super().save(*args, **kwargs)

@@ -4,6 +4,7 @@ from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
+from config.celery import celery_app
 from apps.finance.models import (
     Operation,
     UserProgram,
@@ -13,11 +14,12 @@ from apps.finance.models import (
     OperationHistory,
     OperationConfirmation,
     DestinationType,
-    # Action,
+    ProgramResult,
 )
 from apps.finance.services.send_operation_confirm_email import (
     send_operation_confirm_email,
 )
+from apps.finance.tasks import make_daily_programs_accruals
 from apps.telegram.utils import send_telegram_message
 
 
@@ -136,3 +138,18 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
             )
         instance.done = True
         instance.save()
+        if instance.operation:
+            instance.operation.done = True
+            instance.operation.save()
+
+
+@receiver(pre_save, sender=ProgramResult)
+def update_program_result_settings(sender, instance: ProgramResult, **kwargs):
+    if instance.task_id:
+        celery_app.control.revoke(instance.task_id)
+
+    apply_datetime = instance.get_apply_datetime()
+    print(apply_datetime, apply_datetime.tzinfo)
+    if apply_datetime.date() <= instance.until:
+        task_id = make_daily_programs_accruals.apply_async(eta=apply_datetime)
+        instance.task_id = task_id

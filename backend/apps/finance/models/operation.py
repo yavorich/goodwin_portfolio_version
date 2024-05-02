@@ -1,10 +1,10 @@
-from decimal import Decimal
 from uuid import uuid4
 
 from django.db import models, transaction
 from django.core.validators import RegexValidator
 from django.utils import timezone
 
+from apps.finance.services import get_commission_pct
 from core.utils import blank_and_null, decimal_usdt
 
 from .program import Program, UserProgram, UserProgramReplenishment
@@ -44,6 +44,10 @@ class Operation(models.Model):
     )
     amount_frozen = models.DecimalField(
         'Из раздела "Заморожено"', **decimal_usdt, **blank_and_null
+    )
+    commission = models.DecimalField("Комиссия", **decimal_usdt, **blank_and_null)
+    amount_net = models.DecimalField(
+        "Сумма с учётом комиссии", **decimal_usdt, **blank_and_null
     )
     created_at = models.DateTimeField("Дата и время", default=timezone.now)
     done = models.BooleanField("Исполнена", default=False)
@@ -101,8 +105,9 @@ class Operation(models.Model):
     )
 
     class Meta:
-        verbose_name = "Операция"
-        verbose_name_plural = "Операции"
+        verbose_name = "транзакцию"
+        verbose_name_plural = "Транзакции"
+        ordering = ["-created_at"]
 
     def __str__(self) -> str:
         return Operation.Type(self.type).label
@@ -118,9 +123,13 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):  # ready
+        commission_pct = get_commission_pct(self.wallet, "commission_on_replenish")
+        self.commission = self.amount * commission_pct / 100
+        self.amount_net = self.amount - self.commission
+        self.save()
         return False
 
-    def _apply_withdrawal(self):  # soon
+    def _apply_withdrawal(self):  # ready
         self.wallet.update_balance(free=-self.amount)
         OperationHistory.objects.create(
             wallet=self.wallet,
@@ -133,21 +142,37 @@ class Operation(models.Model):
             target_name=self.wallet.name,
             amount=-self.amount,
         )
+
+        commission_pct = get_commission_pct(self.wallet, "commission_on_withdraw")
+        self.commission = self.amount * commission_pct / 100
+        self.amount_net = self.amount - self.commission
+        self.save()
+
         WithdrawalRequest.objects.create(
+            operation=self,
             wallet=self.wallet,
             original_amount=self.amount,
-            amount=self.amount * Decimal(0.98),
+            amount=self.amount_net,
             address=self.address,
             status=WithdrawalRequest.Status.PENDING,
         )
-        return True
+        return False
 
     def _apply_transfer(self):  # ready
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
+
+        commission_pct = get_commission_pct(self.wallet, "commission_on_transfer")
+        commission_free = self.amount_free * commission_pct / 100
+        commission_frozen = self.amount_frozen * commission_pct / 100
+
         self.receiver.update_balance(
-            free=self.amount_free * Decimal("0.995"),
-            frozen=self.amount_frozen * Decimal("0.995"),
+            free=self.amount_free - commission_free,
+            frozen=self.amount_frozen - commission_frozen,
         )
+        self.commission = commission_free + commission_frozen
+        self.amount_net = self.amount_free + self.amount_frozen - self.commission
+        self.save()
+
         description_to = (
             dict(
                 ru=f"Перевод клиенту GDW ID{self.receiver.user.id}",
@@ -173,7 +198,7 @@ class Operation(models.Model):
                 type=OperationHistory.Type.TRANSFER_FREE,
                 description=description_from,
                 target_name=self.receiver.name,
-                amount=self.amount_free,
+                amount=self.amount_free - commission_free,
             )
         if self.amount_frozen:
             OperationHistory.objects.create(
@@ -188,7 +213,7 @@ class Operation(models.Model):
                 type=OperationHistory.Type.TRANSFER_FROZEN,
                 description=description_from,
                 target_name=self.receiver.name,
-                amount=self.amount_frozen,
+                amount=self.amount_frozen - commission_frozen,
             )
         return True
 
@@ -265,7 +290,6 @@ class Operation(models.Model):
                     wallet=self.wallet,
                     replenishment=replenishment,
                     amount=replenishment.amount,
-                    confirmed=True,
                 )
         self.wallet.update_balance(frozen=self.amount)
         OperationHistory.objects.create(
@@ -324,7 +348,10 @@ class Operation(models.Model):
         else:
             description = (
                 dict(
-                    ru=f"Частичная отмена пополнения программы {self.user_program.name}",
+                    ru=(
+                        f"Частичная отмена пополнения программы "
+                        f"{self.user_program.name}"
+                    ),
                     en=(
                         "Partial cancellation of the replenishment "
                         f"of program {self.user_program.name}"
@@ -371,12 +398,15 @@ class Operation(models.Model):
                 cn=None,
             )
             self.wallet.update_balance(frozen=-self.amount)  # разморозка суммы
+
+            # списание Extra Fee
+            commission_pct = get_commission_pct(self.wallet, "extra_fee")
             Operation.objects.create(
                 type=Operation.Type.EXTRA_FEE,
                 wallet=self.wallet,
-                amount=Decimal("0.1") * self.amount,
-                confirmed=True,
+                amount=self.amount * commission_pct / 100,
             )
+
         self.wallet.update_balance(free=self.amount)
         OperationHistory.objects.create(
             wallet=self.wallet,
@@ -443,6 +473,13 @@ class WithdrawalRequest(models.Model):
         APPROVED = "approved", "Одобрена"
         REJECTED = "rejected", "Отклонена"
 
+    operation = models.ForeignKey(
+        Operation,
+        on_delete=models.CASCADE,
+        verbose_name="Заявки на вывод",
+        related_name="withdrawal_requests",
+        **blank_and_null,
+    )
     wallet = models.ForeignKey(
         Wallet,
         on_delete=models.CASCADE,
@@ -460,11 +497,11 @@ class WithdrawalRequest(models.Model):
     )
     created_at = models.DateField("Поставлено на вывод", auto_now_add=True)
     reject_message = models.TextField("Причина отказа", blank=True)
-    done = models.BooleanField("Отметка о выполнении", default=False)
-    done_at = models.DateField("Проведена транзакция", **blank_and_null)
+    done = models.BooleanField("Выполнено", default=False)
+    done_at = models.DateField("Дата выполнения", **blank_and_null)
 
     # нужно для уникальности объектов при парсинге внешней базы
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField("Дата создания", default=timezone.now)
 
     class Meta:
         verbose_name = "Заявка"
@@ -592,3 +629,10 @@ class Action(models.Model):
 
     def _get_target_name(self):
         return getattr(self.operation, self.target).name
+
+
+class OperationSummary(Operation):
+    class Meta:
+        proxy = True
+        verbose_name = "Транзакции"
+        verbose_name_plural = "Транзакции"

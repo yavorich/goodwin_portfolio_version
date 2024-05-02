@@ -1,0 +1,59 @@
+{% extends "admin/change_list.html" %}
+{% load humanize %}
+{% block content_title %}
+    <h1> Статистика транзакций </h1>
+{% endblock %}
+{% block result_list %}
+    <div class="results">
+        <table>
+            <thead>
+                <tr>
+                    <th>
+                        <div class="text">
+                            <a href="#">Тип транзакции</a>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="text">
+                            <a href="#">Кол-во</a>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="text">
+                            <a href="#">Сумма</a>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="text">
+                            <a href="#">Комиссия</a>
+                        </div>
+                    </th>
+                    <th>
+                        <div class="text">
+                            <a href="#">Транзакция</a>
+                        </div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in summary %}
+                    <tr class="{% cycle 'row1' 'row2' %}">
+                        <td> {{ row.type }} </td>
+                        <td> {{ row.total | intcomma }} </td>
+                        <td> {{ row.total_amount | default:0 | intcomma }}$ </td>
+                        <td> {{ row.total_commission | default:0 | intcomma }}$ </td>
+                        <td> {{ row.total_amount_net | default:0 | intcomma }}$ </td>
+                    </tr>
+                {% endfor %}
+                <tr style="font-weight:bold; border-top:2px solid #DDDDDD;">
+                    <td> Итого </td>
+                    <td> {{ summary_total.total | intcomma }} </td>
+                    <td> {{ summary_total.total_amount | default:0 | intcomma }}$ </td>
+                    <td> {{ summary_total.total_commission | default:0 | intcomma }}$ </td>
+                    <td> {{ summary_total.total_amount_net | default:0 | intcomma }}$ </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+{% block pagination %}{% endblock %}

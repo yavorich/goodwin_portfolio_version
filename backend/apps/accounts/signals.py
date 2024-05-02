@@ -13,7 +13,7 @@ from apps.accounts.models import (
     Settings,
     Partner,
 )
-from apps.finance.models import Wallet
+from apps.finance.models import Wallet, WalletSettings
 
 
 @receiver(post_save, sender=User)
@@ -25,7 +25,8 @@ def create_temp_data(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def create_wallet(sender, instance, created, **kwargs):
     if created:
-        Wallet.objects.create(user=instance)
+        wallet = Wallet.objects.create(user=instance)
+        WalletSettings.objects.create(wallet=wallet)
 
 
 @receiver(post_save, sender=User)

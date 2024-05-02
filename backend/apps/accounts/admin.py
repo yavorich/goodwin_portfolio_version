@@ -1,9 +1,7 @@
 from decimal import Decimal
-from typing import Any, Iterable
+from typing import Any
 
 from django.contrib import admin
-from django.contrib.admin.options import InlineModelAdmin
-from django.core.exceptions import ValidationError
 from django.db.models.query import QuerySet
 from django.forms import ModelForm, BaseInlineFormSet
 from django.db.models import Q, Sum, F
@@ -16,6 +14,7 @@ from nested_admin.nested import (
 
 from apps.finance.models import (
     Wallet,
+    WalletSettings,
     UserProgram,
     Operation,
     WithdrawalRequest,
@@ -367,6 +366,8 @@ class ReplenishmentInline(TotalStatisticInlineMixin, NestedTabularInline):
     get_amount.short_description = "Сумма перевода"
 
     def get_commission(self, obj: Operation):
+        if obj.commission is not None:
+            return obj.commission
         try:
             return round(self.get_amount(obj) * Decimal("0.015"), 2)
         except TypeError:
@@ -375,6 +376,8 @@ class ReplenishmentInline(TotalStatisticInlineMixin, NestedTabularInline):
     get_commission.short_description = "Удержанная комиссия"
 
     def get_amount_net(self, obj: Operation):
+        if obj.amount_net is not None:
+            return obj.amount_net
         try:
             return round(self.get_amount(obj) * Decimal("0.985"), 2)
         except TypeError:
@@ -406,10 +409,12 @@ class WithdrawalInline(TotalStatisticInlineMixin, NestedTabularInline):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         qs = super().get_queryset(request)
-        return qs.filter(done=True)
+        return qs.filter(status=WithdrawalRequest.Status.APPROVED)
 
     def get_all_objects(self):
-        return WithdrawalRequest.objects.filter(wallet=self.user.wallet, done=True)
+        return WithdrawalRequest.objects.filter(
+            wallet=self.user.wallet, status=WithdrawalRequest.Status.APPROVED
+        )
 
     def get_date(self, obj: WithdrawalRequest):
         if self.is_total_obj(obj):
@@ -550,6 +555,8 @@ class TransfersOutInline(TotalStatisticInlineMixin, NestedTabularInline):
     get_amount.short_description = "Списано с кошелька"
 
     def get_commission(self, obj: Operation):
+        if obj.commission is not None:
+            return obj.commission
         try:
             return round(self.get_amount(obj) * Decimal("0.005"), 2)
         except TypeError:
@@ -558,6 +565,8 @@ class TransfersOutInline(TotalStatisticInlineMixin, NestedTabularInline):
     get_commission.short_description = "Удержанная комиссия"
 
     def get_amount_net(self, obj: Operation):
+        if obj.amount_net is not None:
+            return obj.amount_net
         try:
             return round(self.get_amount(obj) * Decimal("0.995"), 2)
         except TypeError:
@@ -645,6 +654,24 @@ class TransfersIncInline(TotalStatisticInlineMixin, NestedTabularInline):
     get_amount_net.short_description = "Получено"
 
 
+class WalletSettingsInline(NestedStackedInline):
+    verbose_name_plural = "Персональные настройки"
+    model = WalletSettings
+    fields = [
+        "defrost_days",
+        "commission_on_replenish",
+        "commission_on_withdraw",
+        "commission_on_transfer",
+        "success_fee",
+        "management_fee",
+        "extra_fee",
+    ]
+    can_delete = False
+    max_num = 0
+    fk_name = "wallet"
+    sortable_field_name = "wallet"
+
+
 class WalletInline(NestedTabularInline):
     verbose_name_plural = "Кошелёк"
     model = Wallet
@@ -660,6 +687,7 @@ class WalletInline(NestedTabularInline):
         WithdrawalInline,
         TransfersOutInline,
         TransfersIncInline,
+        WalletSettingsInline,
     ]
 
     def get_inlines(self, request, obj):
@@ -673,7 +701,7 @@ class WalletInline(NestedTabularInline):
 @admin.register(models.User)
 class UserAdmin(NestedModelAdmin):
     class Media:
-        css = {"all": ("custom_admin.css",)}  # Include extra css
+        css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
 
     change_form_template = "custom_user_change_form.html"
     list_display = [
@@ -709,15 +737,6 @@ class UserAdmin(NestedModelAdmin):
             {"fields": ("id", "email", "fio", "date_joined", "status", "funds_total")},
         ),
     )
-    # add_fieldsets = (
-    #     (
-    #         None,
-    #         {
-    #             "classes": ("wide",),
-    #             "fields": ("email", "password1", "password2"),
-    #         },
-    #     ),
-    # )
 
     def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
         super().__init__(model, admin_site)
