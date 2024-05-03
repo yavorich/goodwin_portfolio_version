@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.forms import ModelForm, BaseInlineFormSet
 from django.db.models import Q, Sum, F
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest
 from nested_admin.nested import (
     NestedStackedInline,
     NestedTabularInline,
@@ -671,8 +671,6 @@ class WalletSettingsInline(NestedStackedInline):
     ]
     can_delete = False
     max_num = 0
-    fk_name = "wallet"
-    sortable_field_name = "wallet"
 
 
 class WalletInline(NestedTabularInline):
@@ -747,6 +745,12 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
         self.opts.verbose_name_plural = "Клиенты"
         self.opts.verbose_name = "клиента"
 
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
+
     def get_form(self, request, obj=None, **kwargs):
         # Убедитесь, что не упоминается поле 'username'
         self.exclude = ("username",)
@@ -787,6 +791,8 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
             if obj.wallet.balance > 0:
                 return "Инвестор"
             return "Верифицирован"
+        if obj.waiting_for_verification():
+            return "Ожидает верификации"
         return "Не верифицирован"
 
     @admin.display(description="Сумма в кошельке")

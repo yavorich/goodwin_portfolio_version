@@ -101,6 +101,21 @@ class User(AbstractUser):
         address_status = getattr(address, "status", None)
         return personal_status == address_status == VerificationStatus.APPROVED
 
+    def waiting_for_verification(self) -> bool:
+        personal = getattr(self, "personal_verification", None)
+        address = getattr(self, "address_verification", None)
+        personal_status = getattr(personal, "status", None)
+        address_status = getattr(address, "status", None)
+        return (personal_status == VerificationStatus.CHECK) or (
+            address_status == VerificationStatus.CHECK
+        )
+
+    @classmethod
+    def notify_count(cls):
+        return len(
+            list(filter(lambda x: x.waiting_for_verification(), cls.objects.all()))
+        )
+
 
 class Settings(models.Model):
     user = models.OneToOneField(User, related_name="settings", on_delete=models.CASCADE)
