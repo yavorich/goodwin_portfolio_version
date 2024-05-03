@@ -4,7 +4,10 @@ from django.db import models, transaction
 from django.core.validators import RegexValidator
 from django.utils import timezone
 
-from apps.finance.services import get_commission_pct
+from apps.finance.services import (
+    get_commission_pct,
+    send_admin_withdrawal_notifications,
+)
 from core.utils import blank_and_null, decimal_usdt
 
 from .program import Program, UserProgram, UserProgramReplenishment
@@ -148,7 +151,7 @@ class Operation(models.Model):
         self.amount_net = self.amount - self.commission
         self.save()
 
-        WithdrawalRequest.objects.create(
+        withdrawal_request = WithdrawalRequest.objects.create(
             operation=self,
             wallet=self.wallet,
             original_amount=self.amount,
@@ -156,6 +159,8 @@ class Operation(models.Model):
             address=self.address,
             status=WithdrawalRequest.Status.PENDING,
         )
+        send_admin_withdrawal_notifications(withdrawal_request)
+
         return False
 
     def _apply_transfer(self):  # ready

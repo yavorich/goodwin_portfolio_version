@@ -14,6 +14,7 @@ from apps.accounts.serializers import (
     VerificationCountrySerializer,
 )
 from apps.accounts.models import Country
+from apps.accounts.services.verification import send_admin_verify_notifications
 
 
 class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
@@ -65,6 +66,16 @@ class VerificationAPIView(RetrieveUpdateAPIView, CreateAPIView):
     def create(self, request, *args, **kwargs):
         self.validate_verification_type()
         return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        verification_type = self.kwargs.get("verification_type")
+        instance = serializer.save()
+        send_admin_verify_notifications(instance.user, verification_type)
+
+    def perform_update(self, serializer):
+        verification_type = self.kwargs.get("verification_type")
+        instance = serializer.save()
+        send_admin_verify_notifications(instance.user, verification_type)
 
 
 class VerificationStatusAPIView(RetrieveAPIView):
