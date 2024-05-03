@@ -16,7 +16,7 @@ def send_admin_verify_notifications(user: User, verification_type: str):
     admin_page_url = reverse(
         "admin:accounts_user_change", kwargs={"object_id": user.pk}
     )
-    full_url = f"{MAIN_URL[:-1]}{admin_page_url}"
+    full_url = MAIN_URL + admin_page_url
     text = "Новый запрос на верификацию {}: {}".format(
         sample[verification_type], full_url
     )
