@@ -119,7 +119,7 @@ class UserProgram(models.Model):
             accrual: UserProgramAccrual = self.accruals.get(created_at=yesterday)
         except UserProgramAccrual.DoesNotExist:
             return None
-        return accrual.amount / self.deposit
+        return accrual.percent_amount
 
     def _set_name(self):
         if not self.name:
