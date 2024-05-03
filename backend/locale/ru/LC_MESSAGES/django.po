@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-26 16:32+0300\n"
+"POT-Creation-Date: 2024-05-03 15:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -73,6 +73,10 @@ msgstr ""
 msgid ""
 "Доступ к этой странице разрешён только для аутентифицированного локального "
 "приложения"
+msgstr ""
+
+#: apps/accounts/permissions.py:72
+msgid "Действие доступно только администратору"
 msgstr ""
 
 #: apps/accounts/serializers/register.py:31
@@ -219,131 +223,131 @@ msgstr ""
 msgid "Системное сообщение"
 msgstr ""
 
-#: apps/finance/models/stats.py:19
+#: apps/finance/models/stats.py:20
 msgid "Сумма в кошельках"
 msgstr ""
 
-#: apps/finance/models/stats.py:20
+#: apps/finance/models/stats.py:21
 msgid "Сумма в программах ST-1"
 msgstr ""
 
-#: apps/finance/models/stats.py:21
+#: apps/finance/models/stats.py:22
 msgid "Сумма в программах ST-2"
 msgstr ""
 
-#: apps/finance/models/stats.py:22
+#: apps/finance/models/stats.py:23
 msgid "Сумма в программах ST-3"
 msgstr ""
 
-#: apps/finance/models/stats.py:23
-msgid "Поставлено на вывод (кошелёк)"
-msgstr ""
-
 #: apps/finance/models/stats.py:24
-msgid "Ожидает запуска"
+msgid "Поставлено на вывод (ожидает рассмотрения)"
 msgstr ""
 
 #: apps/finance/models/stats.py:25
-msgid "Ожидает пополнения"
+msgid "Ожидает запуска"
 msgstr ""
 
 #: apps/finance/models/stats.py:26
-msgid "Доход филиала Россия"
+msgid "Ожидает пополнения"
 msgstr ""
 
 #: apps/finance/models/stats.py:27
-msgid "Доход филиала Китай"
+msgid "Доход филиала Россия"
 msgstr ""
 
 #: apps/finance/models/stats.py:28
-msgid "Доход филиала США"
+msgid "Доход филиала Китай"
 msgstr ""
 
 #: apps/finance/models/stats.py:29
-msgid "Начисленная прибыль (чистая)"
+msgid "Доход филиала США"
 msgstr ""
 
 #: apps/finance/models/stats.py:30
-msgid "Начисленная прибыль (базовая)"
+msgid "Начисленная прибыль (чистая)"
 msgstr ""
 
 #: apps/finance/models/stats.py:31
+msgid "Начисленная прибыль (базовая)"
+msgstr ""
+
+#: apps/finance/models/stats.py:32
 msgid "Удержано Success Fee"
 msgstr ""
 
-#: apps/finance/models/stats.py:33
+#: apps/finance/models/stats.py:34
 msgid "Удержано Success Fee после вычета дохода Филиала"
 msgstr ""
 
-#: apps/finance/models/stats.py:35
+#: apps/finance/models/stats.py:36
 msgid "Удержано Extra Fee"
 msgstr ""
 
-#: apps/finance/models/stats.py:36
+#: apps/finance/models/stats.py:37
 msgid "Удержано Management Fee"
 msgstr ""
 
-#: apps/finance/models/stats.py:37
+#: apps/finance/models/stats.py:38
 msgid "ИТОГО БАЛАНС ФОНДА"
 msgstr ""
 
-#: apps/finance/models/stats.py:38
+#: apps/finance/models/stats.py:39
 msgid "Кол-во зарегистрированных пользователей"
 msgstr ""
 
-#: apps/finance/models/stats.py:39
+#: apps/finance/models/stats.py:40
 msgid "Кол-во активных пользователей"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:50
+#: apps/finance/serializers/operations.py:54
 msgid "Insufficient free funds."
 msgstr "Недостаточно свободных средств"
 
-#: apps/finance/serializers/operations.py:52
+#: apps/finance/serializers/operations.py:56
 msgid "Insufficient frozen funds."
 msgstr "Недостаточно замороженных средств"
 
-#: apps/finance/serializers/operations.py:84
+#: apps/finance/serializers/operations.py:90
 msgid "Minimum program deposit"
 msgstr "Минимальный депозит программы"
 
-#: apps/finance/serializers/operations.py:103
+#: apps/finance/serializers/operations.py:109
 msgid "Minimum program replenishment"
 msgstr "Минимальная сумма пополнения программы"
 
-#: apps/finance/serializers/operations.py:121
+#: apps/finance/serializers/operations.py:127
 msgid "Minimum replenishment amount after cancellation"
 msgstr "Минимальная остаток суммы пополнения программы"
 
-#: apps/finance/serializers/operations.py:124
+#: apps/finance/serializers/operations.py:130
 msgid "Insufficient funds to cancel"
 msgstr "Указанная сумма больше текущей суммы пополнения"
 
-#: apps/finance/serializers/operations.py:151
+#: apps/finance/serializers/operations.py:157
 msgid "Minimum program deposit after cancellation"
 msgstr "Минимальный остаток депозита программы"
 
-#: apps/finance/serializers/operations.py:155
+#: apps/finance/serializers/operations.py:161
 msgid "Insufficient program deposit"
 msgstr "Указанная сумма больше текущего депозита программы"
 
-#: apps/finance/serializers/operations.py:210
+#: apps/finance/serializers/operations.py:216
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr "Сервис эквайринга временно не доступен, повторите попытку позже"
 
-#: apps/finance/services/operation_replenishment_confirmation.py:12
+#: apps/finance/services/operation_replenishment_confirmation.py:11
 msgid "Operation already done"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:14
+#: apps/finance/services/operation_replenishment_confirmation.py:13
 msgid "Insufficient amount transferred"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:18
+#: apps/finance/services/operation_replenishment_confirmation.py:17
 msgid "The required amount has been transferred and credited to the account"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:22
+#: apps/finance/services/operation_replenishment_confirmation.py:21
 msgid ""
 "More than the required amount has been transferred and credited to the "
 "account"
@@ -359,22 +363,43 @@ msgid ""
 "Ваш код для подтверждения операции"
 msgstr ""
 
-#: apps/finance/signals.py:61
+#: apps/finance/signals.py:63
 msgid ""
 "Подтверждение операции\n"
 "Ваш код для подтверждения операции"
 msgstr ""
 
-#: config/settings.py:140
+#: config/settings.py:160
 msgid "Russian"
 msgstr ""
 
-#: config/settings.py:141
+#: config/settings.py:161
 msgid "English"
 msgstr ""
 
-#: config/settings.py:142
+#: config/settings.py:162
 msgid "China"
+msgstr ""
+
+#: templates/admin/app_list.html:8
+#, python-format
+msgid "Models in the %(name)s application"
+msgstr ""
+
+#: templates/admin/app_list.html:25
+msgid "Add"
+msgstr ""
+
+#: templates/admin/app_list.html:32
+msgid "View"
+msgstr ""
+
+#: templates/admin/app_list.html:34
+msgid "Change"
+msgstr ""
+
+#: templates/admin/app_list.html:45
+msgid "You don’t have permission to view or edit anything."
 msgstr ""
 
 #~ msgid "Region"
