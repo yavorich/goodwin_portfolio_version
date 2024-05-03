@@ -1,6 +1,7 @@
 from io import BytesIO
 
 from import_export.formats.base_formats import XLSX
+from openpyxl.styles import Font
 from openpyxl.utils import get_column_letter
 from openpyxl.workbook import Workbook
 from tablib.formats._xlsx import XLSXFormat, safe_xlsx_sheet_title
@@ -21,6 +22,7 @@ class DimensionXLSXFormat(XLSXFormat):
         )
 
         cls.dset_sheet(dataset, ws, freeze_panes=freeze_panes, escape=escape)
+        cls.set_bottoms(dataset, ws)
         cls.set_dimension(ws)
 
         stream = BytesIO()
@@ -36,3 +38,12 @@ class DimensionXLSXFormat(XLSXFormat):
             ws.column_dimensions[get_column_letter(column_cells[0].column)].width = (
                 length + 4
             )
+
+    @staticmethod
+    def set_bottoms(dataset, ws):
+        if hasattr(dataset, "bottoms"):
+            ws.append(dataset.bottoms)
+
+            bold = Font(bold=True)
+            for cell in ws[len(ws["A"])]:
+                cell.font = bold

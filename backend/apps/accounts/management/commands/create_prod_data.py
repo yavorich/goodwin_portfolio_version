@@ -428,88 +428,105 @@ def create_operation_history_withdraw(cursor):
         "FROM withdraw "
         "JOIN user ON withdraw.user_id = user.id "
     )
-    for (
-        email,
-        status,
-        amount,
-        amount_final,
-        address,
-        created,
-        finished,
-    ) in cursor.fetchall():
-        user = User.objects.get(email=email)
-        wallet = user.wallet
+    with DisconnectSignal(post_save, handle_operation, Operation):
+        for (
+            email,
+            status,
+            amount,
+            amount_final,
+            address,
+            created,
+            finished,
+        ) in cursor.fetchall():
+            user = User.objects.get(email=email)
+            wallet = user.wallet
 
-        created_at = timezone.make_aware(datetime.fromtimestamp(created))
-        finished_at = timezone.make_aware(datetime.fromtimestamp(finished))
+            created_at = timezone.make_aware(datetime.fromtimestamp(created))
+            finished_at = timezone.make_aware(datetime.fromtimestamp(finished))
 
-        if amount_final is None:
-            amount_final = amount * 0.97
+            if amount_final is None:
+                amount_final = amount * 0.97
 
-        OperationHistory.objects.update_or_create(
-            wallet=wallet,
-            type=OperationHistory.Type.WITHDRAWAL,
-            created_at=created_at,
-            defaults={
-                "description": dict(
-                    ru="Заявка на вывод принята",
-                    en="Withdrawal request accepted",
-                    cn=None,
-                ),
-                "target_name": wallet.name,
-                "amount": -amount,
-            },
-        )
-        withdrawal_request = WithdrawalRequest.objects.update_or_create(
-            wallet=wallet,
-            created_at=created_at,
-            status=WithdrawalRequest.Status.APPROVED
-            if status == 3
-            else WithdrawalRequest.Status.REJECTED,
-            done=True,
-            defaults={
-                "address": address,
-                "original_amount": amount,
-                "amount": amount_final,
-            },
-        )[0]
-
-        if status == 3:
+            operation = Operation.objects.update_or_create(
+                created_at=created_at,
+                wallet=wallet,
+                type=Operation.Type.WITHDRAWAL,
+                defaults={
+                    "amount": amount,
+                    "amount_net": amount_final,
+                    "commission": amount - amount_final,
+                },
+            )[0]
             OperationHistory.objects.update_or_create(
                 wallet=wallet,
-                type=OperationHistory.Type.SYSTEM_MESSAGE,
-                created_at=finished_at,
+                type=OperationHistory.Type.WITHDRAWAL,
+                created_at=created_at,
                 defaults={
                     "description": dict(
-                        ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT исполнена",
-                        en=(
-                            f"The withdrawal request of {withdrawal_request.original_amount}"
-                            "USDT has been processed."
-                        ),
+                        ru="Заявка на вывод принята",
+                        en="Withdrawal request accepted",
                         cn=None,
                     ),
-                    "target_name": None,
-                    "amount": None,
+                    "target_name": wallet.name,
+                    "amount": -amount,
                 },
             )
-        else:
-            OperationHistory.objects.update_or_create(
+            withdrawal_request = WithdrawalRequest.objects.update_or_create(
                 wallet=wallet,
-                type=OperationHistory.Type.SYSTEM_MESSAGE,
-                created_at=finished_at,
+                created_at=created_at,
+                status=WithdrawalRequest.Status.APPROVED
+                if status == 3
+                else WithdrawalRequest.Status.REJECTED,
+                done=True,
                 defaults={
-                    "description": dict(
-                        ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT отклонена",
-                        en=(
-                            f"The withdrawal request of {withdrawal_request.original_amount}"
-                            "USDT has been rejected."
-                        ),
-                        cn=None,
-                    ),
-                    "target_name": withdrawal_request.wallet.name,
-                    "amount": withdrawal_request.original_amount,
+                    "address": address,
+                    "original_amount": amount,
+                    "amount": amount_final,
+                    "done_at": finished_at,
                 },
-            )
+            )[0]
+
+            if status == 3:
+                OperationHistory.objects.update_or_create(
+                    wallet=wallet,
+                    type=OperationHistory.Type.SYSTEM_MESSAGE,
+                    created_at=finished_at,
+                    defaults={
+                        "description": dict(
+                            ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT исполнена",
+                            en=(
+                                f"The withdrawal request of {withdrawal_request.original_amount}"
+                                "USDT has been processed."
+                            ),
+                            cn=None,
+                        ),
+                        "target_name": None,
+                        "amount": None,
+                    },
+                )
+                operation.done = True
+
+            else:
+                OperationHistory.objects.update_or_create(
+                    wallet=wallet,
+                    type=OperationHistory.Type.SYSTEM_MESSAGE,
+                    created_at=finished_at,
+                    defaults={
+                        "description": dict(
+                            ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT отклонена",
+                            en=(
+                                f"The withdrawal request of {withdrawal_request.original_amount}"
+                                "USDT has been rejected."
+                            ),
+                            cn=None,
+                        ),
+                        "target_name": withdrawal_request.wallet.name,
+                        "amount": withdrawal_request.original_amount,
+                    },
+                )
+                operation.done = False
+
+            operation.save()
 
 
 def create_operation_history_partner(cursor):
@@ -612,13 +629,13 @@ def create_operation_history_program_replenishment(cursor):
 
 def create_operation_history_replenishment(cursor):
     cursor.execute(
-        "SELECT email, amount_gc, finished "
+        "SELECT email, amount_gc, amount_gc_fee, finished "
         "FROM invoice "
         "JOIN user ON invoice.user_id = user.id "
         "WHERE invoice.status = '2'"
     )
     with DisconnectSignal(post_save, handle_operation, Operation):
-        for email, amount_gc, finished in cursor.fetchall():
+        for email, amount_gc, amount_gc_fee, finished in cursor.fetchall():
             user = User.objects.get(email=email)
             wallet = user.wallet
             created_at = get_datetime_from_timestamp(finished)
@@ -627,7 +644,12 @@ def create_operation_history_replenishment(cursor):
                 created_at=created_at,
                 wallet=wallet,
                 type=Operation.Type.REPLENISHMENT,
-                defaults={"amount": amount_gc, "done": True},
+                defaults={
+                    "amount": amount_gc,
+                    "amount_net": amount_gc_fee,
+                    "commission": amount_gc_fee - amount_gc,
+                    "done": True,
+                },
             )
             OperationHistory.objects.update_or_create(
                 wallet=wallet,
