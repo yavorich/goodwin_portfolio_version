@@ -16,7 +16,6 @@ from apps.finance.models import UserProgramAccrual, Operation, Holidays
 from apps.finance.models.program import (
     UserProgramHistory,
     UserProgram,
-    ProgramResult,
     UserProgramReplenishment,
 )
 

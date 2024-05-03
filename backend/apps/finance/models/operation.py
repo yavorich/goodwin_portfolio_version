@@ -507,6 +507,10 @@ class WithdrawalRequest(models.Model):
         verbose_name = "Заявка"
         verbose_name_plural = "Заявки на вывод средств"
 
+    @classmethod
+    def notify_count(cls):
+        return cls.objects.filter(status=cls.Status.PENDING).count()
+
 
 # TODO: удалить модель
 class Action(models.Model):
