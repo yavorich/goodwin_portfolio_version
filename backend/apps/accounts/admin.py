@@ -2,9 +2,9 @@ from decimal import Decimal
 from typing import Any
 
 from django.contrib import admin
+from django.db.models import Q, Sum, F
 from django.db.models.query import QuerySet
 from django.forms import ModelForm, BaseInlineFormSet
-from django.db.models import Q, Sum, F
 from django.http import HttpRequest
 from nested_admin.nested import (
     NestedStackedInline,
@@ -20,10 +20,9 @@ from apps.finance.models import (
     WithdrawalRequest,
     UserProgramAccrual,
 )
+from config.settings import LOGIN_AS_USER_TOKEN
 from core.import_export.admin import NoConfirmExportMixin
 from core.utils import safe_zero_div
-from config.settings import LOGIN_AS_USER_TOKEN
-
 from . import models
 from .models import (
     VerificationStatus,
@@ -33,7 +32,6 @@ from .models import (
     PersonalVerification,
     AddressVerification,
 )
-
 from .resources import UserResource
 
 

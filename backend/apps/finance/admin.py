@@ -1,6 +1,9 @@
 from decimal import Decimal
 from typing import Any
+
 from django.contrib import admin
+from django.db.models import Sum, Count, F, CharField, TextField
+from django.db.models.functions import Coalesce
 from django.db.models.query import QuerySet
 from django.forms import (
     ModelForm,
@@ -9,13 +12,15 @@ from django.forms import (
     TextInput,
     Textarea,
 )
+from django.http import HttpRequest
 from django.urls import reverse
 from django.utils.html import format_html
-from django.http import HttpRequest
-from django.db.models import Sum, Count, F, CharField, TextField
-from django.db.models.functions import Coalesce
 
-from core.import_export.admin import NoConfirmExportMixin
+from core.import_export.admin import (
+    NoConfirmExportMixin,
+    ExportInlineModelAdminMixin,
+    ExportInlineMixin,
+)
 from . import models
 from .models import (
     Program,
@@ -27,14 +32,21 @@ from .models import (
     Operation,
     WalletSettings,
 )
-from .resourses import UserProgramResource, WithdrawalRequestResource, OperationResource
+from .resourses import (
+    UserProgramRunningResource,
+    WithdrawalRequestResource,
+    OperationResource,
+    UserProgramResource,
+)
 
 
-class UserProgramInline(admin.TabularInline):
+class UserProgramInline(ExportInlineMixin, admin.TabularInline):
+    resource_classes = [UserProgramResource]
     model = UserProgram
     classes = ["collapse"]
     max_num = 0
     can_delete = False
+    ordering = ("start_date", "id")
 
     def get_id(self, obj: UserProgram):
         return obj.wallet.user.id
@@ -50,13 +62,13 @@ class UserProgramInline(admin.TabularInline):
         return obj.wallet.user.email
 
     def total_accruals(self, obj: UserProgram):
-        return obj.accruals.aggregate(total=Sum("amount"))["total"]
+        return obj.accruals.aggregate(total=Sum("amount"))["total"] or 0
 
     def total_success_fee(self, obj: UserProgram):
-        return obj.accruals.aggregate(total=Sum("success_fee"))["total"]
+        return obj.accruals.aggregate(total=Sum("success_fee"))["total"] or 0
 
     def total_management_fee(self, obj: UserProgram):
-        return obj.accruals.aggregate(total=Sum("management_fee"))["total"]
+        return obj.accruals.aggregate(total=Sum("management_fee"))["total"] or 0
 
 
 class UserProgramActiveInline(UserProgramInline):
@@ -99,7 +111,6 @@ class UserProgramClosedInline(UserProgramInline):
 
 
 class ProgramAdminForm(ModelForm):
-
     class Meta:
         model = Program
         help_texts = {
@@ -110,7 +121,7 @@ class ProgramAdminForm(ModelForm):
 
 
 @admin.register(Program)
-class ProgramAdmin(admin.ModelAdmin):
+class ProgramAdmin(ExportInlineModelAdminMixin, admin.ModelAdmin):
     class Media:
         css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
 
@@ -290,7 +301,7 @@ class UserProgramAccrualInline(admin.TabularInline):
 
 @admin.register(models.UserProgram)
 class UserProgramAdmin(NoConfirmExportMixin, admin.ModelAdmin):
-    resource_classes = [UserProgramResource]
+    resource_classes = [UserProgramRunningResource]
     change_list_template = "pagination_on_top.html"
     list_display = [
         "wallet_id",
