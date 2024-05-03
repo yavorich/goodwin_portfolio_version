@@ -33,7 +33,6 @@ from .models import (
     PersonalVerification,
     AddressVerification,
 )
-from import_export.admin import ExportMixin
 
 from .resources import UserResource
 

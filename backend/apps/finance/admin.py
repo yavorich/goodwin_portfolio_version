@@ -14,6 +14,8 @@ from django.utils.html import format_html
 from django.http import HttpRequest
 from django.db.models import Sum, Count, F, CharField, TextField
 from django.db.models.functions import Coalesce
+
+from core.import_export.admin import NoConfirmExportMixin
 from . import models
 from .models import (
     Program,
@@ -25,6 +27,7 @@ from .models import (
     Operation,
     WalletSettings,
 )
+from .resourses import UserProgramResource, WithdrawalRequestResource, OperationResource
 
 
 class UserProgramInline(admin.TabularInline):
@@ -286,7 +289,8 @@ class UserProgramAccrualInline(admin.TabularInline):
 
 
 @admin.register(models.UserProgram)
-class UserProgramAdmin(admin.ModelAdmin):
+class UserProgramAdmin(NoConfirmExportMixin, admin.ModelAdmin):
+    resource_classes = [UserProgramResource]
     change_list_template = "pagination_on_top.html"
     list_display = [
         "wallet_id",
@@ -353,7 +357,8 @@ class TypeFilter(admin.SimpleListFilter):
 
 
 @admin.register(models.Operation)
-class OperationAdmin(admin.ModelAdmin):
+class OperationAdmin(NoConfirmExportMixin, admin.ModelAdmin):
+    resource_classes = [OperationResource]
     actions = None
     list_display = [
         "get_type",
@@ -510,7 +515,8 @@ class WithdrawalRequestForm(ModelForm):
 
 
 @admin.register(WithdrawalRequest)
-class WithdrawalRequestAdmin(admin.ModelAdmin):
+class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
+    resource_classes = [WithdrawalRequestResource]
     formfield_overrides = {
         CharField: {"widget": TextInput(attrs={"size": "10"})},
         TextField: {"widget": Textarea(attrs={"rows": 3, "cols": 30})},
