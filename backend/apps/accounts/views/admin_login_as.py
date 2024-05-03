@@ -7,7 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.accounts.models import User
 from apps.accounts.permissions import IsAdmin
-from config.settings import FRONT_URL
+from config.settings import MAIN_URL
 
 
 class LoginAsUserView(View):
@@ -17,7 +17,7 @@ class LoginAsUserView(View):
         self.check_permissions()
 
         user = get_object_or_404(User, pk=self.kwargs["pk"])
-        response = HttpResponseRedirect(redirect_to=FRONT_URL)
+        response = HttpResponseRedirect(redirect_to=MAIN_URL)
         refresh = RefreshToken.for_user(user)
         response.set_cookie("refresh", str(refresh))
         response.set_cookie("access", str(refresh.access_token))
