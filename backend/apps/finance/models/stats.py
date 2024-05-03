@@ -110,7 +110,6 @@ class Stats(Model):
     def sum_to_withdraw(self, start_date, end_date):
         return (
             WithdrawalRequest.objects.filter(
-                created_at__gte=start_date,
                 created_at__lte=end_date,
                 status=WithdrawalRequest.Status.PENDING,
             ).aggregate(total=Sum("original_amount"))["total"]
@@ -120,7 +119,7 @@ class Stats(Model):
     def sum_to_start(self, start_date, end_date):
         return (
             UserProgram.objects.filter(
-                created_at__date__range=(start_date, end_date),
+                created_at__date__lte=end_date,
                 status=UserProgram.Status.INITIAL,
             ).aggregate(total=Sum("deposit"))["total"]
             or 0
@@ -129,7 +128,7 @@ class Stats(Model):
     def sum_to_replenish(self, start_date, end_date):
         return (
             UserProgramReplenishment.objects.filter(
-                created_at__range=(start_date, end_date),
+                created_at__lte=end_date,
                 status=UserProgramReplenishment.Status.INITIAL,
             ).aggregate(total=Sum("amount"))["total"]
             or 0
