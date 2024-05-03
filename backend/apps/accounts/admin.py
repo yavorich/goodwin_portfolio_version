@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.db.models.query import QuerySet
 from django.forms import ModelForm, BaseInlineFormSet
 from django.db.models import Q, Sum, F
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from nested_admin.nested import (
     NestedStackedInline,
     NestedTabularInline,
@@ -20,6 +20,7 @@ from apps.finance.models import (
     WithdrawalRequest,
     UserProgramAccrual,
 )
+from core.import_export.admin import NoConfirmExportMixin
 from core.utils import safe_zero_div
 from config.settings import LOGIN_AS_USER_TOKEN
 
@@ -32,6 +33,9 @@ from .models import (
     PersonalVerification,
     AddressVerification,
 )
+from import_export.admin import ExportMixin
+
+from .resources import UserResource
 
 
 class TotalStatisticFormSet(BaseInlineFormSet):
@@ -699,11 +703,12 @@ class WalletInline(NestedTabularInline):
 
 
 @admin.register(models.User)
-class UserAdmin(NestedModelAdmin):
+class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
     class Media:
         css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
 
     change_form_template = "custom_user_change_form.html"
+    resource_classes = [UserResource]
     list_display = [
         "id",
         "region",
