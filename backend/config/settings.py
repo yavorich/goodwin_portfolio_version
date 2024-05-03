@@ -4,6 +4,11 @@ import os
 from aiogram import Bot
 from django.utils.timezone import timedelta
 from django.utils.translation import gettext_lazy as _
+from import_export.formats.base_formats import XLSX
+from tablib.formats import registry
+
+from core.import_export.formats import DimensionXLSXFormat
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -46,6 +51,7 @@ THIRD_PARTY_APPS = [
     "django_filters",
     "corsheaders",
     "nested_admin",
+    "import_export",
 ]
 
 INSTALLED_APPS = (
@@ -248,3 +254,7 @@ NODE_JS_TOKEN = os.environ.get("NODE_JS_TOKEN")
 LOCAL_TOKEN = os.environ.get("LOCAL_TOKEN")
 
 LOGIN_AS_USER_TOKEN = os.environ.get("LOGIN_AS_USER_TOKEN")
+
+# import, export
+IMPORT_EXPORT_FORMATS = [XLSX]
+registry.register("xlsx", DimensionXLSXFormat)

@@ -18,3 +18,4 @@ uvicorn[standard]==0.29.0
 django-nested-admin==4.0.2
 channels_redis==4.2.0
 channels[daphne]==4.1.0
+django-import-export
