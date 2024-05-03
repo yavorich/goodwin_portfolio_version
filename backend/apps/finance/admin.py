@@ -23,6 +23,7 @@ from .models import (
     WithdrawalRequest,
     Stats,
     Operation,
+    WalletSettings,
 )
 
 
@@ -94,11 +95,23 @@ class UserProgramClosedInline(UserProgramInline):
         return queryset.filter(status=UserProgram.Status.FINISHED)
 
 
+class ProgramAdminForm(ModelForm):
+
+    class Meta:
+        model = Program
+        help_texts = {
+            "success_fee": 'Можно изменить во вкладке "Общие настройки"',
+            "management_fee": 'Можно изменить во вкладке "Общие настройки"',
+        }
+        exclude = ()
+
+
 @admin.register(Program)
 class ProgramAdmin(admin.ModelAdmin):
     class Media:
         css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
 
+    form = ProgramAdminForm
     list_display = [
         "get_name",
         "count",
@@ -107,6 +120,7 @@ class ProgramAdmin(admin.ModelAdmin):
         "total_success_fee",
         "total_management_fee",
     ]
+    readonly_fields = ["success_fee", "management_fee"]
     ordering = ["name"]
     inlines = [
         # ProgramResultInline,
@@ -117,7 +131,6 @@ class ProgramAdmin(admin.ModelAdmin):
         (
             "ПАРАМЕТРЫ",
             {
-                "classes": ("collapse",),
                 "fields": [
                     "name",
                     "duration",
@@ -203,6 +216,18 @@ class ProgramAdmin(admin.ModelAdmin):
         return format_html(
             '<h3 style="color: green">{}</h3><br><h3>{}</h3>', active, closed
         )
+
+    def success_fee(self, obj: Program):
+        return WalletSettings.objects.get(wallet__isnull=True).success_fee
+
+    def management_fee(self, obj: Program):
+        return WalletSettings.objects.get(wallet__isnull=True).management_fee
+
+    def formfield_for_dbfield(self, db_field, **kwargs):
+        field = super().formfield_for_dbfield(db_field, **kwargs)
+        if db_field.name in ["success_fee", "management_fee"]:
+            field.help_text = "Можно изменить в общих настройках"
+        return field
 
 
 @admin.register(models.ProgramResult)

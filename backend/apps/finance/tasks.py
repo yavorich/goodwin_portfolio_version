@@ -93,7 +93,7 @@ def make_program_accruals(program: Program, result: ProgramResult):
     )
     for user_program in user_programs:
         if not user_program.accruals.filter(created_at=now().date()).exists():
-            accrual = create_accrual(program, user_program, result)
+            accrual = create_accrual(user_program, result)
             Operation.objects.create(
                 type=Operation.Type.PROGRAM_ACCRUAL,
                 wallet=user_program.wallet,

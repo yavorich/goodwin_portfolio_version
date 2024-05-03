@@ -3,6 +3,7 @@ from rest_framework.serializers import (
     DecimalField,
     FloatField,
     CharField,
+    SerializerMethodField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -12,13 +13,14 @@ from apps.finance.models import (
     Wallet,
     UserProgramReplenishment,
 )
+from apps.finance.services import get_commission_pct
 from core.utils import decimal_usdt
 
 
 class ProgramSerializer(ModelSerializer):
     min_deposit = FloatField()
-    success_fee = FloatField()
-    management_fee = FloatField()
+    success_fee = SerializerMethodField()
+    management_fee = SerializerMethodField()
     accrual_type = CharField(source="get_accrual_type_display")
     withdrawal_type = CharField(source="get_withdrawal_type_display")
 
@@ -38,6 +40,14 @@ class ProgramSerializer(ModelSerializer):
             "management_fee",
             "withdrawal_terms",
         ]
+
+    def get_success_fee(self, obj: Program):
+        wallet = self.context["wallet"]
+        return float(get_commission_pct(wallet, "success_fee"))
+
+    def get_management_fee(self, obj: Program):
+        wallet = self.context["wallet"]
+        return float(get_commission_pct(wallet, "management_fee"))
 
 
 class UserProgramSerializer(ModelSerializer):
