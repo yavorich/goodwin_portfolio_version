@@ -12,7 +12,7 @@ def send_admin_withdrawal_notifications(withdrawal_request):
         "admin:finance_withdrawalrequest_change",
         kwargs={"object_id": withdrawal_request.pk},
     )
-    full_url = f"{MAIN_URL[:-1]}{admin_page_url}"
+    full_url = MAIN_URL + admin_page_url
 
     text = "Новая заявка на вывод средств: {}".format(full_url)
     for account in accounts:
