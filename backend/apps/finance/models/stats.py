@@ -10,6 +10,7 @@ from apps.finance.models import (
     Operation,
     UserProgramAccrual,
     UserProgram,
+    UserProgramReplenishment,
 )
 from apps.accounts.models import Partner, UserCountHistory
 
@@ -20,7 +21,7 @@ class Stats(Model):
         ST_1 = "st_1", _("Сумма в программах ST-1")
         ST_2 = "st_2", _("Сумма в программах ST-2")
         ST_3 = "st_3", _("Сумма в программах ST-3")
-        TO_WITHDRAW = "to_withdraw", _("Поставлено на вывод (кошелёк)")
+        TO_WITHDRAW = "to_withdraw", _("Поставлено на вывод (ожидает рассмотрения)")
         TO_START = "to_start", _("Ожидает запуска")
         TO_REPLENISH = "to_replenish", _("Ожидает пополнения")
         BRANCH_RU = "branch_ru", _("Доход филиала Россия")
@@ -99,7 +100,9 @@ class Stats(Model):
     def sum_st(self, date, program_name):
         return (
             UserProgramHistory.objects.filter(
-                user_program__program__name=program_name, created_at=date
+                user_program__program__name=program_name,
+                created_at=date,
+                status=UserProgram.Status.RUNNING,
             ).aggregate(total=Sum("deposit"))["total"]
             or 0
         )
@@ -107,28 +110,28 @@ class Stats(Model):
     def sum_to_withdraw(self, start_date, end_date):
         return (
             WithdrawalRequest.objects.filter(
-                created_at__gte=start_date, created_at__lte=end_date
+                created_at__gte=start_date,
+                created_at__lte=end_date,
+                status=WithdrawalRequest.Status.PENDING,
             ).aggregate(total=Sum("original_amount"))["total"]
             or 0
         )
 
     def sum_to_start(self, start_date, end_date):
         return (
-            Operation.objects.filter(
-                type=Operation.Type.PROGRAM_START,
-                created_at__gte=start_date,
-                created_at__lte=end_date,
-            ).aggregate(total=Sum(F("amount_free") + F("amount_frozen")))["total"]
+            UserProgram.objects.filter(
+                created_at__date__range=(start_date, end_date),
+                status=UserProgram.Status.INITIAL,
+            ).aggregate(total=Sum("deposit"))["total"]
             or 0
         )
 
     def sum_to_replenish(self, start_date, end_date):
         return (
-            Operation.objects.filter(
-                type=Operation.Type.PROGRAM_REPLENISHMENT,
-                created_at__gte=start_date,
-                created_at__lte=end_date,
-            ).aggregate(total=Sum(F("amount_free") + F("amount_frozen")))["total"]
+            UserProgramReplenishment.objects.filter(
+                created_at__range=(start_date, end_date),
+                status=UserProgramReplenishment.Status.INITIAL,
+            ).aggregate(total=Sum("amount"))["total"]
             or 0
         )
 
