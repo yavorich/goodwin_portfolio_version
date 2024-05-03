@@ -28,6 +28,11 @@ class ProgramMixin(OperationViewMixin, ModelViewSet):
             return UserProgramSerializer
         return program_operations_serializers[self.action]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["wallet"] = self.request.user.wallet
+        return context
+
     def get_object(self):
         try:
             return super().get_object()
