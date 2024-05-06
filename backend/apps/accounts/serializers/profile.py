@@ -1,5 +1,10 @@
 from rest_framework.fields import UUIDField
-from rest_framework.serializers import ModelSerializer, CharField, Serializer
+from rest_framework.serializers import (
+    ModelSerializer,
+    CharField,
+    Serializer,
+    SerializerMethodField,
+)
 from rest_framework.exceptions import ValidationError
 
 from apps.accounts.models import (
@@ -8,9 +13,6 @@ from apps.accounts.models import (
     SettingsAuthCodes,
     PasswordChangeConfirmation,
     EmailChangeConfirmation,
-)
-from apps.accounts.serializers.partner import (
-    PartnerSerializer,
 )
 from core.serializers import HttpsFileField
 
@@ -40,8 +42,8 @@ class InviterSerializer(ModelSerializer):
 class ProfileRetrieveSerializer(ModelSerializer):
     # region = PartnerRetrieveSerializer()
     avatar = HttpsFileField()
-    partner = PartnerSerializer()
     settings = ProfileSettingsSerializer()
+    is_partner = SerializerMethodField()
 
     class Meta:
         model = User
@@ -52,9 +54,12 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "avatar",
             "telegram",
             "settings",
-            "partner",
+            "is_partner",
         ]
         read_only_fields = fields
+
+    def get_is_partner(self, obj):
+        return getattr(obj, "partner_profile", None) is not None
 
 
 class ProfileUpdateSerializer(ModelSerializer):
