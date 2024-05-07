@@ -13,7 +13,7 @@ from config.settings import MAIN_URL
 class LoginAsUserView(View):
     permission_classes = [IsAdmin]
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         self.check_permissions()
 
         user = get_object_or_404(User, pk=self.kwargs["pk"])
