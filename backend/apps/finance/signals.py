@@ -97,6 +97,13 @@ def save_frozen_item(sender, instance: FrozenItem, **kwargs):
     instance._set_defrost_date()
 
 
+@receiver(pre_save, sender=WithdrawalRequest)
+def reset_status_if_done(sender, instance: WithdrawalRequest, **kwargs):
+    if instance.done:
+        previous = WithdrawalRequest.objects.get(pk=instance.pk)
+        instance.status = previous.status
+
+
 @receiver(post_save, sender=WithdrawalRequest)
 def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
     if not instance.done:
