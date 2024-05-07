@@ -166,7 +166,7 @@ LOCALE_PATHS = [
     BASE_DIR / "locale/",
 ]
 
-TIME_ZONE = os.environ.get("TIME_ZONE", "Europe/Moscow")
+TIME_ZONE = os.environ.get("TIME_ZONE", "UTC")
 
 USE_I18N = True
 
@@ -218,7 +218,7 @@ CELERY_BROKER_URL = (
     f"{RABBITMQ['PROTOCOL']}://{RABBITMQ['USER']}:"
     f"{RABBITMQ['PASSWORD']}@{RABBITMQ['HOST']}:{RABBITMQ['PORT']}"
 )
-CELERY_TIMEZONE = "Europe/Moscow"
+CELERY_TIMEZONE = "UTC"
 
 MAIN_URL = os.environ.get("MAIN_URL", "http://localhost:8000/")
 
