@@ -2,7 +2,7 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.db import models
 from django.utils import timezone
-from django.utils.timezone import now, timedelta, datetime, localtime
+from django.utils.timezone import now, timedelta, datetime
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 from .operation_history import OperationHistory
@@ -49,11 +49,11 @@ class ProgramResult(models.Model):
         verbose_name_plural = "Настройки начислений"
 
     def get_apply_datetime(self):
-        apply_date = localtime().date() + timedelta(
-            days=int(localtime().time() > self.apply_time)
+        apply_date = now().date() + timedelta(
+            days=int(now().time() > self.apply_time)
         )
         return datetime.combine(apply_date, self.apply_time).astimezone(
-            localtime().tzinfo
+            now().tzinfo
         )
 
 
