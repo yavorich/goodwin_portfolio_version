@@ -508,6 +508,44 @@ class WithdrawalRequestFormSet(BaseModelFormSet):
 
         return form_set
 
+    def _construct_form(self, i, **kwargs):
+        pk_required = i < self.initial_form_count()
+        if pk_required:
+            if self.is_bound:
+                pk_key = "%s-%s" % (self.add_prefix(i), self.model._meta.pk.name)
+                try:
+                    pk = self.data[pk_key]
+                except KeyError:
+                    # The primary key is missing. The user may have tampered
+                    # with POST data.
+                    pass
+                else:
+                    to_python = self._get_to_python(self.model._meta.pk)
+                    try:
+                        pk = to_python(pk)
+                    except ValidationError:
+                        # The primary key exists but is an invalid value. The
+                        # user may have tampered with POST data.
+                        pass
+                    else:
+                        kwargs["instance"] = self._existing_object(pk)
+            else:
+                kwargs["instance"] = self.get_queryset()[i]
+        elif self.initial_extra:
+            # Set initial values for extra forms
+            try:
+                kwargs["initial"] = self.initial_extra[i - self.initial_form_count()]
+            except IndexError:
+                pass
+        form = super()._construct_form(i, **kwargs)
+        if pk_required:
+            form.fields[self.model._meta.pk.name].required = True
+        if (
+            kwargs["instance"].status != WithdrawalRequest.Status.PENDING
+        ):  # check field status
+            form.fields["status"].widget.attrs["disabled"] = "disabled"
+        return form
+
 
 class WithdrawalRequestForm(ModelForm):
     def clean(self):
@@ -536,7 +574,7 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
 
     form = WithdrawalRequestForm
     list_display = [
-        "done",
+        "get_done",
         "created_at",
         "done_at",
         "wallet_id",
@@ -549,7 +587,7 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
     ]
     list_editable = ("status", "reject_message")
     readonly_fields = (
-        "done",
+        "get_done",
         "done_at",
         "created_at",
         "address",
@@ -573,6 +611,13 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
     @admin.display(description="Удержать комиссию")
     def commission(self, obj: WithdrawalRequest):
         return obj.original_amount - obj.amount
+
+    @admin.display(description="Статус", boolean=True)
+    def get_done(self, obj: WithdrawalRequest):
+        if obj.status == WithdrawalRequest.Status.APPROVED:
+            return True
+        elif obj.status == WithdrawalRequest.Status.REJECTED:
+            return False
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
