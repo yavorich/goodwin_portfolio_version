@@ -5,6 +5,7 @@ from rest_framework.generics import (
     RetrieveAPIView,
     ListAPIView,
 )
+from rest_framework.filters import SearchFilter
 
 from apps.accounts.permissions import IsAuthenticatedAndAcceptedOfferAgreement
 from apps.accounts.serializers import (
@@ -89,4 +90,6 @@ class VerificationStatusAPIView(RetrieveAPIView):
 class VerificationCountryListView(ListAPIView):
     permission_classes = [IsAuthenticatedAndAcceptedOfferAgreement]
     serializer_class = VerificationCountrySerializer
+    filter_backends = [SearchFilter]
+    search_fields = ["name"]
     queryset = Country.objects.filter(is_active=True)
