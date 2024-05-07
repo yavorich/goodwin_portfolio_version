@@ -40,7 +40,6 @@ class InviterSerializer(ModelSerializer):
 
 
 class ProfileRetrieveSerializer(ModelSerializer):
-    # region = PartnerRetrieveSerializer()
     avatar = HttpsFileField()
     settings = ProfileSettingsSerializer()
     is_partner = SerializerMethodField()
