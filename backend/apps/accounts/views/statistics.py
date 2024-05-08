@@ -101,13 +101,17 @@ class GeneralInvestmentStatisticsView(RetrieveAPIView):
         )
 
         total_profits = (
-            UserProgramAccrual.objects.filter(program__wallet=user.wallet).aggregate(
-                total_profits=Sum("amount")
-            )["total_profits"]
+            UserProgramAccrual.objects.filter().aggregate(total_profits=Sum("amount"))[
+                "total_profits"
+            ]
             or 0
         )
         try:
-            start_date = UserProgram.objects.earliest("start_date").start_date
+            start_date = (
+                UserProgram.objects.filter(program__wallet=user.wallet)
+                .earliest("start_date")
+                .start_date
+            )
         except UserProgram.DoesNotExist:
             start_date = None
 
