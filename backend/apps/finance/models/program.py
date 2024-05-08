@@ -32,6 +32,7 @@ class Program(models.Model):
     class Meta:
         verbose_name = "Программа"
         verbose_name_plural = "Программы"
+        ordering = ["name"]
 
     def __str__(self) -> str:
         return self.name
