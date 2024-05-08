@@ -38,7 +38,6 @@ class Stats(Model):
         TOTAL_FUND_BALANCE = "total_fund_balance", _("ИТОГО БАЛАНС ФОНДА")
         USERS_TOTAL = "users_total", _("Кол-во зарегистрированных пользователей")
         USERS_ACTIVE = "users_active", _("Кол-во активных пользователей")
-        MASTER_WALLET = "master_wallet", _("")
 
     name = CharField("Показатель", choices=Name.choices, unique=True)
 

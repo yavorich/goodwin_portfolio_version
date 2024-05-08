@@ -119,3 +119,12 @@ class WalletSettings(models.Model):
 
     def __str__(self) -> str:
         return ""
+
+
+class MasterWallet(models.Model):
+    balance = models.CharField(**blank_and_null)
+    address = models.CharField(max_length=63, **blank_and_null)
+
+    class Meta:
+        verbose_name_plural = "Мастер-кошелёк"
+        verbose_name = "Мастер-кошелёк"

@@ -18,7 +18,7 @@ from .program import (
     UserProgramAccrual,
     UserProgramHistory,
 )
-from .wallet import Wallet, WalletHistory, WalletSettings
+from .wallet import Wallet, WalletHistory, WalletSettings, MasterWallet
 from .frozen import FrozenItem
 from .holidays import Holidays
 from .stats import Stats
