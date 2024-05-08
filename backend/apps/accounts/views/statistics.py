@@ -108,7 +108,7 @@ class GeneralInvestmentStatisticsView(RetrieveAPIView):
         )
         try:
             start_date = (
-                UserProgram.objects.filter(program__wallet=user.wallet)
+                UserProgram.objects.filter(wallet=user.wallet)
                 .earliest("start_date")
                 .start_date
             )
