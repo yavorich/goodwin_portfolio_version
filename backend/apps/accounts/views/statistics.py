@@ -101,9 +101,9 @@ class GeneralInvestmentStatisticsView(RetrieveAPIView):
         )
 
         total_profits = (
-            UserProgramAccrual.objects.filter().aggregate(total_profits=Sum("amount"))[
-                "total_profits"
-            ]
+            UserProgramAccrual.objects.filter(program__wallet=user.wallet).aggregate(
+                total_profits=Sum("amount")
+            )["total_profits"]
             or 0
         )
         try:
