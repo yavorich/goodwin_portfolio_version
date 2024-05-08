@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Any
+import requests
 
 from django.contrib import admin
 from django.db.models import Sum, Count, F, CharField, TextField
@@ -21,6 +22,7 @@ from core.import_export.admin import (
     ExportInlineModelAdminMixin,
     ExportInlineMixin,
 )
+from config import settings
 from . import models
 from .models import (
     Program,
@@ -31,6 +33,7 @@ from .models import (
     Stats,
     Operation,
     WalletSettings,
+    MasterWallet,
 )
 from .resourses import (
     UserProgramRunningResource,
@@ -604,14 +607,14 @@ class StatsAdmin(admin.ModelAdmin):
         super().__init__(model, admin_site)
         self.opts.verbose_name_plural = "Общая статистика"
 
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
+    # def has_add_permission(self, request: HttpRequest) -> bool:
+    #     return False
 
-    def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
-        return False
+    # def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
+    #     return False
 
-    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
-        return False
+    # def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+    #     return False
 
     @admin.display(description="Показатель")
     def get_name(self, obj: Stats):
@@ -709,6 +712,33 @@ class WalletSettingsAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return super().get_queryset(request).filter(wallet__isnull=True)
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(
+        self, request: HttpRequest, obj: Any | None = ...
+    ) -> bool:
+        return False
+
+
+@admin.register(MasterWallet)
+class MasterWalletAdmin(admin.ModelAdmin):
+    list_display = ["balance", "address"]
+    readonly_fields = ["balance", "address"]
+    list_display_links = None
+    actions = None
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        url = f"{settings.NODE_JS_URL}/api/master-wallet/balance"
+        headers = {"x-auth-token": settings.NODE_JS_TOKEN}
+        try:
+            response = requests.get(url=url, headers=headers)
+        except requests.exceptions.ConnectionError:
+            MasterWallet.objects.update_or_create()
+            return MasterWallet.objects.all()
+        MasterWallet.objects.update_or_create(defaults=response.json())
+        return MasterWallet.objects.all()
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
