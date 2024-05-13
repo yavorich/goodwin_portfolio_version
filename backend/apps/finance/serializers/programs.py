@@ -52,7 +52,7 @@ class ProgramSerializer(ModelSerializer):
 
     def get_withdrawal_terms(self, obj: Program):
         wallet = self.context["wallet"]
-        return int(get_wallet_settings_attr(wallet, "withdrawal_terms"))
+        return int(get_wallet_settings_attr(wallet, "defrost_days"))
 
 
 class UserProgramSerializer(ModelSerializer):
