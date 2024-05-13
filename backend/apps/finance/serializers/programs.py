@@ -13,7 +13,7 @@ from apps.finance.models import (
     Wallet,
     UserProgramReplenishment,
 )
-from apps.finance.services import get_commission_pct
+from apps.finance.services import get_wallet_settings_attr
 from core.utils import decimal_usdt
 
 
@@ -21,6 +21,7 @@ class ProgramSerializer(ModelSerializer):
     min_deposit = FloatField()
     success_fee = SerializerMethodField()
     management_fee = SerializerMethodField()
+    withdrawal_terms = SerializerMethodField()
     accrual_type = CharField(source="get_accrual_type_display")
     withdrawal_type = CharField(source="get_withdrawal_type_display")
 
@@ -43,11 +44,15 @@ class ProgramSerializer(ModelSerializer):
 
     def get_success_fee(self, obj: Program):
         wallet = self.context["wallet"]
-        return float(get_commission_pct(wallet, "success_fee"))
+        return float(get_wallet_settings_attr(wallet, "success_fee"))
 
     def get_management_fee(self, obj: Program):
         wallet = self.context["wallet"]
-        return float(get_commission_pct(wallet, "management_fee"))
+        return float(get_wallet_settings_attr(wallet, "management_fee"))
+
+    def get_withdrawal_terms(self, obj: Program):
+        wallet = self.context["wallet"]
+        return int(get_wallet_settings_attr(wallet, "withdrawal_terms"))
 
 
 class UserProgramSerializer(ModelSerializer):

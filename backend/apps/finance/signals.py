@@ -21,6 +21,8 @@ from apps.finance.services.send_operation_confirm_email import (
 )
 from apps.finance.tasks import make_daily_programs_accruals
 from apps.telegram.utils import send_telegram_message
+from apps.telegram.tasks import send_template_telegram_message_task
+from apps.telegram.models import MessageType
 
 
 @receiver(post_save, sender=Operation)
@@ -77,6 +79,16 @@ def save_user_program(sender, instance: UserProgram, **kwargs):
         running = UserProgram.Status.RUNNING
         if previous.status != instance.status == running:
             instance.start_date = now().date()
+            if (telegram_id := instance.wallet.user.telegram_id):
+                send_template_telegram_message_task.delay(
+                    telegram_id,
+                    message_type=MessageType.PROGRAM_STARTED,
+                    insertion_data={
+                        "program_name": instance.name,
+                        "underlying_asset": instance.deposit,
+                        "email": instance.wallet.user.email,
+                    },
+                )
     except UserProgram.DoesNotExist:
         pass
 
@@ -90,6 +102,14 @@ def save_user_program_replenishment(
         instance.save()
     elif not instance.done and instance.status == UserProgramReplenishment.Status.DONE:
         instance.apply()
+        if (telegram_id := instance.program.wallet.user.telegram_id):
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.START_WITH_REPLENISHMENT,
+                insertion_data={
+                    "program_name": instance.program.name,
+                },
+            )
 
 
 @receiver(pre_save, sender=FrozenItem)
@@ -124,8 +144,10 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
                 target_name=None,
                 amount=None,
             )
+            message_type = MessageType.SUCCESSFUL_TRANSFER
             instance.done_at = now().date()
-        if instance.status == WithdrawalRequest.Status.REJECTED:
+
+        elif instance.status == WithdrawalRequest.Status.REJECTED:
             if instance.reject_message == "":
                 raise ValidationError("Reject message is required for REJECTED status.")
             instance.wallet.update_balance(free=instance.original_amount)
@@ -142,6 +164,20 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
                 ),
                 target_name=instance.wallet.name,
                 amount=instance.original_amount,
+            )
+            message_type = MessageType.TRANSFER_REJECTED
+
+        if (telegram_id := instance.wallet.user.telegram_id):
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=message_type,
+                insertion_data={
+                    "amount": instance.original_amount,
+                    "commission_amount": instance.commission,
+                    "amount_with_commission": instance.amount,
+                    "transfer address": instance.address,
+                    "email": instance.wallet.user.email,
+                },
             )
         instance.done = True
         instance.save()

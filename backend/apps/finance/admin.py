@@ -119,6 +119,7 @@ class ProgramAdminForm(ModelForm):
         help_texts = {
             "success_fee": 'Можно изменить во вкладке "Общие настройки"',
             "management_fee": 'Можно изменить во вкладке "Общие настройки"',
+            "withdrawal_terms": 'Можно изменить во вкладке "Общие настройки"',
         }
         exclude = ()
 
@@ -137,7 +138,7 @@ class ProgramAdmin(ExportInlineModelAdminMixin, admin.ModelAdmin):
         "total_success_fee",
         "total_management_fee",
     ]
-    readonly_fields = ["success_fee", "management_fee"]
+    readonly_fields = ["success_fee", "management_fee", "withdrawal_terms"]
     ordering = ["name"]
     inlines = [
         # ProgramResultInline,
@@ -239,6 +240,10 @@ class ProgramAdmin(ExportInlineModelAdminMixin, admin.ModelAdmin):
 
     def management_fee(self, obj: Program):
         return WalletSettings.objects.get(wallet__isnull=True).management_fee
+
+    @admin.display(description="Срок вывода базового актива (дней)")
+    def withdrawal_terms(self, obj: Program):
+        return WalletSettings.objects.get(wallet__isnull=True).defrost_days
 
     def formfield_for_dbfield(self, db_field, **kwargs):
         field = super().formfield_for_dbfield(db_field, **kwargs)
@@ -572,10 +577,6 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
     def get_changelist_formset(self, request, **kwargs):
         kwargs["formset"] = WithdrawalRequestFormSet
         return super().get_changelist_formset(request, **kwargs)
-
-    @admin.display(description="Удержать комиссию")
-    def commission(self, obj: WithdrawalRequest):
-        return obj.original_amount - obj.amount
 
     @admin.display(description="Статус", boolean=True)
     def get_done(self, obj: WithdrawalRequest):

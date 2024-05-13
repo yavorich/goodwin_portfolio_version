@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .wallet import Wallet
 from core.utils import blank_and_null, decimal_usdt
 from core.localized.fields import LocalizedCharField
 
@@ -22,7 +21,7 @@ class OperationHistory(models.Model):
     # class Message(models.TextChoices):
     #     DEPOSIT = _("")
     wallet = models.ForeignKey(
-        Wallet,
+        "Wallet",
         verbose_name="Кошелёк",
         related_name="operations_history",
         on_delete=models.CASCADE,

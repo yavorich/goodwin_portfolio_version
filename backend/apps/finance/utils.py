@@ -4,15 +4,15 @@ from apps.finance.models import (
     UserProgramAccrual,
 )
 
-from apps.finance.services import get_commission_pct
+from apps.finance.services.wallet_settings_attr import get_wallet_settings_attr
 from core.utils import safe_zero_div
 
 
 def create_accrual(
     user_program: UserProgram, result: ProgramResult
 ) -> UserProgramAccrual:
-    success_fee_pct = get_commission_pct(user_program.wallet, "success_fee")
-    management_fee_pct = get_commission_pct(user_program.wallet, "management_fee")
+    success_fee_pct = get_wallet_settings_attr(user_program.wallet, "success_fee")
+    management_fee_pct = get_wallet_settings_attr(user_program.wallet, "management_fee")
 
     amount = user_program.funds * result.result / 100
     management_fee = user_program.deposit * management_fee_pct / 100

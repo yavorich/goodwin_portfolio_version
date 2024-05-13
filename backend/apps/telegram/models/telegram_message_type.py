@@ -27,7 +27,7 @@ class MessageType(TextChoices):
         "Внутренний перевод (для получателя)",
     )
     PROGRAM_PROFIT = "program_profit", "Прибыль по программе"
-    # PROGRAM_LOSS = "program_loss", "Убыток по программе"
+    PROGRAM_LOSS = "program_loss", "Убыток по программе"
 
 
 DATA_INSERTION = {
@@ -45,6 +45,7 @@ DATA_INSERTION = {
     MessageType.PROGRAM_CLOSING: {
         "program_name": "Название программы",
         "defrost_date": "Дата разморозки",
+        "amount": "Сумма закрытия",
         "extra_fee_percent": "Процент комиссии Extra fee",
         "email": "Почта пользователя",
     },
@@ -98,6 +99,15 @@ DATA_INSERTION = {
         "amount": "Сумма перевода (USDT)",
     },
     MessageType.PROGRAM_PROFIT: {
+        "program_name": "Название программы",
+        "yesterday_profit": "Прибыль за вчерашний торговый день (USDT)",
+        "yesterday_profit_percent": "Прибыль за вчерашний торговый день в процентах",
+        "all_profit": "Общая прибыль (USDT)",
+        "all_profit_percent": "Общая прибыль в процентах",
+        "underlying_asset": "Размер базового актива (USDT)",
+        "email": "Почта пользователя",
+    },
+    MessageType.PROGRAM_LOSS: {
         "program_name": "Название программы",
         "yesterday_profit": "Прибыль за вчерашний торговый день (USDT)",
         "yesterday_profit_percent": "Прибыль за вчерашний торговый день в процентах",
@@ -191,7 +201,9 @@ INITIAL_MESSAGE_TYPES = {
             "Underlying asset: {underlying_asset} USDT\n\n"
             "Login: {email}"
         ),
-        "cn": ("程序 {program_name} 推出!\n标的资产: {underlying_asset} USDT\n\n登录: {email}"),
+        "cn": (
+            "程序 {program_name} 推出!\n标的资产: {underlying_asset} USDT\n\n登录: {email}"
+        ),
     },
     MessageType.PROGRAM_CLOSING: {
         "ru": (
@@ -289,7 +301,7 @@ INITIAL_MESSAGE_TYPES = {
             "Сумма списания с Wallet: {amount} USDT\n"
             "Сумма транзакционной комиссии: {commission_amount} USDT\n"
             "Сумма перевода: {amount_with_commission} USDT\n"
-            "Адрес перевода: {transfer address}\n\n"
+            "Адрес перевода: {transfer_address} \n\n"
             "Логин: {email}"
         ),
         "en": (
@@ -315,7 +327,7 @@ INITIAL_MESSAGE_TYPES = {
             "Сумма списания с Wallet: {amount} USDT\n"
             "Сумма транзакционной комиссии: {commission_amount} USDT\n"
             "Сумма перевода: {amount_with_commission} USDT\n"
-            "Адрес перевода: {transfer address}\n\n"
+            "Адрес перевода: {transfer_address} \n\n"
             "Логин: {email}"
         ),
         "en": (
@@ -376,7 +388,9 @@ INITIAL_MESSAGE_TYPES = {
             "Login: {email}"
         ),
         "cn": (
-            "##内部转会.\n" "转给客户 GDW ID{user_id} 对于金额 {amount} USDT 实现了.\n" "登录: {email}"
+            "##内部转会.\n"
+            "转给客户 GDW ID{user_id} 对于金额 {amount} USDT 实现了.\n"
+            "登录: {email}"
         ),
     },
     MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT: {
@@ -418,6 +432,38 @@ INITIAL_MESSAGE_TYPES = {
             "该计划的基本资产 {program_name}: {underlying_asset} USDT\n\n"
             "*投资者的收入显示为负 Success fee 和 Management Fee\n\n"
             "登录: {email}"
+        ),
+    },
+    MessageType.PROGRAM_LOSS: {
+        "ru": (
+            "Прибыль по программе {program_name}:\n\n"
+            "Прибыль за вчерашний торговый день: {yesterday_profit} USDT "
+            "({yesterday_profit_percent} %)\n"
+            "Общая прибыль {all_profit} USDT ({all_profit_percent} %)\n"
+            "Базовый актив программы {program_name}: {underlying_asset} USDT\n\n"
+            "*Доход инвестора указан за вычетом Success fee и Management Fee\n\n"
+            "Логин: {email} \n"
+            "(В случае убытка за торговую сессию, минус списывается с базового актива)"
+        ),
+        "en": (
+            "Profit under the program {program_name}:\n\n"
+            "Profit for yesterday's trading day: {yesterday_profit} USDT "
+            "({yesterday_profit_percent} %)\n"
+            "Total profit {all_profit} USDT ({all_profit_percent} %)\n"
+            "Basic asset of the program {program_name}: {underlying_asset} USDT\n\n"
+            "*The investor's income is shown minus Success fee and Management Fee\n\n"
+            "Login: {email} \n"
+            "(In case of a loss during a trading session, the minus is written off "
+            "from the underlying asset)"
+        ),
+        "cn": (
+            "该计划下的利润 {program_name}:\n\n"
+            "昨天交易日盈利: {yesterday_profit} USDT ({yesterday_profit_percent} %)\n"
+            "利润总额 {all_profit} USDT ({all_profit_percent} %)\n"
+            "该计划的基本资产 {program_name}: {underlying_asset} USDT\n\n"
+            "*投资者的收入显示为负 Success fee 和 Management Fee\n\n"
+            "登录: {email} \n"
+            "(如果交易期间出现亏损，则从标的资产中冲销减额)"
         ),
     },
 }
