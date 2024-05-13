@@ -97,6 +97,7 @@ DATA_INSERTION = {
     MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT: {
         "user_id": "ID пользователя",
         "amount": "Сумма перевода (USDT)",
+        "section": "Раздел кошелька",
     },
     MessageType.PROGRAM_PROFIT: {
         "program_name": "Название программы",
@@ -397,14 +398,14 @@ INITIAL_MESSAGE_TYPES = {
         "ru": (
             "#Внутренний перевод.\n"
             "Поступление от аккаунта ID{user_id} на сумму {amount} USDT.\n"
-            "Сумма зачислена в раздел «Заморожено»."
+            "Сумма зачислена в раздел «{section}»."
         ),
         "en": (
             "#Internal transfer.\n"
             "Receipt from account ID{user_id} for the amount {amount} USDT.\n"
-            "The amount is credited to the “Frozen” section."
+            "The amount is credited to the “{section}” section."
         ),
-        "cn": "#内部转会.\n帐户收据 ID{user_id} 对于金额 {amount} USDT.\n金额记入“冻结”部分.",
+        "cn": "#内部转会.\n帐户收据 ID{user_id} 对于金额 {amount} USDT.\n金额记入“{section}”部分.",
     },
     MessageType.PROGRAM_PROFIT: {
         "ru": (

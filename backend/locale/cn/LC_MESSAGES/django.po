@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-03 15:22+0300\n"
+"POT-Creation-Date: 2024-05-13 11:11+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -159,69 +159,77 @@ msgid ""
 "Ваш код для подтверждения смены настроек"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Вс"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Пн"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Вт"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Ср"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Чт"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Пт"
 msgstr ""
 
-#: apps/accounts/views/statistics.py:183
+#: apps/accounts/views/statistics.py:187
 msgid "Сб"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:12
+#: apps/finance/models/operation.py:237
+msgid "Free"
+msgstr "免费"
+
+#: apps/finance/models/operation.py:262
+msgid "Frozen"
+msgstr "冻结"
+
+#: apps/finance/models/operation_history.py:11
 msgid "Перевод в раздел \"Доступно\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:13
+#: apps/finance/models/operation_history.py:12
 msgid "Перевод в раздел \"Заморожено\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:14
+#: apps/finance/models/operation_history.py:13
 msgid "Перевод между счетами"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:15
+#: apps/finance/models/operation_history.py:14
 msgid "Вывод"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:16
+#: apps/finance/models/operation_history.py:15
 msgid "Пополнение"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:17
+#: apps/finance/models/operation_history.py:16
 #, fuzzy
 #| msgid "Восстановление пароля"
 msgid "Начисление прибыли"
 msgstr "找回密码"
 
-#: apps/finance/models/operation_history.py:18
+#: apps/finance/models/operation_history.py:17
 msgid "Фиксация убытка"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:19
+#: apps/finance/models/operation_history.py:18
 msgid "Программа лояльности"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:20
+#: apps/finance/models/operation_history.py:19
 msgid "Системное сообщение"
 msgstr ""
 
@@ -369,10 +377,32 @@ msgid ""
 "Ваш код для подтверждения операции"
 msgstr ""
 
-#: apps/finance/signals.py:63
+#: apps/finance/signals.py:65
 msgid ""
 "Подтверждение операции\n"
 "Ваш код для подтверждения операции"
+msgstr ""
+
+#: apps/finance/templates/export_tabular.html:25
+msgid "Export"
+msgstr ""
+
+#: apps/finance/templates/export_tabular.html:41
+msgid "Delete?"
+msgstr ""
+
+#: apps/finance/templates/export_tabular.html:55
+#: templates/admin/app_list.html:34
+msgid "Change"
+msgstr ""
+
+#: apps/finance/templates/export_tabular.html:55
+#: templates/admin/app_list.html:32
+msgid "View"
+msgstr ""
+
+#: apps/finance/templates/export_tabular.html:57
+msgid "View on site"
 msgstr ""
 
 #: config/settings.py:160
@@ -394,14 +424,6 @@ msgstr ""
 
 #: templates/admin/app_list.html:25
 msgid "Add"
-msgstr ""
-
-#: templates/admin/app_list.html:32
-msgid "View"
-msgstr ""
-
-#: templates/admin/app_list.html:34
-msgid "Change"
 msgstr ""
 
 #: templates/admin/app_list.html:45
