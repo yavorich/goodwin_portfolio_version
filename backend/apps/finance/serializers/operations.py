@@ -195,6 +195,8 @@ class WalletTransferSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         self._validate_wallet(attrs)
+        if attrs["wallet"] == attrs["receiver"]:
+            raise ValidationError(_("Recipient and sender must be different"))
         return attrs
 
     def create(self, validated_data: dict):

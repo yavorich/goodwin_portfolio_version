@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-13 11:11+0000\n"
+"POT-Creation-Date: 2024-05-13 12:26+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -187,11 +187,11 @@ msgstr ""
 msgid "Сб"
 msgstr ""
 
-#: apps/finance/models/operation.py:237
+#: apps/finance/models/operation.py:236
 msgid "Free"
 msgstr "Доступно"
 
-#: apps/finance/models/operation.py:262
+#: apps/finance/models/operation.py:261
 msgid "Frozen"
 msgstr "Заморожено"
 
@@ -339,9 +339,22 @@ msgstr "Минимальный остаток депозита программ�
 msgid "Insufficient program deposit"
 msgstr "Указанная сумма больше текущего депозита программы"
 
-#: apps/finance/serializers/operations.py:216
+#: apps/finance/serializers/operations.py:199
+#: apps/finance/serializers/wallet.py:48
+msgid "Recipient and sender must be different"
+msgstr "Получатель и отправитель должны отличаться"
+
+#: apps/finance/serializers/operations.py:218
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr "Сервис эквайринга временно не доступен, повторите попытку позже"
+
+#: apps/finance/serializers/wallet.py:43
+msgid "WALLET ID does not exist"
+msgstr "WALLET ID не найден"
+
+#: apps/finance/serializers/wallet.py:45
+msgid "Incorrect email"
+msgstr "Неверный email"
 
 #: apps/finance/services/operation_replenishment_confirmation.py:11
 msgid "Operation already done"

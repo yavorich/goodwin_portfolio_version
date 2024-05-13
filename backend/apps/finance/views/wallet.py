@@ -72,6 +72,8 @@ class WalletTransferAPIView(GenericAPIView):
     permission_classes = [IsAuthenticatedAndVerified]
 
     def post(self, request, *args, **kwargs):
-        serializer = WalletTransferUserSerializer(data=request.data)
+        serializer = WalletTransferUserSerializer(
+            data=request.data, context={"user": self.request.user}
+        )
         serializer.is_valid(raise_exception=True)
         return Response(data=serializer.data, status=HTTP_200_OK)
