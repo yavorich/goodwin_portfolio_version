@@ -2,6 +2,8 @@ from decimal import Decimal
 from django.db import models
 from django.utils.timezone import now, timedelta
 
+
+from apps.finance.services import get_wallet_settings_attr
 from core.utils import blank_and_null, decimal_usdt
 
 
@@ -36,4 +38,5 @@ class FrozenItem(models.Model):
 
     def _set_defrost_date(self):
         if not self.defrost_date:
-            self.defrost_date = now().date() + timedelta(days=30)
+            defrost_days = get_wallet_settings_attr(self.wallet, "defrost_days")
+            self.defrost_date = now().date() + timedelta(days=defrost_days)

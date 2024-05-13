@@ -23,11 +23,6 @@ class Program(models.Model):
     accrual_type = models.CharField("Начисление прибыли", choices=AccrualType.choices)
     withdrawal_type = models.CharField("Вывод прибыли", choices=WithdrawalType.choices)
     max_risk = models.FloatField("Максимальный риск (%)")
-    # success_fee = models.DecimalField("Success Fee (%)", **decimal_pct)
-    # management_fee = models.DecimalField(
-    #     "Management Fee (%, в день)", max_digits=6, decimal_places=4
-    # )
-    withdrawal_terms = models.IntegerField("Срок вывода базового актива (дней)")
 
     class Meta:
         verbose_name = "Программа"
@@ -110,16 +105,15 @@ class UserProgram(models.Model):
         try:
             accrual: UserProgramAccrual = self.accruals.get(created_at=now().date())
         except UserProgramAccrual.DoesNotExist:
-            return None
+            return 0
         return accrual.amount
 
     @property
     def yesterday_profit_percent(self):
-        yesterday = now().date() - timedelta(days=1)
         try:
-            accrual: UserProgramAccrual = self.accruals.get(created_at=yesterday)
+            accrual: UserProgramAccrual = self.accruals.get(created_at=now().date())
         except UserProgramAccrual.DoesNotExist:
-            return None
+            return 0
         return accrual.percent_amount
 
     def _set_name(self):

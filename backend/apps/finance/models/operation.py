@@ -3,11 +3,14 @@ from uuid import uuid4
 from django.db import models, transaction
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from django.utils.timezone import now, timedelta
 
 from apps.finance.services import (
-    get_commission_pct,
+    get_wallet_settings_attr,
     send_admin_withdrawal_notifications,
 )
+from apps.telegram.tasks import send_template_telegram_message_task
+from apps.telegram.models import MessageType
 from core.utils import blank_and_null, decimal_usdt
 
 from .program import Program, UserProgram, UserProgramReplenishment
@@ -126,7 +129,9 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):  # ready
-        commission_pct = get_commission_pct(self.wallet, "commission_on_replenish")
+        commission_pct = get_wallet_settings_attr(
+            self.wallet, "commission_on_replenish"
+        )
         self.commission = self.amount * commission_pct / 100
         self.amount_net = self.amount - self.commission
         self.save()
@@ -146,7 +151,7 @@ class Operation(models.Model):
             amount=-self.amount,
         )
 
-        commission_pct = get_commission_pct(self.wallet, "commission_on_withdraw")
+        commission_pct = get_wallet_settings_attr(self.wallet, "commission_on_withdraw")
         self.commission = self.amount * commission_pct / 100
         self.amount_net = self.amount - self.commission
         self.save()
@@ -155,18 +160,31 @@ class Operation(models.Model):
             operation=self,
             wallet=self.wallet,
             original_amount=self.amount,
+            commission=self.commission,
             amount=self.amount_net,
             address=self.address,
             status=WithdrawalRequest.Status.PENDING,
         )
         send_admin_withdrawal_notifications(withdrawal_request)
+        if telegram_id := self.wallet.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.WITHDRAWAL_REQUEST,
+                insertion_data={
+                    "amount": withdrawal_request.original_amount,
+                    "commission_amount": withdrawal_request.commission,
+                    "amount_with_commission": withdrawal_request.amount,
+                    "transfer address": withdrawal_request.address,
+                    "email": self.wallet.user.email,
+                },
+            )
 
         return False
 
     def _apply_transfer(self):  # ready
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
 
-        commission_pct = get_commission_pct(self.wallet, "commission_on_transfer")
+        commission_pct = get_wallet_settings_attr(self.wallet, "commission_on_transfer")
         commission_free = self.amount_free * commission_pct / 100
         commission_frozen = self.amount_frozen * commission_pct / 100
 
@@ -220,6 +238,26 @@ class Operation(models.Model):
                 target_name=self.receiver.name,
                 amount=self.amount_frozen - commission_frozen,
             )
+
+        if telegram_id := self.wallet.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.INTERNAL_TRANSFER_FOR_SENDER,
+                insertion_data={
+                    "user_id": self.receiver.user.id,
+                    "amount": self.amount_net,
+                    "email": self.wallet.user.email,
+                },
+            )
+        if telegram_id := self.receiver.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
+                insertion_data={
+                    "user_id": self.wallet.user.id,
+                    "amount": self.amount_net,
+                },
+            )
         return True
 
     def _apply_partner_bonus(self):  # ready
@@ -262,6 +300,17 @@ class Operation(models.Model):
             target_name=self.user_program.name,
             amount=self.amount_free + self.amount_frozen,
         )
+        if telegram_id := self.wallet.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.PROGRAM_START,
+                insertion_data={
+                    "program_name": self.user_program.name,
+                    "start_date": self.user_program.start_date,
+                    "underlying_asset": self.user_program.deposit,
+                    "email": self.wallet.user.email,
+                },
+            )
         return True
 
     def _apply_program_closure(self):  # ready
@@ -315,6 +364,21 @@ class Operation(models.Model):
             target_name=self.wallet.name,
             amount=self.amount,
         )
+        defrost_days = get_wallet_settings_attr(self.wallet, "defrost_days")
+        extra_fee = get_wallet_settings_attr(self.wallet, "extra_fee")
+
+        if telegram_id := self.wallet.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.PROGRAM_CLOSING,
+                insertion_data={
+                    "program_name": self.user_program.name,
+                    "defrost_date": now().date() + timedelta(days=defrost_days),
+                    "amount": self.amount,
+                    "extra_fee_percent": extra_fee,
+                    "email": self.wallet.user.email,
+                },
+            )
         return True
 
     def _apply_program_replenishment(self):  # ready
@@ -384,6 +448,20 @@ class Operation(models.Model):
             target_name=self.wallet.name,
             amount=self.amount,
         )
+        defrost_days = get_wallet_settings_attr(self.wallet, "defrost_days")
+        extra_fee = get_wallet_settings_attr(self.wallet, "extra_fee")
+
+        if telegram_id := self.wallet.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=MessageType.CANCELING_PROGRAM_REPLENISHMENT,
+                insertion_data={
+                    "program_name": self.replenishment.program.name,
+                    "available_date": now().date() + timedelta(days=defrost_days),
+                    "extra_fee_percent": extra_fee,
+                    "email": self.wallet.user.email,
+                },
+            )
         return True
 
     def _apply_defrost(self):  # ready
@@ -396,6 +474,15 @@ class Operation(models.Model):
             self.wallet.update_balance(
                 frozen=-self.amount, item=self.frozen_item  # разморозка frozen-item
             )
+            if telegram_id := self.wallet.user.telegram_id:
+                send_template_telegram_message_task.delay(
+                    telegram_id,
+                    message_type=MessageType.FROZEN_AVAILABLE,
+                    insertion_data={
+                        "frozen_date": self.frozen_item.frost_date,
+                        "frozen_amount": self.frozen_item.amount,
+                    },
+                )
         else:
             description = dict(
                 ru="Заявка на разморозку активов исполнена",
@@ -405,12 +492,24 @@ class Operation(models.Model):
             self.wallet.update_balance(frozen=-self.amount)  # разморозка суммы
 
             # списание Extra Fee
-            commission_pct = get_commission_pct(self.wallet, "extra_fee")
+            extra_fee = get_wallet_settings_attr(self.wallet, "extra_fee")
+            extra_fee_amount = self.amount * extra_fee / 100
             Operation.objects.create(
                 type=Operation.Type.EXTRA_FEE,
                 wallet=self.wallet,
-                amount=self.amount * commission_pct / 100,
+                amount=extra_fee_amount,
             )
+            if telegram_id := self.wallet.user.telegram_id:
+                send_template_telegram_message_task.delay(
+                    telegram_id,
+                    message_type=MessageType.PREMATURE_DEFROST,
+                    insertion_data={
+                        "amount": self.amount,
+                        "extra_fee_percent": extra_fee,
+                        "extra_fee_amount": extra_fee_amount,
+                        "amount_with_extra_fee": self.amount - extra_fee_amount,
+                    },
+                )
 
         self.wallet.update_balance(free=self.amount)
         OperationHistory.objects.create(
@@ -442,6 +541,7 @@ class Operation(models.Model):
         self.user_program.update_profit(amount=self.amount)
 
         if self.amount >= 0:
+            message_type = MessageType.PROGRAM_PROFIT
             if withdrawal_type == Program.WithdrawalType.DAILY:
                 self.wallet.update_balance(free=self.amount)
                 OperationHistory.objects.create(
@@ -456,7 +556,7 @@ class Operation(models.Model):
                     amount=self.amount,
                 )
         else:
-            self.user_program.update_profit(amount=self.amount)
+            message_type = MessageType.PROGRAM_LOSS
             OperationHistory.objects.create(
                 wallet=self.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
@@ -467,6 +567,23 @@ class Operation(models.Model):
                 ),
                 target_name=self.user_program.name,
                 amount=self.amount,
+            )
+
+        if telegram_id := self.wallet.user.telegram_id:
+            send_template_telegram_message_task.delay(
+                telegram_id,
+                message_type=message_type,
+                insertion_data={
+                    "program_name": self.user_program.name,
+                    "yesterday_profit": self.user_program.yesterday_profit,
+                    "yesterday_profit_percent": (
+                        self.user_program.yesterday_profit_percent
+                    ),
+                    "all_profit": self.user_program.profit,
+                    "all_profit_percent": self.user_program.profit_percent,
+                    "underlying_asset": self.user_program.deposit,
+                    "email": self.wallet.user.email,
+                },
             )
 
         return True
@@ -492,6 +609,7 @@ class WithdrawalRequest(models.Model):
         related_name="withdrawal_requests",
     )
     original_amount = models.DecimalField("Списать с кошелька", **decimal_usdt)
+    commission = models.DecimalField("Удержать комиссию", **decimal_usdt)
     amount = models.DecimalField("Перевести инвестору", **decimal_usdt)
     address = models.CharField(
         "Адрес криптокошелька", validators=[RegexValidator(regex=r"T[A-Za-z1-9]{33}")]
