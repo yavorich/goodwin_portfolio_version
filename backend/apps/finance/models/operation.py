@@ -4,6 +4,7 @@ from django.db import models, transaction
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from django.utils.timezone import now, timedelta
+from django.utils.translation import gettext as _
 
 from apps.finance.services import (
     get_wallet_settings_attr,
@@ -188,12 +189,15 @@ class Operation(models.Model):
         commission_free = self.amount_free * commission_pct / 100
         commission_frozen = self.amount_frozen * commission_pct / 100
 
+        amount_free_net = self.amount_free - commission_free
+        amount_frozen_net = self.amount_frozen - commission_frozen
+
         self.receiver.update_balance(
-            free=self.amount_free - commission_free,
-            frozen=self.amount_frozen - commission_frozen,
+            free=amount_free_net,
+            frozen=amount_frozen_net,
         )
         self.commission = commission_free + commission_frozen
-        self.amount_net = self.amount_free + self.amount_frozen - self.commission
+        self.amount_net = amount_free_net + amount_frozen_net
         self.save()
 
         description_to = (
@@ -221,8 +225,18 @@ class Operation(models.Model):
                 type=OperationHistory.Type.TRANSFER_FREE,
                 description=description_from,
                 target_name=self.receiver.name,
-                amount=self.amount_free - commission_free,
+                amount=amount_free_net,
             )
+            if telegram_id := self.receiver.user.telegram_id:
+                send_template_telegram_message_task.delay(
+                    telegram_id,
+                    message_type=MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
+                    insertion_data={
+                        "user_id": self.wallet.user.id,
+                        "amount": amount_free_net,
+                        "section": _("Free"),
+                    },
+                )
         if self.amount_frozen:
             OperationHistory.objects.create(
                 wallet=self.wallet,
@@ -236,8 +250,18 @@ class Operation(models.Model):
                 type=OperationHistory.Type.TRANSFER_FROZEN,
                 description=description_from,
                 target_name=self.receiver.name,
-                amount=self.amount_frozen - commission_frozen,
+                amount=amount_frozen_net,
             )
+            if telegram_id := self.receiver.user.telegram_id:
+                send_template_telegram_message_task.delay(
+                    telegram_id,
+                    message_type=MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
+                    insertion_data={
+                        "user_id": self.wallet.user.id,
+                        "amount": amount_frozen_net,
+                        "section": _("Frozen"),
+                    },
+                )
 
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
@@ -247,15 +271,6 @@ class Operation(models.Model):
                     "user_id": self.receiver.user.id,
                     "amount": self.amount_net,
                     "email": self.wallet.user.email,
-                },
-            )
-        if telegram_id := self.receiver.user.telegram_id:
-            send_template_telegram_message_task.delay(
-                telegram_id,
-                message_type=MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
-                insertion_data={
-                    "user_id": self.wallet.user.id,
-                    "amount": self.amount_net,
                 },
             )
         return True
