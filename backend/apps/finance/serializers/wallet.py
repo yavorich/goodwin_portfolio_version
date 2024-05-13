@@ -7,6 +7,7 @@ from rest_framework.serializers import (
     Serializer,
 )
 from rest_framework.exceptions import ValidationError
+from django.utils.translation import gettext as _
 
 from apps.finance.models import Wallet, FrozenItem
 from apps.accounts.models import User
@@ -39,9 +40,13 @@ class WalletTransferUserSerializer(Serializer):
         try:
             user = User.objects.get(id=attrs["id"])
         except User.DoesNotExist:
-            raise ValidationError("ID WALLET не существует")
+            raise ValidationError(_("WALLET ID does not exist"))
         if user.email != attrs["email"]:
-            raise ValidationError("Неверный email")
+            raise ValidationError(_("Incorrect email"))
+        if user == self.context["user"]:
+            raise ValidationError(
+                _("Recipient and sender must be different")
+            )
         return attrs
 
     def to_representation(self, instance):
