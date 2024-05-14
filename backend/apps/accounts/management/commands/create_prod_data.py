@@ -7,8 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from sqlite3 import connect
 
-from django.db.models import Q, F
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
 
 from apps.accounts.models import (
@@ -28,8 +27,13 @@ from apps.finance.models import (
     WithdrawalRequest,
     UserProgramReplenishment,
     Operation,
+    FrozenItem,
 )
-from apps.finance.signals import handle_operation
+from apps.finance.signals import (
+    handle_operation,
+    save_frozen_item,
+    reset_status_if_done,
+)
 from core.utils import DisconnectSignal
 
 
@@ -46,9 +50,9 @@ class Command(BaseCommand):
                 create_user_settings,
                 update_refer,
                 update_wallet_free,
-                update_wallet_frozen,
                 create_programs,
                 create_user_programs,
+                update_wallet_frozen,
                 create_user_program_accruals,
                 create_operation_history_withdraw,
                 create_operation_history_partner,
@@ -209,57 +213,64 @@ def update_wallet_free(cursor):
 
 def update_wallet_frozen(cursor):
     cursor.execute(
-        "SELECT email, user_programs.name AS user_program_name, "
+        "SELECT email, user_programs.created_at AS user_program_created_at, "
+        "user_programs.start AS user_program_start, "
         "program.name AS program_name, amount, created, expired "
         "FROM green_wallet_freeze "
         "JOIN user ON green_wallet_freeze.user_id = user.id "
         "JOIN user_programs ON green_wallet_freeze.program_id = user_programs.id "
         "JOIN program ON user_programs.program_id = program.id"
     )
-    now = timezone.now()
-    for (
-        email,
-        user_program_name,
-        program_name,
-        amount,
-        created,
-        expired,
-    ) in cursor.fetchall():
-        raise Exception("has frozen")
-        # user = User.objects.get(email=email)
-        # wallet = user.wallet
-        #
-        # user_program_name = get_user_program_name(user_program_name, program_name)
-        # user_program = UserProgram.objects.get(wallet=wallet, name=user_program_name)
-        #
-        # operation_data = {
-        #     "type": Operation.Type.WITHDRAWAL,
-        #     "wallet": wallet,
-        #     "amount_free": 0,
-        #     "amount_frozen": amount,
-        #     "created_at": timezone.make_aware(datetime.fromisoformat(created)),
-        #     "done": True,
-        #     "program": user_program.program,
-        # }
-        # operation = Operation.objects.filter(**operation_data).first()
-        # if operation is None:
-        #     operation = Operation.objects.create(**operation_data)
-        #
-        # frozen_item_data = {
-        #     "wallet": wallet,
-        #     "amount": amount,
-        #     # "operation": operation,
-        #     "defrost_date": timezone.make_aware(datetime.fromisoformat(expired)),
-        # }
-        #
-        # frozen_item = FrozenItem.objects.filter(**frozen_item_data).first()
-        # if frozen_item is None:
-        #     frozen_item = FrozenItem.objects.create(**frozen_item_data)
-        #     wallet.frozen += amount
-        #     wallet.save()
-        #
-        # if not frozen_item.done and frozen_item.defrost_date <= now:
-        #     frozen_item.defrost()
+    # now = timezone.now()
+    with DisconnectSignal(pre_save, save_frozen_item, FrozenItem):
+        for (
+            email,
+            user_program_created_at,
+            user_program_start,
+            program_name,
+            amount,
+            created,
+            expired,
+        ) in cursor.fetchall():
+            # program = Program.objects.get(name=program_name)
+            user = User.objects.get(email=email)
+            wallet = user.wallet
+
+            # user_program = get_user_program(
+            #     wallet, program, user_program_created_at, user_program_start
+            # )
+
+            created = get_datetime_from_iso(created)
+            expired = get_datetime_from_iso(expired)
+
+            FrozenItem.objects.update_or_create(
+                wallet=wallet,
+                frost_date=created,
+                frost_datetime=created,
+                defaults={"amount": amount, "defrost_date": expired},
+            )
+
+            frozen_item_unique_data = {
+                "wallet": wallet,
+                "frost_datetime": created,
+            }
+
+            frozen_item_data = {
+                "frost_date": created.date(),
+                "amount": Decimal(amount),
+                "defrost_date": expired,
+            }
+
+            frozen_item = FrozenItem.objects.filter(**frozen_item_unique_data).first()
+            if frozen_item is None:
+                frozen_item = FrozenItem.objects.create(
+                    **frozen_item_unique_data, **frozen_item_data
+                )
+                wallet.frozen += frozen_item.amount
+                wallet.save()
+
+            # if not frozen_item.done and frozen_item.defrost_date <= now:
+            #     frozen_item.defrost()
 
 
 def create_programs(cursor):
@@ -429,104 +440,106 @@ def create_operation_history_withdraw(cursor):
         "JOIN user ON withdraw.user_id = user.id "
     )
     with DisconnectSignal(post_save, handle_operation, Operation):
-        for (
-            email,
-            status,
-            amount,
-            amount_final,
-            address,
-            created,
-            finished,
-        ) in cursor.fetchall():
-            user = User.objects.get(email=email)
-            wallet = user.wallet
+        with DisconnectSignal(pre_save, reset_status_if_done, WithdrawalRequest):
+            for (
+                email,
+                status,
+                amount,
+                amount_final,
+                address,
+                created,
+                finished,
+            ) in cursor.fetchall():
+                user = User.objects.get(email=email)
+                wallet = user.wallet
 
-            created_at = timezone.make_aware(datetime.fromtimestamp(created))
-            finished_at = timezone.make_aware(datetime.fromtimestamp(finished))
+                created_at = timezone.make_aware(datetime.fromtimestamp(created))
+                finished_at = timezone.make_aware(datetime.fromtimestamp(finished))
 
-            if amount_final is None:
-                amount_final = amount * 0.97
+                if amount_final is None:
+                    amount_final = amount * 0.97
 
-            operation = Operation.objects.update_or_create(
-                created_at=created_at,
-                wallet=wallet,
-                type=Operation.Type.WITHDRAWAL,
-                defaults={
-                    "amount": amount,
-                    "amount_net": amount_final,
-                    "commission": amount - amount_final,
-                },
-            )[0]
-            OperationHistory.objects.update_or_create(
-                wallet=wallet,
-                type=OperationHistory.Type.WITHDRAWAL,
-                created_at=created_at,
-                defaults={
-                    "description": dict(
-                        ru="Заявка на вывод принята",
-                        en="Withdrawal request accepted",
-                        cn=None,
-                    ),
-                    "target_name": wallet.name,
-                    "amount": -amount,
-                },
-            )
-            withdrawal_request = WithdrawalRequest.objects.update_or_create(
-                wallet=wallet,
-                created_at=created_at,
-                status=WithdrawalRequest.Status.APPROVED
-                if status == 3
-                else WithdrawalRequest.Status.REJECTED,
-                done=True,
-                defaults={
-                    "address": address,
-                    "original_amount": amount,
-                    "amount": amount_final,
-                    "done_at": finished_at,
-                },
-            )[0]
-
-            if status == 3:
+                operation = Operation.objects.update_or_create(
+                    created_at=created_at,
+                    wallet=wallet,
+                    type=Operation.Type.WITHDRAWAL,
+                    defaults={
+                        "amount": amount,
+                        "amount_net": amount_final,
+                        "commission": amount - amount_final,
+                    },
+                )[0]
                 OperationHistory.objects.update_or_create(
                     wallet=wallet,
-                    type=OperationHistory.Type.SYSTEM_MESSAGE,
-                    created_at=finished_at,
+                    type=OperationHistory.Type.WITHDRAWAL,
+                    created_at=created_at,
                     defaults={
                         "description": dict(
-                            ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT исполнена",
-                            en=(
-                                f"The withdrawal request of {withdrawal_request.original_amount}"
-                                "USDT has been processed."
-                            ),
+                            ru="Заявка на вывод принята",
+                            en="Withdrawal request accepted",
                             cn=None,
                         ),
-                        "target_name": None,
-                        "amount": None,
+                        "target_name": wallet.name,
+                        "amount": -amount,
                     },
                 )
-                operation.done = True
-
-            else:
-                OperationHistory.objects.update_or_create(
+                withdrawal_request = WithdrawalRequest.objects.update_or_create(
                     wallet=wallet,
-                    type=OperationHistory.Type.SYSTEM_MESSAGE,
-                    created_at=finished_at,
+                    created_at=created_at,
+                    status=WithdrawalRequest.Status.APPROVED
+                    if status == 3
+                    else WithdrawalRequest.Status.REJECTED,
+                    done=True,
                     defaults={
-                        "description": dict(
-                            ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT отклонена",
-                            en=(
-                                f"The withdrawal request of {withdrawal_request.original_amount}"
-                                "USDT has been rejected."
-                            ),
-                            cn=None,
-                        ),
-                        "target_name": withdrawal_request.wallet.name,
-                        "amount": withdrawal_request.original_amount,
+                        "address": address,
+                        "original_amount": amount,
+                        "amount": amount_final,
+                        "commission": operation.commission,
+                        "done_at": finished_at,
                     },
-                )
-                operation.done = False
+                )[0]
 
-            operation.save()
+                if status == 3:
+                    OperationHistory.objects.update_or_create(
+                        wallet=wallet,
+                        type=OperationHistory.Type.SYSTEM_MESSAGE,
+                        created_at=finished_at,
+                        defaults={
+                            "description": dict(
+                                ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT исполнена",
+                                en=(
+                                    f"The withdrawal request of {withdrawal_request.original_amount}"
+                                    "USDT has been processed."
+                                ),
+                                cn=None,
+                            ),
+                            "target_name": None,
+                            "amount": None,
+                        },
+                    )
+                    operation.done = True
+
+                else:
+                    OperationHistory.objects.update_or_create(
+                        wallet=wallet,
+                        type=OperationHistory.Type.SYSTEM_MESSAGE,
+                        created_at=finished_at,
+                        defaults={
+                            "description": dict(
+                                ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT отклонена",
+                                en=(
+                                    f"The withdrawal request of {withdrawal_request.original_amount}"
+                                    "USDT has been rejected."
+                                ),
+                                cn=None,
+                            ),
+                            "target_name": withdrawal_request.wallet.name,
+                            "amount": withdrawal_request.original_amount,
+                        },
+                    )
+                    operation.done = False
+
+                operation.save()
 
 
 def create_operation_history_partner(cursor):

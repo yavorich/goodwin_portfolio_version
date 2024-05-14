@@ -20,6 +20,7 @@ class FrozenItem(models.Model):
     )
     amount = models.DecimalField("Сумма", **decimal_usdt)
     frost_date = models.DateField("Дата заморозки", auto_now_add=True)
+    frost_datetime = models.DateField(null=True, blank=True)
     defrost_date = models.DateField("Срок разморозки", **blank_and_null)
     status = models.CharField("Статус", choices=Status.choices, default=Status.INITIAL)
 
