@@ -633,13 +633,10 @@ class WithdrawalRequest(models.Model):
         choices=Status.choices,
         verbose_name="Статус",
     )
-    created_at = models.DateField("Поставлено на вывод", auto_now_add=True)
+    created_at = models.DateField("Поставлено на вывод", default=timezone.now)
     reject_message = models.TextField("Причина отказа", blank=True)
     done = models.BooleanField("Выполнено", default=False)
     done_at = models.DateField("Дата выполнения", **blank_and_null)
-
-    # нужно для уникальности объектов при парсинге внешней базы
-    created_at = models.DateTimeField("Дата создания", default=timezone.now)
 
     class Meta:
         verbose_name = "Заявка"
