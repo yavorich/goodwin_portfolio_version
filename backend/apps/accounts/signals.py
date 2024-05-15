@@ -51,8 +51,8 @@ def delete_verification_attachment(sender, instance, **kwargs):
         raise ValidationError("Reject message is required for REJECTED status.")
 
 
-@receiver(post_save, sender=Partner)
-def delete_related_partner(sender, instance: Partner, **kwargs):
-    if instance.user.partner:
-        instance.user.partner = None
-        instance.user.save()
+# @receiver(post_save, sender=Partner)
+# def delete_related_partner(sender, instance: Partner, **kwargs):
+#     if instance.user.partner:
+#         instance.user.partner = None
+#         instance.user.save()

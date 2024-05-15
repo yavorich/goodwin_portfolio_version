@@ -1,17 +1,17 @@
 import os
 
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.core.validators import (
     MinValueValidator,
     MaxValueValidator,
 )
 from django.db import models
-from django.core.exceptions import ValidationError
-from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.base_user import BaseUserManager
 
+from apps.accounts.utils import check_is_online
 from core.utils import blank_and_null
 from .region import Region
-from ..utils import check_is_online
 
 
 class UserManager(BaseUserManager):
