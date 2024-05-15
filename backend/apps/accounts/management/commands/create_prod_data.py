@@ -106,7 +106,7 @@ def create_users(cursor):
 
         user = User.objects.update_or_create(email=email, defaults=update_data)[0]
 
-        if verified == 1 or commentary not in (None, ""):
+        if verified == 1:
             if not hasattr(user, "personal_verification"):
                 gender = NAME_TO_GENDER[user.first_name]
                 personal_verification = PersonalVerification(
@@ -177,14 +177,14 @@ def create_user_settings(cursor):
 def update_refer(cursor):
     cursor.execute(
         "SELECT parent_user.email AS parent_email, child_user.email as child_email, "
-        "invited_id "
+        "inviter_id "
         "FROM refer "
         "JOIN user AS parent_user ON refer.inviter_id = parent_user.id "
         "JOIN user AS child_user ON refer.invited_id = child_user.id "
     )
 
     region = Region.objects.get_or_create(name="Russia")[0]
-    for parent_email, child_email, invited_id in cursor.fetchall():
+    for parent_email, child_email, inviter_id in cursor.fetchall():
         parent_user = User.objects.get(email=parent_email)
         child_user = User.objects.get(email=child_email)
 
@@ -193,7 +193,7 @@ def update_refer(cursor):
         else:
             partner = Partner.objects.create(
                 user=parent_user,
-                partner_id=invited_id,
+                partner_id=inviter_id,
                 region=region,
             )
 
