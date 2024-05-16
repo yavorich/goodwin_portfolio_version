@@ -200,12 +200,10 @@ class Operation(models.Model):
         self.amount_net = amount_free_net + amount_frozen_net
         self.save()
 
-        description_to = (
-            dict(
-                ru=f"Перевод клиенту GDW ID{self.receiver.user.id}",
-                en=f"Transfer to GDW client ID{self.receiver.user.id}",
-                cn=None,
-            ),
+        description_to = dict(
+            ru=f"Перевод клиенту GDW ID{self.receiver.user.id}",
+            en=f"Transfer to GDW client ID{self.receiver.user.id}",
+            cn=None,
         )
         description_from = dict(
             ru=f"Поступление от ID{self.wallet.user.id}",
