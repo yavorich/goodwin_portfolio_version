@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from sqlite3 import connect
 
+from django.db.models import Sum, F
 from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
 
@@ -28,6 +29,7 @@ from apps.finance.models import (
     UserProgramReplenishment,
     Operation,
     FrozenItem,
+    UserProgramHistory,
 )
 from apps.finance.signals import (
     handle_operation,
@@ -59,8 +61,9 @@ class Command(BaseCommand):
                 create_operation_history_program_replenishment,
                 create_operation_history_replenishment,
                 create_operation_history_extra_fee,
+                update_user_program_profit,
                 create_operation_history_start_close_program,
-                # imitation_working_app,  no work
+                # imitation_working_app,  # no work
             ]
 
             stages = len(functions)
@@ -243,29 +246,13 @@ def update_wallet_frozen(cursor):
             created = get_datetime_from_iso(created)
             expired = get_datetime_from_iso(expired)
 
-            FrozenItem.objects.update_or_create(
+            frozen_item, created = FrozenItem.objects.update_or_create(
                 wallet=wallet,
                 frost_date=created,
                 frost_datetime=created,
                 defaults={"amount": amount, "defrost_date": expired},
             )
-
-            frozen_item_unique_data = {
-                "wallet": wallet,
-                "frost_datetime": created,
-            }
-
-            frozen_item_data = {
-                "frost_date": created.date(),
-                "amount": Decimal(amount),
-                "defrost_date": expired,
-            }
-
-            frozen_item = FrozenItem.objects.filter(**frozen_item_unique_data).first()
-            if frozen_item is None:
-                frozen_item = FrozenItem.objects.create(
-                    **frozen_item_unique_data, **frozen_item_data
-                )
+            if created:
                 wallet.frozen += frozen_item.amount
                 wallet.save()
 
@@ -355,8 +342,8 @@ def create_user_programs(cursor):
             user_program = UserProgram(**default_data)
 
         update_data = {
-            "deposit": Decimal(0),
-            "profit": Decimal(deposit),
+            "deposit": Decimal(deposit),
+            "profit": Decimal(0),
             "start_date": get_datetime_from_iso(start),
             "status": STATUS_NUMBER[status],
         }
@@ -735,21 +722,21 @@ def create_operation_history_start_close_program(cursor):
 
             result = cursor.fetchall()
 
-            c_ups = user_programs.filter(program_id=program_id)
+            current_user_programs = user_programs.filter(program_id=program_id)
 
             user_program_start = [
                 (get_datetime_from_iso(created_at).date(), Decimal(round(deposit, 2)))
                 for email, deposit, created_at, program_name in result
                 if deposit > 0
             ]
-            for user_program in c_ups:
-                c_dates = filter(
+            for user_program in current_user_programs:
+                current_dates = filter(
                     lambda t: t[0]
                     >= user_program.created_at.date() - timezone.timedelta(days=1),
                     user_program_start,
                 )
 
-                c_dates = list(
+                current_dates = list(
                     map(
                         lambda x: (
                             abs((x[0] - user_program.created_at.date()).days),
@@ -757,25 +744,18 @@ def create_operation_history_start_close_program(cursor):
                             x[0],
                             x[1],
                         ),
-                        c_dates,
+                        current_dates,
                     )
                 )
-                c_dates.sort(key=lambda x: x[0])
+                current_dates.sort(key=lambda x: x[0])
 
-                if len(c_dates) == 0:
+                if len(current_dates) == 0:
                     continue
 
-                choice = c_dates[0]
+                choice = current_dates[0]
                 deposit = user_program_start.pop(
                     user_program_start.index((choice[1], choice[2]))
                 )[1]
-
-                funds = Decimal(get_upe_deposit(cursor, user_program))
-                user_program.deposit = deposit
-                user_program.profit = funds - deposit
-                user_program.save()
-
-                up = UserProgram.objects.get(pk=user_program.pk)
 
                 start_date = get_datetime_from_iso(
                     get_upe_start_date(cursor, user_program)
@@ -789,8 +769,10 @@ def create_operation_history_start_close_program(cursor):
                 for email, deposit, created_at, program_name in result
                 if deposit < 0
             ]
-            for user_program in c_ups.filter(status=UserProgram.Status.FINISHED):
-                c_dates = filter(
+            for user_program in current_user_programs.filter(
+                status=UserProgram.Status.FINISHED
+            ):
+                current_dates = filter(
                     lambda t: t[0].date()
                     >= user_program.created_at.date() - timezone.timedelta(days=1),
                     user_program_end,
@@ -798,7 +780,7 @@ def create_operation_history_start_close_program(cursor):
 
                 funds = Decimal(get_upe_deposit(cursor, user_program))
 
-                c_dates = list(
+                current_dates = list(
                     map(
                         lambda x: (
                             x[0],
@@ -813,15 +795,15 @@ def create_operation_history_start_close_program(cursor):
                                 - funds
                             ),
                         ),
-                        c_dates,
+                        current_dates,
                     )
                 )
-                c_dates.sort(key=lambda x: (x[2], x[3]))
+                current_dates.sort(key=lambda x: (x[2], x[3]))
 
-                if len(c_dates) == 0:
+                if len(current_dates) == 0:
                     continue
 
-                choice = c_dates[0]
+                choice = current_dates[0]
                 date_, deposit = user_program_end.pop(
                     user_program_end.index((choice[0], choice[1]))
                 )
@@ -903,100 +885,179 @@ def create_operation_history_close_program(user_program, amount, close_date):
     )
 
 
+def update_user_program_profit(cursor):
+    for user_program in UserProgram.objects.all():
+        user_program.profit = (
+            user_program.accruals.aggregate(total=Sum("amount"))["total"] or 0
+        )
+        user_program.save()
+
+
 def imitation_working_app(cursor):
     for user in User.objects.all():
-        # if user.email != "1111katya83@gmail.com":
-        #     continue
-
-        user_programs = UserProgram.objects.filter(wallet__user=user)
-        if not user_programs.exists():
+        if user.email != "urist0686@gmail.com":
             continue
 
-        for user_program in user_programs:
+        user_programs = UserProgram.objects.filter(wallet__user=user)
+
+        # for user_program in user_programs:
+        #     print(
+        #         user_program.name,
+        #         user_program.deposit,
+        #         user_program.funds,
+        #         get_upe_deposit(cursor, user_program),
+        #         user_program.status,
+        #     )
+        #
+        # continue
+
+        for user_program in user_programs.iterator():
+            created_at = user_program.created_at.date()
+            end_date = user_program.close_date
+            if end_date is None:
+                end_date = timezone.now().date()
+
+            total_days = (end_date - created_at).days
+
+            program_data = {
+                "funds": 0,
+                "deposit": 0,
+                "profit": 0,
+            }
+
+            print("start")
+            for i in range(total_days + 1):
+                current_date = created_at + timezone.timedelta(days=i)
+
+                if current_date < user_program.start_date:
+                    status = UserProgram.Status.INITIAL
+
+                elif (
+                    user_program.close_date and current_date == user_program.close_date
+                ):
+                    status = UserProgram.Status.FINISHED
+
+                else:
+                    status = UserProgram.Status.RUNNING
+
+                current_accrual = user_program.accruals.filter(
+                    created_at=current_date
+                ).first()
+                if current_accrual:
+                    program_data["profit"] += max(current_accrual.amount, 0)
+
+                if current_date == user_program.start_date:
+                    start_program_history = OperationHistory.objects.filter(
+                        created_at__date=current_date,
+                        target_name=user_program.name,
+                        description__ru=f"Программа {user_program.name} пополнена",
+                    ).first()
+                    if start_program_history:
+                        program_data["deposit"] += start_program_history.amount
+
+                current_replenishment = user_program.replenishments.filter(
+                    apply_date=current_date
+                ).first()
+                if current_replenishment:
+                    program_data["deposit"] += current_replenishment.amount
+
+                program_data["funds"] = program_data["deposit"] + program_data["profit"]
+                UserProgramHistory(
+                    user_program=user_program,
+                    funds=program_data["funds"],
+                    deposit=program_data["deposit"],
+                    profit=program_data["profit"],
+                    status=status,
+                )
+                print(program_data, status)
+                print()
+
             print(
-                user_program.name,
-                user_program.deposit,
-                user_program.funds,
-                get_upe_deposit(cursor, user_program),
-                user_program.status,
+                "end",
+                {
+                    "funds": user_program.funds,
+                    "deposit": user_program.deposit,
+                    "profit": user_program.profit,
+                    "status": user_program.status,
+                },
             )
+            print()
+            print()
 
-        continue
-
-        start_date = user_programs.order_by("created_at").first().created_at.date()
-        end_date = user_programs.order_by("-close_date").first().close_date
-        if end_date is None:
-            end_date = timezone.now().date()
-
-        total_days = (end_date - start_date).days
-
-        user_programs_data = {
-            user_program.pk: [
-                user_program,
-                user_program.deposit,
-                {
-                    accrual.created_at: accrual
-                    for accrual in user_program.accruals.iterator()
-                },
-                {
-                    replenishment.created_at: replenishment
-                    for replenishment in user_program.replenishments.iterator()
-                },
-            ]
-            for user_program in user_programs.iterator()
-        }
-
-        for i in range(total_days + 1):
-            current_date = start_date + timezone.timedelta(days=i)
-
-            cur_ups = []
-            for _id, user_program_data in user_programs_data.items():
-                user_program = user_program_data[0]
-
-                up_start_date = user_program.created_at.date()
-                up_end_date = (
-                    user_program.close_date
-                    if user_program.close_date
-                    else timezone.now().date()
-                )
-
-                if up_start_date <= current_date <= up_end_date:
-                    cur_ups.append(user_program)
-
-            if len(cur_ups) == 0:
-                continue
-
-            programs = {user_program.program_id for user_program in cur_ups}
-
-            for program_id in programs:
-                p_cur_ups = list(
-                    filter(lambda up: up.program_id == program_id, cur_ups)
-                )
-                if len(p_cur_ups) == 0:
-                    continue
-
-                for user_program in p_cur_ups:
-                    user_program_data = user_programs_data[user_program.pk]
-
-                    if current_date in user_program_data[2].keys():
-                        user_program_data[1] += user_program_data[2][
-                            current_date
-                        ].amount
-                        # print(
-                        #     user_program_data[1], user_program_data[2][current_date][1]
-                        # )
-
-                    if current_date in user_program_data[3].keys():
-                        user_program_data[1] += user_program_data[3][
-                            current_date
-                        ].amount
-
-        print(
-            [
-                (upd[1], get_upe_deposit(cursor, upd[0]), upd[0].funds)
-                for upd in user_programs_data.values()
-            ]
-        )
+        # start_date = user_programs.order_by("created_at").first().created_at.date()
+        # end_date = user_programs.order_by("-close_date").first().close_date
+        # if end_date is None:
+        #     end_date = timezone.now().date()
+        #
+        # total_days = (end_date - start_date).days
+        #
+        # user_programs_data = {
+        #     user_program.pk: [
+        #         user_program,
+        #         user_program.deposit,
+        #         {
+        #             accrual.created_at: accrual
+        #             for accrual in user_program.accruals.iterator()
+        #         },
+        #         {
+        #             replenishment.created_at: replenishment
+        #             for replenishment in user_program.replenishments.iterator()
+        #         },
+        #     ]
+        #     for user_program in user_programs.iterator()
+        # }
+        #
+        # for i in range(total_days + 1):
+        #     current_date = start_date + timezone.timedelta(days=i)
+        #
+        #     cur_ups = []
+        #     for _id, user_program_data in user_programs_data.items():
+        #         user_program = user_program_data[0]
+        #
+        #         up_start_date = user_program.created_at.date()
+        #         up_end_date = (
+        #             user_program.close_date
+        #             if user_program.close_date
+        #             else timezone.now().date()
+        #         )
+        #
+        #         if up_start_date <= current_date <= up_end_date:
+        #             cur_ups.append(user_program)
+        #
+        #     if len(cur_ups) == 0:
+        #         continue
+        #
+        #     programs = {user_program.program_id for user_program in cur_ups}
+        #
+        #     for program_id in programs:
+        #         p_cur_ups = list(
+        #             filter(lambda up: up.program_id == program_id, cur_ups)
+        #         )
+        #         if len(p_cur_ups) == 0:
+        #             continue
+        #
+        #         for user_program in p_cur_ups:
+        #             user_program_data = user_programs_data[user_program.pk]
+        #
+        #             if current_date in user_program_data[2].keys():
+        #                 user_program_data[1] += user_program_data[2][
+        #                     current_date
+        #                 ].amount
+        #                 # print(
+        #                 #     user_program_data[1], user_program_data[2][current_date][1]
+        #                 # )
+        #
+        #             if current_date in user_program_data[3].keys():
+        #                 user_program_data[1] += user_program_data[3][
+        #                     current_date
+        #                 ].amount
+        #
+        # print(
+        #     [
+        #         (upd[1], get_upe_deposit(cursor, upd[0]), upd[0].funds)
+        #         for upd in user_programs_data.values()
+        #     ]
+        # )
 
         # accruals = user_program.accruals
         # replenishments = user_program.replenishments
