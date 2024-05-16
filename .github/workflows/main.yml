@@ -30,3 +30,6 @@ jobs:
     steps:
       - name: Migrations
         run: docker exec -t goodwin_backend python3 manage.py migrate --no-input
+      
+      - name: Activate program accruals
+        run: docker exec -t goodwin_backend python3 manage.py activate_program_accruals

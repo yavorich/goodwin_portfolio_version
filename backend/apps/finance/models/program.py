@@ -98,7 +98,7 @@ class UserProgram(models.Model):
 
     @property
     def profit_percent(self):
-        return 100 * self.profit / self.deposit
+        return round(100 * self.profit / self.deposit, 2)
 
     @property
     def yesterday_profit(self):
