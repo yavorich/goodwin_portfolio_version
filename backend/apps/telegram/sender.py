@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 from apps.telegram.models import MessageType, TemplateTelegramMessage
 from apps.telegram.utils import asend_telegram_message, aiogram_async_to_sync
@@ -37,7 +38,7 @@ async def asend_template_telegram_message(
 
         if isinstance(value, date):
             value = value.strftime("%d.%m.%Y")
-        elif isinstance(value, float):
+        elif isinstance(value, (float, Decimal)):
             value = round(value, 2)
 
         text = text.replace(f"{{{field}}}", str(value))
