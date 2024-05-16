@@ -250,7 +250,7 @@ def update_wallet_frozen(cursor):
                 wallet=wallet,
                 frost_date=created,
                 frost_datetime=created,
-                defaults={"amount": amount, "defrost_date": expired},
+                defaults={"amount": Decimal(amount), "defrost_date": expired},
             )
             if created:
                 wallet.frozen += frozen_item.amount
