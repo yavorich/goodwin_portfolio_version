@@ -63,7 +63,7 @@ class ProfileRetrieveSerializer(ModelSerializer):
     def get_partner(self, obj):
         partner = obj.partner or getattr(obj, "partner_profile", None)
         if partner:
-            return PartnerSerializer(instance=partner)
+            return PartnerSerializer(instance=partner).data
         return None
 
     def get_is_partner(self, obj):
