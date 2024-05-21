@@ -43,7 +43,7 @@ class InviterSerializer(ModelSerializer):
 class ProfileRetrieveSerializer(ModelSerializer):
     avatar = HttpsFileField()
     settings = ProfileSettingsSerializer()
-    partner = PartnerSerializer()
+    partner = SerializerMethodField()
     is_partner = SerializerMethodField()
 
     class Meta:
@@ -59,6 +59,12 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "is_partner",
         ]
         read_only_fields = fields
+
+    def get_partner(self, obj):
+        partner = obj.partner or getattr(obj, "partner_profile", None)
+        if partner:
+            return PartnerSerializer(instance=partner)
+        return None
 
     def get_is_partner(self, obj):
         return getattr(obj, "partner_profile", None) is not None
