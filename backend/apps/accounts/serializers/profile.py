@@ -15,6 +15,7 @@ from apps.accounts.models import (
     EmailChangeConfirmation,
 )
 from core.serializers import HttpsFileField
+from .partner import PartnerSerializer
 
 
 class ProfileSettingsSerializer(ModelSerializer):
@@ -42,6 +43,7 @@ class InviterSerializer(ModelSerializer):
 class ProfileRetrieveSerializer(ModelSerializer):
     avatar = HttpsFileField()
     settings = ProfileSettingsSerializer()
+    partner = PartnerSerializer()
     is_partner = SerializerMethodField()
 
     class Meta:
@@ -53,6 +55,7 @@ class ProfileRetrieveSerializer(ModelSerializer):
             "avatar",
             "telegram",
             "settings",
+            "partner",
             "is_partner",
         ]
         read_only_fields = fields
