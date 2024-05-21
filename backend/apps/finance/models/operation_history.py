@@ -5,6 +5,8 @@ from django.utils.translation import gettext_lazy as _
 from core.utils import blank_and_null, decimal_usdt
 from core.localized.fields import LocalizedCharField
 
+from .operation_type import OperationType
+
 
 class OperationHistory(models.Model):
     class Type(models.TextChoices):
@@ -18,8 +20,7 @@ class OperationHistory(models.Model):
         LOYALTY_PROGRAM = "loyalty_program", _("Программа лояльности")
         SYSTEM_MESSAGE = "system_message", _("Системное сообщение")
 
-    # class Message(models.TextChoices):
-    #     DEPOSIT = _("")
+    operation_type = models.CharField(choices=OperationType.choices, **blank_and_null)
     wallet = models.ForeignKey(
         "Wallet",
         verbose_name="Кошелёк",

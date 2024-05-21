@@ -8,6 +8,8 @@ from rest_framework.serializers import (
     CharField,
     BooleanField,
     Serializer,
+    FloatField,
+    # SerializerMethodField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -21,20 +23,27 @@ from core.exceptions import ServiceUnavailable
 from core.utils import decimal_usdt
 
 
-class OperationSerializer(ModelSerializer):
+class OperationHistorySerializer(ModelSerializer):
     type = CharField(source="get_type_display")
     description = CharField()
+    amount = FloatField()
 
     class Meta:
         model = OperationHistory
         fields = [
             "id",
             "type",
+            "operation_type",
             "description",
             "target_name",
             "created_at",
             "amount",
         ]
+
+    # def get_operation_type(self, obj: OperationHistory):
+    #     if obj.operation:
+    #         return obj.operation.get_type_display()
+    #     return None
 
 
 class OperationCreateSerializer(ModelSerializer):

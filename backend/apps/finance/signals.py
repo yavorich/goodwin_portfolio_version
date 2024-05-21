@@ -131,6 +131,7 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
             return
         if instance.status == WithdrawalRequest.Status.APPROVED:
             OperationHistory.objects.create(
+                operation_type=instance.operation.type,
                 wallet=instance.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
                 description=dict(
@@ -152,6 +153,7 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
                 raise ValidationError("Reject message is required for REJECTED status.")
             instance.wallet.update_balance(free=instance.original_amount)
             OperationHistory.objects.create(
+                operation=instance.operation,
                 wallet=instance.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
                 description=dict(

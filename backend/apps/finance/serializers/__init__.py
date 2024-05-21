@@ -1,7 +1,7 @@
 # flake8: noqa: F401
 
 from .operations import (
-    OperationSerializer,
+    OperationHistorySerializer,
     program_operations_serializers,
     wallet_operations_serializers,
 )
