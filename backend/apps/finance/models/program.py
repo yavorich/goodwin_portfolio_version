@@ -219,6 +219,7 @@ class UserProgramReplenishment(models.Model):
     def apply(self):
         self.program.update_deposit(amount=self.amount)
         OperationHistory.objects.create(
+            operation=self.operation.last().type,
             wallet=self.program.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             description=dict(

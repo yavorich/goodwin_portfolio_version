@@ -25,7 +25,7 @@ from apps.finance.models import (
     OperationConfirmation,
     DestinationType,
 )
-from apps.finance.serializers import OperationSerializer
+from apps.finance.serializers import OperationHistorySerializer
 from apps.finance.serializers.operations import (
     OperationReplenishmentConfirmSerializer,
 )
@@ -37,7 +37,7 @@ from core.exceptions import ServiceUnavailable
 
 
 class OperationAPIView(ListAPIView):
-    serializer_class = OperationSerializer
+    serializer_class = OperationHistorySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

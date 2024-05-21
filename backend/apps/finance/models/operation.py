@@ -18,24 +18,11 @@ from .program import Program, UserProgram, UserProgramReplenishment
 from .wallet import Wallet
 from .frozen import FrozenItem
 from .operation_history import OperationHistory
+from .operation_type import OperationType
 
 
 class Operation(models.Model):
-    class Type(models.TextChoices):
-        REPLENISHMENT = "replenishment", "Пополнение"
-        WITHDRAWAL = "withdrawal", "Вывод"
-        TRANSFER = "transfer", "Перевод"
-        PARTNER_BONUS = "partner_bonus", "Доход филиала"
-        PROGRAM_START = "program_start", "Запуск программы"
-        PROGRAM_CLOSURE = "program_closure", "Закрытие программы"
-        PROGRAM_REPLENISHMENT = "program_replenishment", "Пополнение программы"
-        PROGRAM_REPLENISHMENT_CANCEL = (
-            "program_replenishment_cancel",
-            "Отмена пополнения программы",
-        )
-        DEFROST = "defrost", "Разморозка активов"
-        EXTRA_FEE = "extra_fee", "Списание комиссии Extra Fee"
-        PROGRAM_ACCRUAL = "program_accrual", "Начисление по программе"
+    Type = OperationType
 
     uuid = models.UUIDField(default=uuid4, editable=False)
     type = models.CharField("Тип операции", choices=Type.choices)
@@ -141,6 +128,7 @@ class Operation(models.Model):
     def _apply_withdrawal(self):  # ready
         self.wallet.update_balance(free=-self.amount)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.WITHDRAWAL,
             description=dict(
@@ -212,6 +200,7 @@ class Operation(models.Model):
         )
         if self.amount_free:
             OperationHistory.objects.create(
+                operation_type=self.type,
                 wallet=self.wallet,
                 type=OperationHistory.Type.TRANSFER_FREE,
                 description=description_to,
@@ -219,6 +208,7 @@ class Operation(models.Model):
                 amount=-self.amount_free,
             )
             OperationHistory.objects.create(
+                operation_type=self.type,
                 wallet=self.receiver,
                 type=OperationHistory.Type.TRANSFER_FREE,
                 description=description_from,
@@ -237,6 +227,7 @@ class Operation(models.Model):
                 )
         if self.amount_frozen:
             OperationHistory.objects.create(
+                operation_type=self.type,
                 wallet=self.wallet,
                 type=OperationHistory.Type.TRANSFER_FROZEN,
                 description=description_to,
@@ -244,6 +235,7 @@ class Operation(models.Model):
                 amount=-self.amount_frozen,
             )
             OperationHistory.objects.create(
+                operation_type=self.type,
                 wallet=self.receiver,
                 type=OperationHistory.Type.TRANSFER_FROZEN,
                 description=description_from,
@@ -276,6 +268,7 @@ class Operation(models.Model):
     def _apply_partner_bonus(self):  # ready
         self.wallet.update_balance(amount_free=self.amount)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.LOYALTY_PROGRAM,
             description="Branch income",
@@ -292,6 +285,7 @@ class Operation(models.Model):
         )
         self.user_program.update_deposit(amount=self.amount_free + self.amount_frozen)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             description=dict(
@@ -303,6 +297,7 @@ class Operation(models.Model):
             amount=-(self.amount_free + self.amount_frozen),
         )
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             description=dict(
@@ -360,6 +355,7 @@ class Operation(models.Model):
                 )
         self.wallet.update_balance(frozen=self.amount)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.SYSTEM_MESSAGE,
             description=description,
@@ -367,6 +363,7 @@ class Operation(models.Model):
             amount=-self.amount,
         )
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_FROZEN,
             description=dict(
@@ -401,6 +398,7 @@ class Operation(models.Model):
             amount=self.amount_free + self.amount_frozen,
         )
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             description=dict(
@@ -444,6 +442,7 @@ class Operation(models.Model):
             self.replenishment.cancel()
         self.wallet.update_balance(frozen=self.amount)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.SYSTEM_MESSAGE,
             description=description,
@@ -451,6 +450,7 @@ class Operation(models.Model):
             amount=-self.amount,
         )
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_FROZEN,
             description=dict(
@@ -526,6 +526,7 @@ class Operation(models.Model):
 
         self.wallet.update_balance(free=self.amount)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             description=description,
@@ -537,6 +538,7 @@ class Operation(models.Model):
     def _apply_extra_fee(self):  # ready
         self.wallet.update_balance(free=-self.amount)
         OperationHistory.objects.create(
+            operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.SYSTEM_MESSAGE,
             description=dict(
@@ -558,6 +560,7 @@ class Operation(models.Model):
             if withdrawal_type == Program.WithdrawalType.DAILY:
                 self.wallet.update_balance(free=self.amount)
                 OperationHistory.objects.create(
+                    operation_type=self.type,
                     wallet=self.wallet,
                     type=OperationHistory.Type.SYSTEM_MESSAGE,
                     description=dict(
@@ -571,6 +574,7 @@ class Operation(models.Model):
         else:
             message_type = MessageType.PROGRAM_LOSS
             OperationHistory.objects.create(
+                operation_type=self.type,
                 wallet=self.wallet,
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
                 description=dict(
