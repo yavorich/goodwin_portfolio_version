@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-13 12:26+0000\n"
+"POT-Creation-Date: 2024-05-21 10:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -198,11 +198,11 @@ msgstr "Fri"
 msgid "Сб"
 msgstr "Sat"
 
-#: apps/finance/models/operation.py:236
+#: apps/finance/models/operation.py:238
 msgid "Free"
 msgstr "Free"
 
-#: apps/finance/models/operation.py:261
+#: apps/finance/models/operation.py:265
 msgid "Frozen"
 msgstr "Frozen"
 
@@ -324,44 +324,44 @@ msgstr ""
 msgid "Кол-во активных пользователей"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:54
+#: apps/finance/serializers/operations.py:62
 msgid "Insufficient free funds."
 msgstr ""
 
-#: apps/finance/serializers/operations.py:56
+#: apps/finance/serializers/operations.py:64
 msgid "Insufficient frozen funds."
 msgstr ""
 
-#: apps/finance/serializers/operations.py:90
+#: apps/finance/serializers/operations.py:98
 msgid "Minimum program deposit"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:109
+#: apps/finance/serializers/operations.py:117
 msgid "Minimum program replenishment"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:127
+#: apps/finance/serializers/operations.py:135
 msgid "Minimum replenishment amount after cancellation"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:130
+#: apps/finance/serializers/operations.py:138
 msgid "Insufficient funds to cancel"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:157
+#: apps/finance/serializers/operations.py:165
 msgid "Minimum program deposit after cancellation"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:161
+#: apps/finance/serializers/operations.py:169
 msgid "Insufficient program deposit"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:199
+#: apps/finance/serializers/operations.py:207
 #: apps/finance/serializers/wallet.py:48
 msgid "Recipient and sender must be different"
 msgstr "Recipient and sender must be different"
 
-#: apps/finance/serializers/operations.py:218
+#: apps/finance/serializers/operations.py:226
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr ""
 
