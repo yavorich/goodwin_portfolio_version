@@ -9,7 +9,6 @@ from rest_framework.serializers import (
     BooleanField,
     Serializer,
     FloatField,
-    # SerializerMethodField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -39,11 +38,6 @@ class OperationHistorySerializer(ModelSerializer):
             "created_at",
             "amount",
         ]
-
-    # def get_operation_type(self, obj: OperationHistory):
-    #     if obj.operation:
-    #         return obj.operation.get_type_display()
-    #     return None
 
 
 class OperationCreateSerializer(ModelSerializer):
