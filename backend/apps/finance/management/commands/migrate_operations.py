@@ -18,12 +18,12 @@ class Command(BaseCommand):
         for o in history.filter(description__ru__icontains="USDT исполнена"):
             o.operation_type = OperationType.WITHDRAWAL
             o.message_type = MessageType.WITHDRAWAL_REQUEST_APPROVED
-            o.insertion_data = {"amount": float(o.amount)}
+            o.insertion_data = {"amount": float(o.amount or 0)}
             o.save()
         for o in history.filter(description__ru__icontains="USDT отклонена"):
             o.operation_type = OperationType.WITHDRAWAL
             o.message_type = MessageType.WITHDRAWAL_REQUEST_REJECTED
-            o.insertion_data = {"amount": float(o.amount)}
+            o.insertion_data = {"amount": float(o.amount or 0)}
             o.save()
         for o in history.filter(description__ru="Депозит"):
             o.operation_type = OperationType.REPLENISHMENT
