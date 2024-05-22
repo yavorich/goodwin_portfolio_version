@@ -20,9 +20,9 @@ from django_filters.rest_framework import (
     FilterSet,
     DateFromToRangeFilter,
     CharFilter,
-    RangeFilter,
+    NumberFilter,
 )
-
+from django.db.models.functions import Abs
 from apps.accounts.permissions import IsLocal, IsAuthenticatedAndVerified
 
 from apps.accounts.serializers import UserEmailConfirmSerializer
@@ -47,7 +47,14 @@ from core.pagination import PageNumberSetPagination
 class OperationHistoryFilterSet(FilterSet):
     operation_type = CharFilter(field_name="operation_type")
     date = DateFromToRangeFilter(field_name="created_at")
-    amount = RangeFilter(field_name="amount")
+    amount_min = NumberFilter(method="filter_amount_min", field_name="amount")
+    amount_max = NumberFilter(method="filter_amount_max", field_name="amount")
+
+    def filter_amount_min(self, queryset, field_name, value):
+        return queryset.annotate(abs_amount=Abs("amount")).filter(abs_amount__gte=value)
+
+    def filter_amount_max(self, queryset, field_name, value):
+        return queryset.annotate(abs_amount=Abs("amount")).filter(abs_amount__lte=value)
 
 
 class OperationAPIView(ListAPIView):
