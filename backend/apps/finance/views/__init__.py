@@ -7,4 +7,5 @@ from .wallet import (
     WalletViewSet,
     FrozenItemViewSet,
     WalletTransferAPIView,
+    WalletSettingsAPIView,
 )

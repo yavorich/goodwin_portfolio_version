@@ -41,4 +41,9 @@ urlpatterns = [
         views.WalletTransferAPIView.as_view(),
         name="wallet-transfer-user",
     ),
+    # path(
+    #     "wallet/settings/",
+    #     views.WalletSettingsAPIView.as_view(),
+    #     name="wallet-settings",
+    # ),
 ] + router.urls
