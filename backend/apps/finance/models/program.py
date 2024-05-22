@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.db import models
 from django.utils import timezone
 from django.utils.timezone import now, timedelta, datetime
+from django.utils.translation import gettext_lazy as _
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 from .operation_history import OperationHistory
@@ -10,11 +11,11 @@ from .operation_history import OperationHistory
 
 class Program(models.Model):
     class AccrualType(models.TextChoices):
-        DAILY = "daily", "Ежедневно"
+        DAILY = "daily", _("Ежедневно")
 
     class WithdrawalType(models.TextChoices):
-        DAILY = "daily", "Ежедневно"
-        AFTER_FINISH = "after_finish", "По окончанию срока программы"
+        DAILY = "daily", _("Ежедневно")
+        AFTER_FINISH = "after_finish", _("По окончанию срока программы")
 
     name = models.CharField("Название", max_length=31)
     duration = models.IntegerField("Продолжительность (мес)", **blank_and_null)

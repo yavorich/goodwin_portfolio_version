@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-21 15:11+0000\n"
+"POT-Creation-Date: 2024-05-22 14:51+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -141,7 +141,7 @@ msgid "GOODWIN - Смена адреса электронной почты"
 msgstr ""
 
 #: apps/accounts/views/profile.py:102 apps/accounts/views/profile.py:158
-#: apps/accounts/views/profile.py:257 apps/finance/views/operations.py:78
+#: apps/accounts/views/profile.py:257 apps/finance/views/operations.py:108
 msgid "Код подтверждения не найден"
 msgstr ""
 
@@ -195,41 +195,49 @@ msgstr "Доступно"
 msgid "Frozen"
 msgstr "Заморожено"
 
-#: apps/finance/models/operation_history.py:13
+#: apps/finance/models/operation_history.py:25
 msgid "Перевод в раздел \"Доступно\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:14
+#: apps/finance/models/operation_history.py:26
 msgid "Перевод в раздел \"Заморожено\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:15
+#: apps/finance/models/operation_history.py:27
 msgid "Перевод между счетами"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:16
+#: apps/finance/models/operation_history.py:28
 msgid "Вывод"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:17
+#: apps/finance/models/operation_history.py:29
 msgid "Пополнение"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:18
+#: apps/finance/models/operation_history.py:30
 msgid "Начисление прибыли"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:19
+#: apps/finance/models/operation_history.py:31
 msgid "Фиксация убытка"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:20
+#: apps/finance/models/operation_history.py:32
 msgid "Программа лояльности"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:21
+#: apps/finance/models/operation_history.py:33
 msgid "Системное сообщение"
 msgstr ""
+
+#: apps/finance/models/program.py:14 apps/finance/models/program.py:17
+msgid "Ежедневно"
+msgstr "Ежедневно"
+
+#: apps/finance/models/program.py:18
+msgid "По окончанию срока программы"
+msgstr "По окончанию срока программы"
 
 #: apps/finance/models/stats.py:20
 msgid "Сумма в кошельках"
@@ -307,44 +315,44 @@ msgstr ""
 msgid "Кол-во активных пользователей"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:63
+#: apps/finance/serializers/operations.py:57
 msgid "Insufficient free funds."
 msgstr "Недостаточно свободных средств"
 
-#: apps/finance/serializers/operations.py:65
+#: apps/finance/serializers/operations.py:59
 msgid "Insufficient frozen funds."
 msgstr "Недостаточно замороженных средств"
 
-#: apps/finance/serializers/operations.py:99
+#: apps/finance/serializers/operations.py:93
 msgid "Minimum program deposit"
 msgstr "Минимальный депозит программы"
 
-#: apps/finance/serializers/operations.py:118
+#: apps/finance/serializers/operations.py:112
 msgid "Minimum program replenishment"
 msgstr "Минимальная сумма пополнения программы"
 
-#: apps/finance/serializers/operations.py:136
+#: apps/finance/serializers/operations.py:130
 msgid "Minimum replenishment amount after cancellation"
 msgstr "Минимальная остаток суммы пополнения программы"
 
-#: apps/finance/serializers/operations.py:139
+#: apps/finance/serializers/operations.py:133
 msgid "Insufficient funds to cancel"
 msgstr "Указанная сумма больше текущей суммы пополнения"
 
-#: apps/finance/serializers/operations.py:166
+#: apps/finance/serializers/operations.py:160
 msgid "Minimum program deposit after cancellation"
 msgstr "Минимальный остаток депозита программы"
 
-#: apps/finance/serializers/operations.py:170
+#: apps/finance/serializers/operations.py:164
 msgid "Insufficient program deposit"
 msgstr "Указанная сумма больше текущего депозита программы"
 
-#: apps/finance/serializers/operations.py:208
-#: apps/finance/serializers/wallet.py:48
+#: apps/finance/serializers/operations.py:202
+#: apps/finance/serializers/wallet.py:47
 msgid "Recipient and sender must be different"
 msgstr "Получатель и отправитель должны отличаться"
 
-#: apps/finance/serializers/operations.py:227
+#: apps/finance/serializers/operations.py:221
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr "Сервис эквайринга временно не доступен, повторите попытку позже"
 
