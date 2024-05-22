@@ -8,6 +8,7 @@ from .operation import (
     OperationSummary,
 )
 from .operation_confirmation import OperationConfirmation, DestinationType
+from .operation_message import OperationMessage
 
 # from .operation_history import OperationHistory
 from .program import (

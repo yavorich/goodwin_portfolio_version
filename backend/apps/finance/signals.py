@@ -16,13 +16,14 @@ from apps.finance.models import (
     DestinationType,
     ProgramResult,
 )
+from apps.finance.models.operation_type import MessageType
 from apps.finance.services.send_operation_confirm_email import (
     send_operation_confirm_email,
 )
 from apps.finance.tasks import make_daily_programs_accruals
 from apps.telegram.utils import send_telegram_message
 from apps.telegram.tasks import send_template_telegram_message_task
-from apps.telegram.models import MessageType
+from apps.telegram.models import MessageType as TelegramMessageType
 
 
 @receiver(post_save, sender=Operation)
@@ -79,10 +80,10 @@ def save_user_program(sender, instance: UserProgram, **kwargs):
         running = UserProgram.Status.RUNNING
         if previous.status != instance.status == running:
             instance.start_date = now().date()
-            if (telegram_id := instance.wallet.user.telegram_id):
+            if telegram_id := instance.wallet.user.telegram_id:
                 send_template_telegram_message_task.delay(
                     telegram_id,
-                    message_type=MessageType.PROGRAM_STARTED,
+                    message_type=TelegramMessageType.PROGRAM_STARTED,
                     insertion_data={
                         "program_name": instance.name,
                         "underlying_asset": instance.deposit,
@@ -102,10 +103,10 @@ def save_user_program_replenishment(
         instance.save()
     elif not instance.done and instance.status == UserProgramReplenishment.Status.DONE:
         instance.apply()
-        if (telegram_id := instance.program.wallet.user.telegram_id):
+        if telegram_id := instance.program.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=MessageType.START_WITH_REPLENISHMENT,
+                message_type=TelegramMessageType.START_WITH_REPLENISHMENT,
                 insertion_data={
                     "program_name": instance.program.name,
                 },
@@ -129,50 +130,38 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
     if not instance.done:
         if instance.status == WithdrawalRequest.Status.PENDING:
             return
+
+        insertion_data = {"amount": float(instance.original_amount)}
+
         if instance.status == WithdrawalRequest.Status.APPROVED:
-            OperationHistory.objects.create(
-                operation_type=instance.operation.type,
-                wallet=instance.wallet,
+            instance.operation.add_history(
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description=dict(
-                    ru=f"Заявка на вывод {instance.original_amount} USDT исполнена",
-                    en=(
-                        f"The withdrawal request of {instance.original_amount}"
-                        "USDT has been processed."
-                    ),
-                    cn=None,
-                ),
+                message_type=MessageType.WITHDRAWAL_REQUEST_APPROVED,
                 target_name=None,
                 amount=None,
+                insertion_data=insertion_data,
             )
-            message_type = MessageType.SUCCESSFUL_TRANSFER
+            telegram_message_type = TelegramMessageType.SUCCESSFUL_TRANSFER
             instance.done_at = now().date()
 
         elif instance.status == WithdrawalRequest.Status.REJECTED:
             if instance.reject_message == "":
                 raise ValidationError("Reject message is required for REJECTED status.")
-            instance.wallet.update_balance(free=instance.original_amount)
-            OperationHistory.objects.create(
-                operation_type=instance.operation.type,
-                wallet=instance.wallet,
-                type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description=dict(
-                    ru=f"Заявка на вывод {instance.original_amount} USDT отклонена",
-                    en=(
-                        f"The withdrawal request of {instance.original_amount}"
-                        "USDT has been rejected."
-                    ),
-                    cn=None,
-                ),
-                target_name=instance.wallet.name,
-                amount=instance.original_amount,
-            )
-            message_type = MessageType.TRANSFER_REJECTED
 
-        if (telegram_id := instance.wallet.user.telegram_id):
+            instance.wallet.update_balance(free=instance.original_amount)
+            instance.operation.add_history(
+                type=OperationHistory.Type.SYSTEM_MESSAGE,
+                message_type=MessageType.WITHDRAWAL_REQUEST_REJECTED,
+                target_name=None,
+                amount=None,
+                insertion_data=insertion_data,
+            )
+            telegram_message_type = TelegramMessageType.TRANSFER_REJECTED
+
+        if telegram_id := instance.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=message_type,
+                message_type=telegram_message_type,
                 insertion_data={
                     "amount": instance.original_amount,
                     "commission_amount": instance.commission,

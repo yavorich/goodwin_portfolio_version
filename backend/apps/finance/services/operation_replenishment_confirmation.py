@@ -1,6 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.finance.models.operation_history import OperationHistory
+from apps.finance.models.operation_type import MessageType
 from config.settings import DEBUG
 
 
@@ -32,15 +33,9 @@ def operation_replenishment_confirmation(operation, amount):
     operation.done = True
     operation.save()
 
-    OperationHistory.objects.create(
-        operation_type=operation.type,
-        wallet=operation.wallet,
+    operation.add_history(
         type=OperationHistory.Type.REPLENISHMENT,
-        description=dict(
-            ru="Депозит",
-            en="Deposit",
-            cn=None,
-        ),
+        message_type=MessageType.REPLENISHMENT,
         target_name=operation.wallet.name,
         amount=operation.amount_net,
     )

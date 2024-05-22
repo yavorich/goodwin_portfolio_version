@@ -11,14 +11,14 @@ from apps.finance.services import (
     send_admin_withdrawal_notifications,
 )
 from apps.telegram.tasks import send_template_telegram_message_task
-from apps.telegram.models import MessageType
+from apps.telegram.models import MessageType as TelegramMessageType
 from core.utils import blank_and_null, decimal_usdt
 
 from .program import Program, UserProgram, UserProgramReplenishment
 from .wallet import Wallet
 from .frozen import FrozenItem
 from .operation_history import OperationHistory
-from .operation_type import OperationType
+from .operation_type import OperationType, MessageType
 
 
 class Operation(models.Model):
@@ -127,18 +127,6 @@ class Operation(models.Model):
 
     def _apply_withdrawal(self):  # ready
         self.wallet.update_balance(free=-self.amount)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
-            type=OperationHistory.Type.WITHDRAWAL,
-            description=dict(
-                ru="Заявка на вывод принята",
-                en="Withdrawal request accepted",
-                cn=None,
-            ),
-            target_name=self.wallet.name,
-            amount=-self.amount,
-        )
 
         commission_pct = get_wallet_settings_attr(self.wallet, "commission_on_withdraw")
         self.commission = self.amount * commission_pct / 100
@@ -155,10 +143,17 @@ class Operation(models.Model):
             status=WithdrawalRequest.Status.PENDING,
         )
         send_admin_withdrawal_notifications(withdrawal_request)
+        self.add_history(
+            type=OperationHistory.Type.WITHDRAWAL,
+            message_type=MessageType.WITHDRAWAL_REQUEST_CREATED,
+            insertion_data=dict(amount=float(self.amount)),
+            target_name=self.wallet.name,
+            amount=-self.amount,
+        )
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=MessageType.WITHDRAWAL_REQUEST,
+                message_type=TelegramMessageType.WITHDRAWAL_REQUEST,
                 insertion_data={
                     "amount": withdrawal_request.original_amount,
                     "commission_amount": withdrawal_request.commission,
@@ -188,37 +183,26 @@ class Operation(models.Model):
         self.amount_net = amount_free_net + amount_frozen_net
         self.save()
 
-        description_to = dict(
-            ru=f"Перевод клиенту GDW ID{self.receiver.user.id}",
-            en=f"Transfer to GDW client ID{self.receiver.user.id}",
-            cn=None,
-        )
-        description_from = dict(
-            ru=f"Поступление от ID{self.wallet.user.id}",
-            en=f"Receipt from ID{self.wallet.user.id}",
-            cn=None,
-        )
         if self.amount_free:
-            OperationHistory.objects.create(
-                operation_type=self.type,
-                wallet=self.wallet,
+            self.add_history(
                 type=OperationHistory.Type.TRANSFER_FREE,
-                description=description_to,
+                message_type=MessageType.TRANSFER_SENT,
+                insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
                 amount=-self.amount_free,
             )
-            OperationHistory.objects.create(
-                operation_type=self.type,
-                wallet=self.receiver,
+            self.add_history(
                 type=OperationHistory.Type.TRANSFER_FREE,
-                description=description_from,
+                message_type=MessageType.TRANSFER_RECEIVED,
+                insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
                 amount=amount_free_net,
+                wallet=self.receiver,
             )
             if telegram_id := self.receiver.user.telegram_id:
                 send_template_telegram_message_task.delay(
                     telegram_id,
-                    message_type=MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
+                    message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
                     insertion_data={
                         "user_id": self.wallet.user.id,
                         "amount": amount_free_net,
@@ -226,26 +210,25 @@ class Operation(models.Model):
                     },
                 )
         if self.amount_frozen:
-            OperationHistory.objects.create(
-                operation_type=self.type,
-                wallet=self.wallet,
+            self.add_history(
                 type=OperationHistory.Type.TRANSFER_FROZEN,
-                description=description_to,
+                message_type=MessageType.TRANSFER_SENT,
+                insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
                 amount=-self.amount_frozen,
             )
-            OperationHistory.objects.create(
-                operation_type=self.type,
-                wallet=self.receiver,
+            self.add_history(
                 type=OperationHistory.Type.TRANSFER_FROZEN,
-                description=description_from,
+                message_type=MessageType.TRANSFER_RECEIVED,
+                insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
                 amount=amount_frozen_net,
+                wallet=self.receiver,
             )
             if telegram_id := self.receiver.user.telegram_id:
                 send_template_telegram_message_task.delay(
                     telegram_id,
-                    message_type=MessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
+                    message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
                     insertion_data={
                         "user_id": self.wallet.user.id,
                         "amount": amount_frozen_net,
@@ -256,7 +239,7 @@ class Operation(models.Model):
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=MessageType.INTERNAL_TRANSFER_FOR_SENDER,
+                message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_SENDER,
                 insertion_data={
                     "user_id": self.receiver.user.id,
                     "amount": self.amount_net,
@@ -267,55 +250,43 @@ class Operation(models.Model):
 
     def _apply_partner_bonus(self):  # ready
         self.wallet.update_balance(amount_free=self.amount)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.LOYALTY_PROGRAM,
-            description=dict(
-                ru="Доход филиала",
-                en="Branch income",
-                cn=None,
-            ),
+            message_type=MessageType.BRANCH_INCOME,
             target_name=self.wallet.name,
             amount=self.amount,
         )
         return True
 
     def _apply_program_start(self):  # ready
+        total_amount = self.amount_free + self.amount_frozen
+
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
         self.user_program = UserProgram.objects.create(
             wallet=self.wallet,
             program=self.program,
         )
-        self.user_program.update_deposit(amount=self.amount_free + self.amount_frozen)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.user_program.update_deposit(amount=total_amount)
+
+        insertion_data = dict(program_name=self.user_program.name)
+        self.add_history(
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=dict(
-                ru=f"Запуск программы {self.user_program.name}",
-                en=f"Starting the {self.user_program.name} program",
-                cn=None,
-            ),
+            message_type=MessageType.PROGRAM_START,
             target_name=self.wallet.name,
-            amount=-(self.amount_free + self.amount_frozen),
+            amount=-total_amount,
+            insertion_data=insertion_data,
         )
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=dict(
-                ru=f"Программа {self.user_program.name} пополнена",
-                en=f"Program {self.user_program.name} has been replenished",
-                cn=None,
-            ),
+            message_type=MessageType.PROGRAM_REPLENISHED,
             target_name=self.user_program.name,
-            amount=self.amount_free + self.amount_frozen,
+            amount=total_amount,
+            insertion_data=insertion_data,
         )
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=MessageType.PROGRAM_START,
+                message_type=TelegramMessageType.PROGRAM_START,
                 insertion_data={
                     "program_name": self.user_program.name,
                     "start_date": self.user_program.start_date,
@@ -326,26 +297,15 @@ class Operation(models.Model):
         return True
 
     def _apply_program_closure(self):  # ready
+        insertion_data = dict(program_name=self.user_program.name)
         if self.partial:
-            description = dict(
-                ru=f"Частичное закрытие программы {self.user_program.name}",
-                en=f"Partial closure of the {self.user_program.name} program",
-                cn=None,
-            )
+            message_type = MessageType.PROGRAM_CLOSURE_PARTIAL
             self.user_program.update_deposit(amount=-self.amount)
         else:
             if self.early_closure:
-                description = dict(
-                    ru=f"Программа {self.user_program.name} закрыта досрочно",
-                    en=f"The {self.user_program.name} program is closed early",
-                    cn=None,
-                )
+                message_type = MessageType.PROGRAM_CLOSURE_EARLY
             else:
-                description = dict(
-                    ru=f"Программа {self.user_program.name} закрыта",
-                    en=f"{self.user_program.name} program is closed",
-                    cn=None,
-                )
+                message_type = MessageType.PROGRAM_CLOSURE
             self.user_program.close()
             replenishments = self.user_program.replenishments.filter(
                 status=UserProgramReplenishment.Status.INITIAL
@@ -358,33 +318,28 @@ class Operation(models.Model):
                     amount=replenishment.amount,
                 )
         self.wallet.update_balance(frozen=self.amount)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.SYSTEM_MESSAGE,
-            description=description,
+            message_type=message_type,
             target_name=self.user_program.name,
             amount=-self.amount,
+            insertion_data=insertion_data,
         )
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.TRANSFER_FROZEN,
-            description=dict(
-                ru=f"Перевод депозита {self.user_program.name}",
-                en=f"Transfer of deposit {self.user_program.name}",
-                cn=None,
-            ),
+            message_type=MessageType.DEPOSIT_TRANSFER,
             target_name=self.wallet.name,
             amount=self.amount,
+            insertion_data=insertion_data,
         )
+
         defrost_days = get_wallet_settings_attr(self.wallet, "defrost_days")
         extra_fee = get_wallet_settings_attr(self.wallet, "extra_fee")
 
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=MessageType.PROGRAM_CLOSING,
+                message_type=TelegramMessageType.PROGRAM_CLOSING,
                 insertion_data={
                     "program_name": self.user_program.name,
                     "defrost_date": now().date() + timedelta(days=defrost_days),
@@ -396,82 +351,55 @@ class Operation(models.Model):
         return True
 
     def _apply_program_replenishment(self):  # ready
+        total_amount = self.amount_free + self.amount_frozen
         self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
         self.replenishment = UserProgramReplenishment.objects.create(
             program=self.user_program,
-            amount=self.amount_free + self.amount_frozen,
+            amount=total_amount,
         )
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=dict(
-                ru=f"Перевод в программу {self.user_program.name}",
-                en=f"Transfer to program {self.user_program.name}",
-                cn=None,
-            ),
+            message_type=MessageType.TRANSFER_TO_PROGRAM,
             target_name=self.wallet.name,
-            amount=-(self.amount_free + self.amount_frozen),
+            amount=-total_amount,
+            insertion_data={"program_name": self.user_program.name},
         )
         return False
 
     def _apply_program_replenishment_cancel(self):  # ready
         program_name = self.replenishment.program.name
+        insertion_data = {"program_name": program_name}
+
         if self.partial:
-            description = (
-                dict(
-                    ru=f"Отмена пополнения программы {program_name}",
-                    en=(
-                        "Cancellation of the replenishment "
-                        f"of program {program_name}"
-                    ),
-                    cn=None,
-                ),
-            )
+            message_type = MessageType.PROGRAM_REPLENISHMENT_CANCEL_PARTIAL
             self.replenishment.decrease(self.amount)
         else:
-            description = (
-                dict(
-                    ru=(
-                        f"Частичная отмена пополнения программы "
-                        f"{program_name}"
-                    ),
-                    en=(
-                        "Partial cancellation of the replenishment "
-                        f"of program {program_name}"
-                    ),
-                    cn=None,
-                ),
-            )
+            message_type = MessageType.PROGRAM_REPLENISHMENT_CANCEL
             self.replenishment.cancel()
+
         self.wallet.update_balance(frozen=self.amount)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.SYSTEM_MESSAGE,
-            description=description,
+            message_type=message_type,
             target_name=program_name,
             amount=-self.amount,
+            insertion_data=insertion_data,
         )
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.TRANSFER_FROZEN,
-            description=dict(
-                ru=f"Перевод депозита {program_name}",
-                en=f"Transfer of deposit {program_name}",
-                cn=None,
-            ),
+            message_type=MessageType.DEPOSIT_TRANSFER,
             target_name=self.wallet.name,
             amount=self.amount,
+            insertion_data=insertion_data,
         )
+
         defrost_days = get_wallet_settings_attr(self.wallet, "defrost_days")
         extra_fee = get_wallet_settings_attr(self.wallet, "extra_fee")
 
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=MessageType.CANCELING_PROGRAM_REPLENISHMENT,
+                message_type=TelegramMessageType.CANCELING_PROGRAM_REPLENISHMENT,
                 insertion_data={
                     "program_name": program_name,
                     "available_date": now().date() + timedelta(days=defrost_days),
@@ -483,29 +411,23 @@ class Operation(models.Model):
 
     def _apply_defrost(self):  # ready
         if self.frozen_item:
-            description = dict(
-                ru=f"Замороженные активы от {self.frozen_item.frost_date} разморожены",
-                en=f"Frozen assets from {self.frozen_item.frost_date} defrosted",
-                cn=None,
-            )
+            message_type = MessageType.FROZEN_AVAILABLE
+            insertion_data = {"frost_date": self.frozen_item.frost_date}
             self.wallet.update_balance(
                 frozen=-self.amount, item=self.frozen_item  # разморозка frozen-item
             )
             if telegram_id := self.wallet.user.telegram_id:
                 send_template_telegram_message_task.delay(
                     telegram_id,
-                    message_type=MessageType.FROZEN_AVAILABLE,
+                    message_type=TelegramMessageType.FROZEN_AVAILABLE,
                     insertion_data={
                         "frozen_date": self.frozen_item.frost_date,
                         "frozen_amount": self.frozen_item.amount,
                     },
                 )
         else:
-            description = dict(
-                ru="Заявка на разморозку активов исполнена",
-                en="The application for unfreezing of assets has been completed",
-                cn=None,
-            )
+            message_type = MessageType.FORCE_DEFROST
+            insertion_data = None
             self.wallet.update_balance(frozen=-self.amount)  # разморозка суммы
 
             # списание Extra Fee
@@ -519,7 +441,7 @@ class Operation(models.Model):
             if telegram_id := self.wallet.user.telegram_id:
                 send_template_telegram_message_task.delay(
                     telegram_id,
-                    message_type=MessageType.PREMATURE_DEFROST,
+                    message_type=TelegramMessageType.PREMATURE_DEFROST,
                     insertion_data={
                         "amount": self.amount,
                         "extra_fee_percent": extra_fee,
@@ -529,27 +451,20 @@ class Operation(models.Model):
                 )
 
         self.wallet.update_balance(free=self.amount)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=description,
+            message_type=message_type,
             target_name=self.wallet.name,
             amount=self.amount,
+            insertion_data=insertion_data,
         )
         return True
 
     def _apply_extra_fee(self):  # ready
         self.wallet.update_balance(free=-self.amount)
-        OperationHistory.objects.create(
-            operation_type=self.type,
-            wallet=self.wallet,
+        self.add_history(
             type=OperationHistory.Type.SYSTEM_MESSAGE,
-            description=dict(
-                ru="Списание комиссии Extra Fee",
-                en="Extra Fee commission write-off",
-                cn=None,
-            ),
+            message_type=MessageType.EXTRA_FEE,
             target_name=self.wallet.name,
             amount=-self.amount,
         )
@@ -560,32 +475,21 @@ class Operation(models.Model):
         self.user_program.update_profit(amount=self.amount)
 
         if self.amount >= 0:
-            message_type = MessageType.PROGRAM_PROFIT
+            telegram_message_type = TelegramMessageType.PROGRAM_PROFIT
             if withdrawal_type == Program.WithdrawalType.DAILY:
                 self.wallet.update_balance(free=self.amount)
-                OperationHistory.objects.create(
-                    operation_type=self.type,
-                    wallet=self.wallet,
+                self.add_history(
                     type=OperationHistory.Type.SYSTEM_MESSAGE,
-                    description=dict(
-                        ru=f"Начисление по программе {self.user_program.name}",
-                        en=f"Accrual under the {self.user_program.name} program",
-                        cn=None,
-                    ),
+                    message_type=MessageType.PROGRAM_ACCRUAL_PROFIT,
                     target_name=self.wallet.name,
                     amount=self.amount,
+                    insertion_data={"program_name": self.user_program.name},
                 )
         else:
-            message_type = MessageType.PROGRAM_LOSS
-            OperationHistory.objects.create(
-                operation_type=self.type,
-                wallet=self.wallet,
+            telegram_message_type = TelegramMessageType.PROGRAM_LOSS
+            self.add_history(
                 type=OperationHistory.Type.SYSTEM_MESSAGE,
-                description=dict(
-                    ru="Списание отрицательной прибыли",
-                    en="Write-off of negative profit",
-                    cn=None,
-                ),
+                message_type=MessageType.PROGRAM_ACCRUAL_LOSS,
                 target_name=self.user_program.name,
                 amount=self.amount,
             )
@@ -593,7 +497,7 @@ class Operation(models.Model):
         if telegram_id := self.wallet.user.telegram_id:
             send_template_telegram_message_task.delay(
                 telegram_id,
-                message_type=message_type,
+                message_type=telegram_message_type,
                 insertion_data={
                     "program_name": self.user_program.name,
                     "yesterday_profit": self.user_program.yesterday_profit,
@@ -608,6 +512,25 @@ class Operation(models.Model):
             )
 
         return True
+
+    def add_history(
+        self,
+        type: OperationHistory.Type,
+        message_type: MessageType,
+        target_name: str,
+        amount,
+        insertion_data: dict | None = None,
+        wallet: Wallet | None = None,
+    ):
+        OperationHistory.objects.create(
+            wallet=wallet or self.wallet,
+            type=type,
+            message_type=message_type,
+            operation_type=self.type,
+            target_name=target_name,
+            amount=amount,
+            insertion_data=insertion_data,
+        )
 
 
 class WithdrawalRequest(models.Model):
