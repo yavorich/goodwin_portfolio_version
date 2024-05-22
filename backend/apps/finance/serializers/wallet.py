@@ -9,7 +9,7 @@ from rest_framework.serializers import (
 from rest_framework.exceptions import ValidationError
 from django.utils.translation import gettext as _
 
-from apps.finance.models import Wallet, FrozenItem
+from apps.finance.models import Wallet, FrozenItem, WalletSettings
 from apps.accounts.models import User
 
 
@@ -44,11 +44,31 @@ class WalletTransferUserSerializer(Serializer):
         if user.email != attrs["email"]:
             raise ValidationError(_("Incorrect email"))
         if user == self.context["user"]:
-            raise ValidationError(
-                _("Recipient and sender must be different")
-            )
+            raise ValidationError(_("Recipient and sender must be different"))
         return attrs
 
     def to_representation(self, instance):
         user = User.objects.get(**instance)
         return {"id": user.id, "full_name": f"{user.last_name} {user.first_name[0]}."}
+
+
+class WalletSettingsSerializer(ModelSerializer):
+    commission_on_replenish = FloatField()
+    commission_on_withdraw = FloatField()
+    commission_on_transfer = FloatField()
+
+    class Meta:
+        model = WalletSettings
+        fields = [
+            "commission_on_replenish",
+            "commission_on_withdraw",
+            "commission_on_transfer",
+        ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        default_settings = WalletSettings.objects.get(wallet__isnull=True)
+        for key in data:
+            if data.get(key) is None:
+                data[key] = getattr(default_settings, key)
+        return data

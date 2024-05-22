@@ -1,5 +1,5 @@
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.generics import RetrieveAPIView, GenericAPIView
+from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -13,7 +13,8 @@ from apps.finance.serializers import (
     wallet_operations_serializers,
     WalletTransferUserSerializer,
 )
-from apps.finance.models import Wallet, FrozenItem
+from apps.finance.models import Wallet, FrozenItem, WalletSettings
+from apps.finance.serializers import WalletSettingsSerializer
 from core.views import OperationViewMixin
 
 
@@ -26,7 +27,7 @@ class WalletAPIView(RetrieveAPIView):
 
 
 class WalletViewSet(OperationViewMixin, ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedAndVerified]
 
     def get_object(self):
         return get_object_or_404(Wallet, user=self.request.user)
@@ -48,7 +49,7 @@ class WalletViewSet(OperationViewMixin, ModelViewSet):
 
 
 class FrozenItemViewSet(OperationViewMixin, ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedAndVerified]
 
     def get_queryset(self):
         return FrozenItem.objects.filter(
@@ -77,3 +78,12 @@ class WalletTransferAPIView(GenericAPIView):
         )
         serializer.is_valid(raise_exception=True)
         return Response(data=serializer.data, status=HTTP_200_OK)
+
+
+class WalletSettingsAPIView(RetrieveAPIView):
+    permission_classes = [IsAuthenticatedAndVerified]
+    serializer_class = WalletSettingsSerializer
+
+    def get_object(self):
+        obj = get_object_or_404(WalletSettings, wallet=self.request.user.wallet)
+        return obj
