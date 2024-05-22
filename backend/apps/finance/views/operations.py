@@ -15,6 +15,13 @@ from rest_framework.generics import (
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
+from django_filters.rest_framework import (
+    DjangoFilterBackend,
+    FilterSet,
+    DateFromToRangeFilter,
+    CharFilter,
+    RangeFilter,
+)
 
 from apps.accounts.permissions import IsLocal, IsAuthenticatedAndVerified
 
@@ -34,23 +41,36 @@ from apps.finance.services.operation_replenishment_confirmation import (
 )
 from config import settings
 from core.exceptions import ServiceUnavailable
+from core.pagination import PageNumberSetPagination
+
+
+class OperationHistoryFilterSet(FilterSet):
+    operation_type = CharFilter(field_name="operation_type")
+    date = DateFromToRangeFilter(field_name="created_at")
+    amount = RangeFilter(field_name="amount")
 
 
 class OperationAPIView(ListAPIView):
     serializer_class = OperationHistorySerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = PageNumberSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OperationHistoryFilterSet
 
     def get_queryset(self):
         return OperationHistory.objects.filter(wallet=self.request.user.wallet)
 
-    def filter_queryset(self, queryset):
-        _type = self.request.query_params.get("type")
-        if _type and _type not in Operation.Type:
-            available_types = [e.value for e in Operation.Type]
-            raise ValidationError(
-                f"Incorrect type='{_type}'. Must be one of {available_types}"
-            )
-        return queryset.filter(operation__type=_type) if _type else queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        if request.query_params.get("page"):
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class OperationConfirmAPIView(UpdateAPIView):

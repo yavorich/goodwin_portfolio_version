@@ -271,7 +271,11 @@ class Operation(models.Model):
             operation_type=self.type,
             wallet=self.wallet,
             type=OperationHistory.Type.LOYALTY_PROGRAM,
-            description="Branch income",
+            description=dict(
+                ru="Доход филиала",
+                en="Branch income",
+                cn=None,
+            ),
             target_name=self.wallet.name,
             amount=self.amount,
         )
