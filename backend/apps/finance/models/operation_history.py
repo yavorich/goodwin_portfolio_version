@@ -15,9 +15,7 @@ class OperationHistoryQuerySet(QuerySet):
         return self.filter(amount__gt=0).aggregate(total=Sum("amount"))["total"] or 0
 
     def total_out(self):
-        return abs(
-            self.filter(amount__lt=0).aggregate(total=Sum("amount"))["total"] or 0
-        )
+        return self.filter(amount__lt=0).aggregate(total=Sum("amount"))["total"] or 0
 
 
 class OperationHistory(models.Model):
