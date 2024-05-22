@@ -420,10 +420,10 @@ class Operation(models.Model):
         if self.partial:
             description = (
                 dict(
-                    ru=f"Отмена пополнения программы {self.user_program.name}",
+                    ru=f"Отмена пополнения программы {program_name}",
                     en=(
                         "Cancellation of the replenishment "
-                        f"of program {self.user_program.name}"
+                        f"of program {program_name}"
                     ),
                     cn=None,
                 ),
@@ -434,11 +434,11 @@ class Operation(models.Model):
                 dict(
                     ru=(
                         f"Частичная отмена пополнения программы "
-                        f"{self.user_program.name}"
+                        f"{program_name}"
                     ),
                     en=(
                         "Partial cancellation of the replenishment "
-                        f"of program {self.user_program.name}"
+                        f"of program {program_name}"
                     ),
                     cn=None,
                 ),
@@ -458,8 +458,8 @@ class Operation(models.Model):
             wallet=self.wallet,
             type=OperationHistory.Type.TRANSFER_FROZEN,
             description=dict(
-                ru=f"Перевод депозита {self.user_program.name}",
-                en=f"Transfer of deposit {self.user_program.name}",
+                ru=f"Перевод депозита {program_name}",
+                en=f"Transfer of deposit {program_name}",
                 cn=None,
             ),
             target_name=self.wallet.name,
@@ -473,7 +473,7 @@ class Operation(models.Model):
                 telegram_id,
                 message_type=MessageType.CANCELING_PROGRAM_REPLENISHMENT,
                 insertion_data={
-                    "program_name": self.replenishment.program.name,
+                    "program_name": program_name,
                     "available_date": now().date() + timedelta(days=defrost_days),
                     "extra_fee_percent": extra_fee,
                     "email": self.wallet.user.email,
