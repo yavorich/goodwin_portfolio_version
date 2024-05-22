@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 from .operation_history import OperationHistory
+from .operation_type import MessageType
 
 
 class Program(models.Model):
@@ -219,17 +220,12 @@ class UserProgramReplenishment(models.Model):
 
     def apply(self):
         self.program.update_deposit(amount=self.amount)
-        OperationHistory.objects.create(
-            operation=self.operation.last().type,
-            wallet=self.program.wallet,
+        self.operation.last().add_history(
             type=OperationHistory.Type.TRANSFER_BETWEEN,
-            description=dict(
-                ru=f"Программа {self.program.name} пополнена",
-                en=f"Program {self.program.name} has been replenished",
-                cn=None,
-            ),
+            message_type=MessageType.PROGRAM_REPLENISHED,
             target_name=self.program.name,
             amount=self.amount,
+            insertion_data={"program_name": self.program.name}
         )
         self.apply_date = now().date()
         self.done = True

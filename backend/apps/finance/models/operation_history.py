@@ -1,3 +1,6 @@
+from datetime import date
+from decimal import Decimal
+
 from django.db import models
 from django.db.models.query import QuerySet
 from django.db.models import Sum
@@ -5,9 +8,11 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from core.utils import blank_and_null, decimal_usdt
+
 from core.localized.fields import LocalizedCharField
 
-from .operation_type import OperationType
+from .operation_type import OperationType, MessageType
+from .operation_message import OperationMessage
 
 
 class OperationHistoryQuerySet(QuerySet):
@@ -31,6 +36,8 @@ class OperationHistory(models.Model):
         SYSTEM_MESSAGE = "system_message", _("Системное сообщение")
 
     operation_type = models.CharField(choices=OperationType.choices, **blank_and_null)
+    message_type = models.CharField(choices=MessageType.choices, **blank_and_null)
+    insertion_data = models.JSONField(**blank_and_null)
     wallet = models.ForeignKey(
         "Wallet",
         verbose_name="Кошелёк",
@@ -51,3 +58,23 @@ class OperationHistory(models.Model):
         verbose_name = "История операций"
         verbose_name_plural = "Истории операций"
         ordering = ["-created_at"]
+
+    def get_description(self, language=None):
+        insertion_data = self.insertion_data or {}
+
+        template_message = OperationMessage.objects.get(message_type=self.message_type)
+        text = template_message.text.get(language)
+
+        for field in template_message.insertion_iter():
+            try:
+                value = insertion_data[field]
+            except KeyError:
+                raise ValueError(f"insertion data dict must have {field}")
+
+            if isinstance(value, date):
+                value = value.strftime("%d.%m.%Y")
+            elif isinstance(value, (float, Decimal)):
+                value = round(value, 2)
+
+            text = text.replace(f"{{{field}}}", str(value))
+        return text

@@ -1,6 +1,7 @@
 import json
 import requests
 
+from django.utils import translation
 from django.utils.translation import gettext as _
 from rest_framework.fields import DecimalField
 from rest_framework.serializers import (
@@ -9,6 +10,7 @@ from rest_framework.serializers import (
     BooleanField,
     Serializer,
     FloatField,
+    SerializerMethodField,
 )
 from rest_framework.exceptions import ValidationError
 
@@ -24,7 +26,7 @@ from core.utils import decimal_usdt
 
 class OperationHistorySerializer(ModelSerializer):
     type = CharField(source="get_type_display")
-    description = CharField()
+    description = SerializerMethodField()
     amount = FloatField()
 
     class Meta:
@@ -38,6 +40,12 @@ class OperationHistorySerializer(ModelSerializer):
             "created_at",
             "amount",
         ]
+
+    def get_description(self, obj: OperationHistory):
+        language = translation.get_language()
+        if obj.message_type is not None:
+            return obj.get_description(language=language)
+        return obj.description.get(language)
 
 
 class OperationCreateSerializer(ModelSerializer):

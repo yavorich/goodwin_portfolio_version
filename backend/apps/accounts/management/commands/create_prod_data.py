@@ -31,6 +31,7 @@ from apps.finance.models import (
     FrozenItem,
     UserProgramHistory,
 )
+from apps.finance.models.operation_type import MessageType, OperationType
 from apps.finance.signals import (
     handle_operation,
     save_frozen_item,
@@ -283,9 +284,11 @@ def create_programs(cursor):
             "exp_profit": expected_profit,
             "min_deposit": min_deposit,
             "accrual_type": Program.AccrualType.DAILY,
-            "withdrawal_type": Program.WithdrawalType.DAILY
-            if p_type == 1
-            else Program.WithdrawalType.AFTER_FINISH,
+            "withdrawal_type": (
+                Program.WithdrawalType.DAILY
+                if p_type == 1
+                else Program.WithdrawalType.AFTER_FINISH
+            ),
             "max_risk": 0,
             "success_fee": success_fee,
             "management_fee": 0.004,
@@ -396,9 +399,9 @@ def create_user_program_accruals(cursor):
             created_at=get_datetime_from_iso(created),
             defaults={
                 "amount": clean_profit,
-                "percent_amount": clean_profit / dirty_profit * dirty_percent
-                if dirty_percent
-                else 0,
+                "percent_amount": (
+                    clean_profit / dirty_profit * dirty_percent if dirty_percent else 0
+                ),
                 "success_fee": success_fee,
                 "management_fee": 0,
             },
@@ -408,13 +411,11 @@ def create_user_program_accruals(cursor):
             type=OperationHistory.Type.SYSTEM_MESSAGE,
             created_at=get_datetime_from_iso(created),
             defaults={
-                "description": dict(
-                    ru=f"Начисление по программе {user_program.name}",
-                    en=f"Accrual under the {user_program.name} program",
-                    cn=None,
-                ),
+                "operation_type": OperationType.PROGRAM_ACCRUAL,
+                "message_type": MessageType.PROGRAM_ACCRUAL_PROFIT,
                 "target_name": wallet.name,
                 "amount": clean_profit,
+                "insertion_data": {"program_name": user_program.name},
             },
         )
 
@@ -461,11 +462,8 @@ def create_operation_history_withdraw(cursor):
                     type=OperationHistory.Type.WITHDRAWAL,
                     created_at=created_at,
                     defaults={
-                        "description": dict(
-                            ru="Заявка на вывод принята",
-                            en="Withdrawal request accepted",
-                            cn=None,
-                        ),
+                        "operation_type": OperationType.WITHDRAWAL,
+                        "message_type": MessageType.WITHDRAWAL_REQUEST_CREATED,
                         "target_name": wallet.name,
                         "amount": -amount,
                     },
@@ -473,9 +471,11 @@ def create_operation_history_withdraw(cursor):
                 withdrawal_request = WithdrawalRequest.objects.update_or_create(
                     wallet=wallet,
                     created_at=created_at,
-                    status=WithdrawalRequest.Status.APPROVED
-                    if status == 3
-                    else WithdrawalRequest.Status.REJECTED,
+                    status=(
+                        WithdrawalRequest.Status.APPROVED
+                        if status == 3
+                        else WithdrawalRequest.Status.REJECTED
+                    ),
                     done=True,
                     defaults={
                         "address": address,
@@ -492,16 +492,13 @@ def create_operation_history_withdraw(cursor):
                         type=OperationHistory.Type.SYSTEM_MESSAGE,
                         created_at=finished_at,
                         defaults={
-                            "description": dict(
-                                ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT исполнена",
-                                en=(
-                                    f"The withdrawal request of {withdrawal_request.original_amount}"
-                                    "USDT has been processed."
-                                ),
-                                cn=None,
-                            ),
+                            "operation_type": OperationType.WITHDRAWAL,
+                            "message_type": MessageType.WITHDRAWAL_REQUEST_APPROVED,
                             "target_name": None,
                             "amount": None,
+                            "insertion_data": {
+                                "amount": float(withdrawal_request.original_amount),
+                            },
                         },
                     )
                     operation.done = True
@@ -512,16 +509,13 @@ def create_operation_history_withdraw(cursor):
                         type=OperationHistory.Type.SYSTEM_MESSAGE,
                         created_at=finished_at,
                         defaults={
-                            "description": dict(
-                                ru=f"Заявка на вывод {withdrawal_request.original_amount} USDT отклонена",
-                                en=(
-                                    f"The withdrawal request of {withdrawal_request.original_amount}"
-                                    "USDT has been rejected."
-                                ),
-                                cn=None,
-                            ),
+                            "operation_type": OperationType.WITHDRAWAL,
+                            "message_type": MessageType.WITHDRAWAL_REQUEST_REJECTED,
                             "target_name": withdrawal_request.wallet.name,
                             "amount": withdrawal_request.original_amount,
+                            "insertion_data": {
+                                "amount": float(withdrawal_request.original_amount),
+                            },
                         },
                     )
                     operation.done = False
@@ -549,9 +543,10 @@ def create_operation_history_partner(cursor):
             "wallet": wallet,
             "type": OperationHistory.Type.LOYALTY_PROGRAM,
             "created_at": get_datetime_from_iso(created_at),
+            "operation_type": OperationType.PARTNER_BONUS,
+            "message_type": MessageType.BRANCH_INCOME,
         }
         OperationHistory.objects.create(
-            description="Branch income",
             target_name=wallet.name,
             amount=bonus,
             **unique_data,
@@ -594,13 +589,11 @@ def create_operation_history_program_replenishment(cursor):
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             created_at=created_at,
             defaults={
-                "description": dict(
-                    ru=f"Перевод в программу {user_program.name}",
-                    en=f"Transfer to program {user_program.name}",
-                    cn=None,
-                ),
+                "operation_type": OperationType.PROGRAM_REPLENISHMENT,
+                "message_type": MessageType.TRANSFER_TO_PROGRAM,
                 "target_name": wallet.name,
                 "amount": -amount,
+                "insertion_data": {"program_name": user_program.name},
             },
         )
         user_program_replenishment = UserProgramReplenishment.objects.get_or_create(
@@ -616,13 +609,13 @@ def create_operation_history_program_replenishment(cursor):
             type=OperationHistory.Type.TRANSFER_BETWEEN,
             created_at=execution_at,
             defaults={
-                "description": dict(
-                    ru=f"Программа {user_program_replenishment.program.name} пополнена",
-                    en=f"Program {user_program_replenishment.program.name} has been replenished",
-                    cn=None,
-                ),
+                "operation_type": OperationType.PROGRAM_REPLENISHMENT,
+                "message_type": MessageType.PROGRAM_REPLENISHED,
                 "target_name": user_program_replenishment.program.name,
                 "amount": user_program_replenishment.amount,
+                "insertion_data": {
+                    "program_name": user_program_replenishment.program.name
+                },
             },
         )
 
@@ -656,11 +649,8 @@ def create_operation_history_replenishment(cursor):
                 type=OperationHistory.Type.REPLENISHMENT,
                 created_at=get_datetime_from_timestamp(finished),
                 defaults={
-                    "description": dict(
-                        ru="Депозит",
-                        en="Deposit",
-                        cn=None,
-                    ),
+                    "operation_type": OperationType.REPLENISHMENT,
+                    "message_type": MessageType.REPLENISHMENT,
                     "target_name": wallet.name,
                     "amount": amount_gc,
                 },
@@ -682,11 +672,8 @@ def create_operation_history_extra_fee(cursor):
             type=OperationHistory.Type.SYSTEM_MESSAGE,
             created_at=get_datetime_from_iso(created_at),
             defaults={
-                "description": dict(
-                    ru="Списание комиссии Extra Fee",
-                    en="Extra Fee commission write-off",
-                    cn=None,
-                ),
+                "operation_type": OperationType.EXTRA_FEE,
+                "message_type": MessageType.EXTRA_FEE,
                 "target_name": wallet.name,
                 "amount": -fee,
             },
@@ -820,13 +807,11 @@ def create_operation_history_start_program(user_program, deposit, start_date):
         type=OperationHistory.Type.TRANSFER_BETWEEN,
         created_at=start_date,
         defaults={
-            "description": dict(
-                ru=f"Запуск программы {user_program.name}",
-                en=f"Starting the {user_program.name} program",
-                cn=None,
-            ),
+            "operation_type": OperationType.PROGRAM_START,
+            "message_type": MessageType.PROGRAM_START,
             "target_name": user_program.wallet.name,
             "amount": -deposit,
+            "insertion_data": {"program_name": user_program.name},
         },
     )
     OperationHistory.objects.update_or_create(
@@ -834,39 +819,31 @@ def create_operation_history_start_program(user_program, deposit, start_date):
         type=OperationHistory.Type.TRANSFER_BETWEEN,
         created_at=start_date,
         defaults={
-            "description": dict(
-                ru=f"Программа {user_program.name} пополнена",
-                en=f"Program {user_program.name} has been replenished",
-                cn=None,
-            ),
+            "operation_type": OperationType.PROGRAM_START,
+            "message_type": MessageType.PROGRAM_REPLENISHED,
             "target_name": user_program.name,
             "amount": deposit,
+            "insertion_data": {"program_name": user_program.name},
         },
     )
 
 
 def create_operation_history_close_program(user_program, amount, close_date):
     if user_program.end_date != close_date.date():
-        description = dict(
-            ru=f"Программа {user_program.name} закрыта досрочно",
-            en=f"The {user_program.name} program is closed early",
-            cn=None,
-        )
+        message_type = MessageType.PROGRAM_CLOSURE_EARLY
     else:
-        description = dict(
-            ru=f"Программа {user_program.name} закрыта",
-            en=f"{user_program.name} program is closed",
-            cn=None,
-        )
+        message_type = MessageType.PROGRAM_CLOSURE
 
     OperationHistory.objects.update_or_create(
         wallet=user_program.wallet,
         type=OperationHistory.Type.SYSTEM_MESSAGE,
         created_at=close_date,
         defaults={
-            "description": description,
+            "operation_type": OperationType.PROGRAM_CLOSURE,
+            "message_type": message_type,
             "target_name": user_program.name,
             "amount": -amount,
+            "insertion_data": {"program_name": user_program.name},
         },
     )
     OperationHistory.objects.update_or_create(
@@ -874,13 +851,11 @@ def create_operation_history_close_program(user_program, amount, close_date):
         type=OperationHistory.Type.TRANSFER_FROZEN,
         created_at=close_date,
         defaults={
-            "description": dict(
-                ru=f"Перевод депозита {user_program.name}",
-                en=f"Transfer of deposit {user_program.name}",
-                cn=None,
-            ),
+            "operation_type": OperationType.PROGRAM_CLOSURE,
+            "message_type": MessageType.DEPOSIT_TRANSFER,
             "target_name": user_program.wallet.name,
             "amount": amount,
+            "insertion_data": {"program_name": user_program.name},
         },
     )
 
@@ -950,7 +925,8 @@ def imitation_working_app(cursor):
                     start_program_history = OperationHistory.objects.filter(
                         created_at__date=current_date,
                         target_name=user_program.name,
-                        description__ru=f"Программа {user_program.name} пополнена",
+                        operation_type=OperationType.PROGRAM_START,
+                        message_type=MessageType.PROGRAM_REPLENISHED,
                     ).first()
                     if start_program_history:
                         program_data["deposit"] += start_program_history.amount
