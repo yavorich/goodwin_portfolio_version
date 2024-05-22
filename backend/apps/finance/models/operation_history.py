@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.query import QuerySet
+from django.db.models import Sum
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -6,6 +8,14 @@ from core.utils import blank_and_null, decimal_usdt
 from core.localized.fields import LocalizedCharField
 
 from .operation_type import OperationType
+
+
+class OperationHistoryQuerySet(QuerySet):
+    def total_in(self):
+        return self.filter(amount__gt=0).aggregate(total=Sum("amount"))["total"]
+
+    def total_out(self):
+        return abs(self.filter(amount__lt=0).aggregate(total=Sum("amount"))["total"])
 
 
 class OperationHistory(models.Model):
@@ -34,6 +44,8 @@ class OperationHistory(models.Model):
         "Дата и время", default=timezone.now  # для парсинга внешней базы
     )
     amount = models.DecimalField("Сумма", **decimal_usdt, **blank_and_null)
+
+    objects = OperationHistoryQuerySet.as_manager()
 
     class Meta:
         verbose_name = "История операций"
