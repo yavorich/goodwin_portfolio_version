@@ -12,10 +12,12 @@ from .operation_type import OperationType
 
 class OperationHistoryQuerySet(QuerySet):
     def total_in(self):
-        return self.filter(amount__gt=0).aggregate(total=Sum("amount"))["total"]
+        return self.filter(amount__gt=0).aggregate(total=Sum("amount"))["total"] or 0
 
     def total_out(self):
-        return abs(self.filter(amount__lt=0).aggregate(total=Sum("amount"))["total"])
+        return abs(
+            self.filter(amount__lt=0).aggregate(total=Sum("amount"))["total"] or 0
+        )
 
 
 class OperationHistory(models.Model):
