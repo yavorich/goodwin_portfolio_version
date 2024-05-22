@@ -543,7 +543,7 @@ def create_operation_history_partner(cursor):
             "wallet": wallet,
             "type": OperationHistory.Type.LOYALTY_PROGRAM,
             "created_at": get_datetime_from_iso(created_at),
-            "operation_type": OperationType.PARTNER_BONUS,
+            "operation_type": OperationType.BRANCH_INCOME,
             "message_type": MessageType.BRANCH_INCOME,
         }
         OperationHistory.objects.create(

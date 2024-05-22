@@ -248,7 +248,7 @@ class Operation(models.Model):
             )
         return True
 
-    def _apply_partner_bonus(self):  # ready
+    def _apply_branch_income(self):  # ready
         self.wallet.update_balance(amount_free=self.amount)
         self.add_history(
             type=OperationHistory.Type.LOYALTY_PROGRAM,
@@ -692,7 +692,7 @@ class Action(models.Model):
         if self.operation.type == Operation.Type.EXTRA_FEE:
             return "Extra Fee commission write-off"
 
-        if self.operation.type == Operation.Type.PARTNER_BONUS:
+        if self.operation.type == Operation.Type.BRANCH_INCOME:
             return "Branch income"
 
     def _get_target_name(self):

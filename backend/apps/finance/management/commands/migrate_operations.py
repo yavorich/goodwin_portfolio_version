@@ -53,7 +53,7 @@ class Command(BaseCommand):
             o.insertion_data = {"program_name": o.description.ru.split(" ")[-1]}
             o.save()
         for o in history.filter(description__ru="Branch income"):
-            o.operation_type = OperationType.PARTNER_BONUS
+            o.operation_type = OperationType.BRANCH_INCOME
             o.message_type = MessageType.BRANCH_INCOME
             o.save()
         for o in history.filter(description__ru="Списание отрицательной прибыли"):
