@@ -146,7 +146,7 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         remainder = attrs["replenishment"].amount - attrs["amount"]
-        min_remainder = attrs["replenishment"].user_program.program.min_replenishment
+        min_remainder = attrs["replenishment"].program.program.min_replenishment
         if 0 < remainder < min_remainder:
             get_error(
                 error_type=ErrorType.MIN_CANCEL_REPLENISHMENT,
