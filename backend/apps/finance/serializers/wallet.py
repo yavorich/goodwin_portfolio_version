@@ -56,6 +56,7 @@ class WalletSettingsSerializer(ModelSerializer):
     commission_on_replenish = FloatField()
     commission_on_withdraw = FloatField()
     commission_on_transfer = FloatField()
+    extra_fee = FloatField()
 
     class Meta:
         model = WalletSettings
@@ -63,6 +64,7 @@ class WalletSettingsSerializer(ModelSerializer):
             "commission_on_replenish",
             "commission_on_withdraw",
             "commission_on_transfer",
+            "extra_fee",
         ]
 
     def to_representation(self, instance):
