@@ -2,7 +2,6 @@
 
 from .operation import (
     Operation,
-    Action,
     OperationHistory,
     WithdrawalRequest,
     OperationSummary,

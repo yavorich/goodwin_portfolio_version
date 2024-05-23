@@ -474,7 +474,6 @@ class Operation(models.Model):
 
     def _apply_program_accrual(self):  # ready
         withdrawal_type = self.user_program.program.withdrawal_type
-        self.user_program.update_profit(amount=self.amount)
 
         if self.amount >= 0:
             telegram_message_type = TelegramMessageType.PROGRAM_PROFIT
@@ -576,129 +575,6 @@ class WithdrawalRequest(models.Model):
     @classmethod
     def notify_count(cls):
         return cls.objects.filter(status=cls.Status.PENDING).count()
-
-
-# TODO: удалить модель
-class Action(models.Model):
-    class Type(models.TextChoices):
-        TRANSFER_FREE = "transfer_free", 'Перевод в раздел "Доступно"'
-        TRANSFER_FROZEN = "transfer_frozen", 'Перевод в раздел "Заморожено"'
-        TRANSFER_BETWEEN = "transfer_between", "Перевод между счетами"
-        WITHDRAWAL = "withdrawal", "Вывод"
-        REPLENISHMENT = "replenishment", "Пополнение"
-        PROFIT_ACCRUAL = "profit_accrual", "Начисление прибыли"
-        LOSS_CHARGEOFF = "loss_chargeoff", "Фиксация убытка"
-        LOYALTY_PROGRAM = "loyalty_program", "Программа лояльности"
-        SYSTEM_MESSAGE = "system_message", "Системное сообщение"
-
-    class Target(models.TextChoices):
-        WALLET = "wallet"
-        USER_PROGRAM = "user_program"
-
-    type = models.CharField("Тип действия", choices=Type.choices)
-    name = models.CharField("Описание", max_length=127, **blank_and_null)
-    target = models.CharField("Объект", choices=Target.choices)
-    operation = models.ForeignKey(
-        Operation,
-        verbose_name="Операция",
-        related_name="actions",
-        on_delete=models.CASCADE,
-    )
-    target_name = models.CharField("Название объекта", max_length=127, **blank_and_null)
-    created_at = models.DateTimeField("Дата и время", auto_now_add=True)
-    amount = models.DecimalField("Сумма", **decimal_usdt)
-
-    class Meta:
-        verbose_name = "Деталь"
-        verbose_name_plural = "Детали"
-
-    def __str__(self) -> str:
-        return self.name
-
-    def apply(self):
-        if self.target == self.Target.WALLET:
-            if self.type == self.Type.TRANSFER_FROZEN:
-                self.operation.wallet.update_balance(frozen=self.amount)
-            else:
-                self.operation.wallet.update_balance(free=self.amount)
-        elif self.target == self.Target.USER_PROGRAM:
-            if self.operation.type == Operation.Type.PROGRAM_ACCRUAL:
-                self.operation.user_program.update_profit(amount=self.amount)
-            else:
-                self.operation.user_program.update_deposit(amount=self.amount)
-            if self.operation.type == Operation.Type.PROGRAM_REPLENISHMENT:
-                self.operation.replenishment.done()
-
-    def _get_name(self):
-        if self.operation.type == Operation.Type.REPLENISHMENT:
-            if not self.operation.sender:
-                return "Deposit"
-            return f"Receipt from ID{self.operation.sender.user.id}"
-
-        if self.operation.type == Operation.Type.WITHDRAWAL:
-            return f"Request for withdrawal of {self.amount} USDT completed"
-
-        if self.operation.type == Operation.Type.TRANSFER:
-            return f"Transfer to client ID{self.operation.receiver.user.id}"
-
-        if self.operation.type == Operation.Type.PROGRAM_START:
-            if self.target == self.Target.USER_PROGRAM:
-                return (
-                    f"The program {self.operation.user_program.name} "
-                    "has been started"
-                )
-            if self.target == self.Target.WALLET:
-                return f"Transfer to program {self.operation.user_program.name}"
-
-        if self.operation.type == Operation.Type.PROGRAM_CLOSURE:
-            if self.target == self.Target.USER_PROGRAM:
-                message = (
-                    f"The program {self.operation.user_program.name} "
-                    "has been %sclosed"
-                )
-                if self.operation.partial:
-                    return message % "partially "
-                if self.operation.early_closure:
-                    return message % "early "
-                return message % ""
-            if self.target == self.Target.WALLET:
-                return f"Transfer to program {self.operation.user_program.name}"
-
-        if self.operation.type == Operation.Type.PROGRAM_REPLENISHMENT:
-            if self.target == self.Target.USER_PROGRAM:
-                return (
-                    f"The program {self.operation.user_program.name} "
-                    "has been replenished"
-                )
-            if self.target == self.Target.WALLET:
-                return f"Transfer to program {self.operation.user_program.name}"
-
-        if self.operation.type == Operation.Type.PROGRAM_REPLENISHMENT_CANCEL:
-            return (
-                f"The program {self.operation.user_program.name} replenishment "
-                f"has been {'partially ' if self.operation.partial else ''}canceled"
-            )
-
-        if self.operation.type == Operation.Type.PROGRAM_ACCRUAL:
-            if self.type == self.Type.PROFIT_ACCRUAL:
-                return f"Accrual by program {self.operation.user_program.name}"
-            if self.type == self.Type.LOSS_CHARGEOFF:
-                return f"Loss by program {self.operation.user_program.name}"
-
-        if self.operation.type == Operation.Type.DEFROST:
-            if self.operation.frozen_item:
-                frost_date = self.operation.frozen_item.frost_date
-                return f"Frozen assets from {frost_date} defrosted"
-            return "The defrost request has been completed"
-
-        if self.operation.type == Operation.Type.EXTRA_FEE:
-            return "Extra Fee commission write-off"
-
-        if self.operation.type == Operation.Type.BRANCH_INCOME:
-            return "Branch income"
-
-    def _get_target_name(self):
-        return getattr(self.operation, self.target).name
 
 
 class OperationSummary(Operation):

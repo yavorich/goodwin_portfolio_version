@@ -77,12 +77,6 @@ class UserProgram(models.Model):
     deposit = models.DecimalField(
         "Базовый депозит", **decimal_usdt, default=Decimal("0.0")
     )
-    # funds = models.DecimalField(
-    #     "Текущие торговые средства", **decimal_usdt, default=Decimal("0.0")
-    # )
-    # profit = models.DecimalField(
-    #     "Суммарный доход", **decimal_usdt, default=Decimal("0.0")
-    # )
 
     # для уникальности программ во время парсинга из внешней базы
     created_at = models.DateTimeField(default=timezone.now, null=True)
@@ -142,12 +136,6 @@ class UserProgram(models.Model):
         if not self.end_date and (duration := self.program.duration):
             self.end_date = self.start_date + relativedelta(months=duration)
 
-    # def _update_funds(self):
-    #     if self.end_date:
-    #         self.funds = self.deposit + self.profit
-    #     else:
-    #         self.funds = self.deposit + min(self.profit, 0)
-
     def start(self):
         self.status = self.Status.RUNNING
         self.save()
@@ -159,10 +147,6 @@ class UserProgram(models.Model):
 
     def update_deposit(self, amount):
         self.deposit += amount
-        self.save()
-
-    def update_profit(self, amount):
-        self.profit += amount
         self.save()
 
 

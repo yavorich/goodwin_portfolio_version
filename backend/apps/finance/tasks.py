@@ -74,9 +74,7 @@ def apply_program_finish():
 @shared_task
 def make_daily_programs_accruals():
     with transaction.atomic():
-        if Holidays.objects.filter(
-            start_date__lte=now(), end_date__gte=now()
-        ).exists():
+        if Holidays.objects.filter(start_date__lte=now(), end_date__gte=now()).exists():
             return "No accruals because of holiday"
         result = ProgramResult.objects.first()
         if not result:
@@ -108,17 +106,17 @@ def create_wallet_history():
 
     for user in users:
         wallet: Wallet = user.wallet
-        total_funds = (
+        total_deposits = (
             UserProgram.objects.filter(
                 wallet=wallet,
             )
             .exclude(status=UserProgram.Status.FINISHED)
-            .aggregate(total_funds=Sum("funds"))["total_funds"]
+            .aggregate(total_deposits=Sum("deposit"))["total_deposits"]
             or 0
         )
 
         WalletHistory.objects.create(
-            user=user, free=wallet.free, frozen=wallet.frozen, deposits=total_funds
+            user=user, free=wallet.free, frozen=wallet.frozen, deposits=total_deposits
         )
 
 
