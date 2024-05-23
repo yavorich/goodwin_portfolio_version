@@ -18,15 +18,21 @@ from apps.finance.models.program import (
     UserProgram,
     UserProgramReplenishment,
 )
+from core.utils.choices import WithChoices
 
 
 def get_table_statistics(
     start_date: datetime.date, end_date: datetime.date, user_program: UserProgram
 ):
-    program_history_subquery = UserProgramHistory.objects.filter(
-        user_program=OuterRef("program"),
-        created_at=OuterRef("created_at"),
-    ).values("funds", "status")
+
+    program_history_subquery = (
+        UserProgramHistory.objects.filter(
+            user_program=OuterRef("program"),
+            created_at=OuterRef("created_at"),
+        )
+        .annotate(status_display=WithChoices(UserProgram, "status"))
+        .values("funds", "status_display")
+    )
 
     replenishment_subquery = (
         UserProgramReplenishment.objects.filter(
@@ -67,7 +73,7 @@ def get_table_statistics(
             profitability=F("percent_amount"),
             withdrawal=Subquery(withdrawal_subquery),
             replenishment=Subquery(replenishment_subquery),
-            status=Subquery(program_history_subquery.values("status")),
+            status=Subquery(program_history_subquery.values("status_display")),
         )
         .order_by("created_at")
     )
