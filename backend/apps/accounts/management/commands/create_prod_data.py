@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 create_operation_history_program_replenishment,
                 create_operation_history_replenishment,
                 create_operation_history_extra_fee,
-                update_user_program_profit,
+                # update_user_program_profit,
                 create_operation_history_start_close_program,
                 # imitation_working_app,  # no work
             ]
@@ -346,7 +346,7 @@ def create_user_programs(cursor):
 
         update_data = {
             "deposit": Decimal(deposit),
-            "profit": Decimal(0),
+            # "profit": Decimal(0),
             "start_date": get_datetime_from_iso(start),
             "status": STATUS_NUMBER[status],
         }

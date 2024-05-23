@@ -50,7 +50,7 @@ class PartnerInvestorsList(ListAPIView):
                 wallet=OuterRef("wallet"), status=UserProgram.Status.RUNNING
             )
             .values("wallet")
-            .annotate(total_funds=Sum("funds"))
+            .annotate(total_funds=Sum("deposit"))
             .values("total_funds"),
         )
         total_accruals_subquery = Subquery(

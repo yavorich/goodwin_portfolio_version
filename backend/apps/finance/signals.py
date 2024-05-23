@@ -74,7 +74,6 @@ def save_user_program(sender, instance: UserProgram, **kwargs):
     instance._set_name()
     instance._set_start_date()
     instance._set_end_date()
-    instance._update_funds()
     try:
         previous = UserProgram.objects.get(pk=instance.pk)
         running = UserProgram.Status.RUNNING
@@ -146,7 +145,10 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
 
         elif instance.status == WithdrawalRequest.Status.REJECTED:
             if instance.reject_message == "":
-                raise ValidationError("Reject message is required for REJECTED status.")
+                raise ValidationError(
+                    f"При постановке статуса {WithdrawalRequest.Status.REJECTED.label}"
+                    f" необходимо указать причину отказа.",
+                )
 
             instance.wallet.update_balance(free=instance.original_amount)
             instance.operation.add_history(

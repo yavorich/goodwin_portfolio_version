@@ -9,11 +9,9 @@ from django.db.models import (
     OuterRef,
     Subquery,
     Func,
-    Q,
 )
 from django.db.models.functions import ExtractWeekDay, Coalesce
 
-from apps.accounts.models import VerificationStatus
 from apps.finance.models import UserProgramAccrual, Operation, Holidays
 from apps.finance.models.program import (
     UserProgramHistory,
@@ -137,21 +135,7 @@ def get_holiday_dates(start_date, end_date):
 
 
 def get_branch_general_statistics(partner_profile):
-    queryset = partner_profile.users.filter(
-        personal_verification__status=VerificationStatus.APPROVED,
-        address_verification__status=VerificationStatus.APPROVED,
-    ).all()
-    total_investments = (
-        queryset.annotate(
-            user_total_funds=Coalesce(
-                Sum(
-                    "wallet__programs__funds",
-                    filter=Q(wallet__programs__status=UserProgram.Status.RUNNING),
-                ),
-                Decimal("0.0"),
-            )
-        ).aggregate(total_funds=Sum("user_total_funds"))
-    )["total_funds"] or 0
+    queryset = partner_profile.users.all()
 
     total_success_fee = (
         queryset.annotate(
@@ -162,7 +146,6 @@ def get_branch_general_statistics(partner_profile):
     total_partner_fee = total_success_fee * partner_profile.partner_fee
 
     data = {
-        "total_investments": total_investments or 0,
         "total_success_fee": total_success_fee or 0,
         "total_partner_fee": total_partner_fee or 0,
         "success_fee_percent": 0.3,  # TODO добавить обращение к Success fee

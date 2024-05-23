@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-22 14:51+0000\n"
+"POT-Creation-Date: 2024-05-23 09:09+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -76,10 +76,6 @@ msgstr ""
 msgid "Действие доступно только администратору"
 msgstr ""
 
-#: apps/accounts/serializers/register.py:31
-msgid "Пользователь с данной почтой уже существует"
-msgstr ""
-
 #: apps/accounts/services/email.py:24
 msgid "GOODWIN - Подтверждение электронной почты"
 msgstr ""
@@ -141,7 +137,7 @@ msgid "GOODWIN - Смена адреса электронной почты"
 msgstr ""
 
 #: apps/accounts/views/profile.py:102 apps/accounts/views/profile.py:158
-#: apps/accounts/views/profile.py:257 apps/finance/views/operations.py:108
+#: apps/accounts/views/profile.py:257 apps/finance/views/operations.py:110
 msgid "Код подтверждения не найден"
 msgstr ""
 
@@ -187,57 +183,102 @@ msgstr ""
 msgid "Сб"
 msgstr ""
 
-#: apps/finance/models/operation.py:225
+#: apps/finance/models/operation.py:209
 msgid "Free"
 msgstr "免费"
 
-#: apps/finance/models/operation.py:252
+#: apps/finance/models/operation.py:235
 msgid "Frozen"
 msgstr "冻结"
 
-#: apps/finance/models/operation_history.py:25
+#: apps/finance/models/operation_history.py:28
 msgid "Перевод в раздел \"Доступно\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:26
+#: apps/finance/models/operation_history.py:29
 msgid "Перевод в раздел \"Заморожено\""
 msgstr ""
 
-#: apps/finance/models/operation_history.py:27
+#: apps/finance/models/operation_history.py:30
 msgid "Перевод между счетами"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:28
+#: apps/finance/models/operation_history.py:31
 msgid "Вывод"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:29
+#: apps/finance/models/operation_history.py:32
+#: apps/finance/models/operation_type.py:6
 msgid "Пополнение"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:30
+#: apps/finance/models/operation_history.py:33
 #, fuzzy
 #| msgid "Восстановление пароля"
 msgid "Начисление прибыли"
 msgstr "找回密码"
 
-#: apps/finance/models/operation_history.py:31
+#: apps/finance/models/operation_history.py:34
 msgid "Фиксация убытка"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:32
+#: apps/finance/models/operation_history.py:35
 msgid "Программа лояльности"
 msgstr ""
 
-#: apps/finance/models/operation_history.py:33
+#: apps/finance/models/operation_history.py:36
 msgid "Системное сообщение"
 msgstr ""
 
-#: apps/finance/models/program.py:14 apps/finance/models/program.py:17
+#: apps/finance/models/operation_type.py:7
+msgid "Снятие"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:8
+msgid "Перевод"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:9
+msgid "Доход филиала"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:10
+msgid "Запуск программы"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:11
+msgid "Закрытие программы"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:12
+#, fuzzy
+#| msgid "Восстановление пароля"
+msgid "Пополнение программы"
+msgstr "找回密码"
+
+#: apps/finance/models/operation_type.py:15
+msgid "Отмена пополнения программы"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:17
+msgid "Разморозка активов"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:18
+msgid "Списание комиссии Extra Fee"
+msgstr ""
+
+#: apps/finance/models/operation_type.py:19
+#, fuzzy
+#| msgid "Восстановление пароля"
+msgid "Начисление по программе"
+msgstr "找回密码"
+
+#: apps/finance/models/program.py:15 apps/finance/models/program.py:18
 msgid "Ежедневно"
 msgstr ""
 
-#: apps/finance/models/program.py:18
+#: apps/finance/models/program.py:19
 msgid "По окончанию срока программы"
 msgstr ""
 
@@ -321,44 +362,40 @@ msgstr ""
 msgid "Кол-во активных пользователей"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:57
-msgid "Insufficient free funds."
-msgstr ""
-
-#: apps/finance/serializers/operations.py:59
+#: apps/finance/serializers/operations.py:69
 msgid "Insufficient frozen funds."
 msgstr ""
 
-#: apps/finance/serializers/operations.py:93
+#: apps/finance/serializers/operations.py:103
 msgid "Minimum program deposit"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:112
+#: apps/finance/serializers/operations.py:122
 msgid "Minimum program replenishment"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:130
+#: apps/finance/serializers/operations.py:140
 msgid "Minimum replenishment amount after cancellation"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:133
+#: apps/finance/serializers/operations.py:143
 msgid "Insufficient funds to cancel"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:160
+#: apps/finance/serializers/operations.py:170
 msgid "Minimum program deposit after cancellation"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:164
+#: apps/finance/serializers/operations.py:174
 msgid "Insufficient program deposit"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:202
+#: apps/finance/serializers/operations.py:212
 #: apps/finance/serializers/wallet.py:47
 msgid "Recipient and sender must be different"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:221
+#: apps/finance/serializers/operations.py:231
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr ""
 
@@ -370,19 +407,19 @@ msgstr ""
 msgid "Incorrect email"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:11
+#: apps/finance/services/operation_replenishment_confirmation.py:12
 msgid "Operation already done"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:13
+#: apps/finance/services/operation_replenishment_confirmation.py:14
 msgid "Insufficient amount transferred"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:17
+#: apps/finance/services/operation_replenishment_confirmation.py:18
 msgid "The required amount has been transferred and credited to the account"
 msgstr ""
 
-#: apps/finance/services/operation_replenishment_confirmation.py:21
+#: apps/finance/services/operation_replenishment_confirmation.py:22
 msgid ""
 "More than the required amount has been transferred and credited to the "
 "account"
@@ -398,7 +435,7 @@ msgid ""
 "Ваш код для подтверждения операции"
 msgstr ""
 
-#: apps/finance/signals.py:65
+#: apps/finance/signals.py:66
 msgid ""
 "Подтверждение операции\n"
 "Ваш код для подтверждения операции"
