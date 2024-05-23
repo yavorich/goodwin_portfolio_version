@@ -124,7 +124,7 @@ class Operation(models.Model):
         )
         self.commission = self.amount * commission_pct / 100
         self.amount_net = self.amount
-        self.amount = self.amount_net + self.commission
+        self.amount = round(self.amount_net + self.commission, 2)
         self.save()
         return False
 
