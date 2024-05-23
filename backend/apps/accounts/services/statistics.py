@@ -79,26 +79,12 @@ def get_table_total_statistics(
     start_date: datetime.date, end_date: datetime.date, user_program: UserProgram
 ):
     accrual_results = get_table_statistics(start_date, end_date, user_program)
-    user_program_history = (
-        (
-            UserProgramHistory.objects.filter(
-                user_program=user_program,
-                created_at=accrual_results.last()["created_at"],
-            )
-            .values("status")
-            .first()
-        )
-        if accrual_results
-        else None
-    )
 
-    last_program_status = (
-        user_program_history["status"] if user_program_history else None
-    )
+    last_program_status = user_program.status
+    total_funds = user_program.deposit
 
     # Агрегация результатов
     totals = accrual_results.aggregate(
-        total_funds=Sum("funds"),
         total_amount=Sum("amount"),
         total_percent_amount=Sum("percent_amount"),
         total_profitability=Sum("profitability"),
@@ -108,6 +94,7 @@ def get_table_total_statistics(
         total_withdrawal=Sum("withdrawal"),
     )
 
+    totals["total_funds"] = total_funds
     totals["last_program_status"] = last_program_status
 
     return totals
