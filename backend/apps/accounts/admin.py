@@ -826,7 +826,7 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
     def funds_st(self, obj: User, name="str"):
         return (
             obj.wallet.programs.filter(program__name=name, status="running").aggregate(
-                total=Sum("funds")
+                total=Sum("deposit")
             )["total"]
             or 0
         )

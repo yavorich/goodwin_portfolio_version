@@ -1,21 +1,22 @@
 from django.db.models import TextChoices
+from django.utils.translation import gettext_lazy as _
 
 
 class OperationType(TextChoices):
-    REPLENISHMENT = "replenishment", "Пополнение"
-    WITHDRAWAL = "withdrawal", "Снятие"
-    TRANSFER = "transfer", "Перевод"
-    BRANCH_INCOME = "branch_income", "Доход филиала"
-    PROGRAM_START = "program_start", "Запуск программы"
-    PROGRAM_CLOSURE = "program_closure", "Закрытие программы"
-    PROGRAM_REPLENISHMENT = "program_replenishment", "Пополнение программы"
+    REPLENISHMENT = "replenishment", _("Пополнение")
+    WITHDRAWAL = "withdrawal", _("Снятие")
+    TRANSFER = "transfer", _("Перевод")
+    BRANCH_INCOME = "branch_income", _("Доход филиала")
+    PROGRAM_START = "program_start", _("Запуск программы")
+    PROGRAM_CLOSURE = "program_closure", _("Закрытие программы")
+    PROGRAM_REPLENISHMENT = "program_replenishment", _("Пополнение программы")
     PROGRAM_REPLENISHMENT_CANCEL = (
         "program_replenishment_cancel",
-        "Отмена пополнения программы",
+        _("Отмена пополнения программы"),
     )
-    DEFROST = "defrost", "Разморозка активов"
-    EXTRA_FEE = "extra_fee", "Списание комиссии Extra Fee"
-    PROGRAM_ACCRUAL = "program_accrual", "Начисление по программе"
+    DEFROST = "defrost", _("Разморозка активов")
+    EXTRA_FEE = "extra_fee", _("Списание комиссии Extra Fee")
+    PROGRAM_ACCRUAL = "program_accrual", _("Начисление по программе")
 
 
 class MessageType(TextChoices):

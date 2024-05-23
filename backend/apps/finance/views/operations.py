@@ -181,5 +181,5 @@ class OperationTypeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        types = [e for e in OperationType]
-        return Response(data=types)
+        data = [{"name": str(e), "verbose_name": e.label} for e in OperationType]
+        return Response(data=data)

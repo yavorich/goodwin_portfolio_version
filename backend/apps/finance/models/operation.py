@@ -412,7 +412,9 @@ class Operation(models.Model):
     def _apply_defrost(self):  # ready
         if self.frozen_item:
             message_type = MessageType.FROZEN_AVAILABLE
-            insertion_data = {"frost_date": self.frozen_item.frost_date}
+            insertion_data = {
+                "frost_date": self.frozen_item.frost_date.strftime("%d.%m.%Y")
+            }
             self.wallet.update_balance(
                 frozen=-self.amount, item=self.frozen_item  # разморозка frozen-item
             )

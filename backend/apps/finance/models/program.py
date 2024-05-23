@@ -47,12 +47,8 @@ class ProgramResult(models.Model):
         verbose_name_plural = "Настройки начислений"
 
     def get_apply_datetime(self):
-        apply_date = now().date() + timedelta(
-            days=int(now().time() > self.apply_time)
-        )
-        return datetime.combine(apply_date, self.apply_time).astimezone(
-            now().tzinfo
-        )
+        apply_date = now().date() + timedelta(days=int(now().time() > self.apply_time))
+        return datetime.combine(apply_date, self.apply_time).astimezone(now().tzinfo)
 
 
 class UserProgram(models.Model):
@@ -81,12 +77,12 @@ class UserProgram(models.Model):
     deposit = models.DecimalField(
         "Базовый депозит", **decimal_usdt, default=Decimal("0.0")
     )
-    funds = models.DecimalField(
-        "Текущие торговые средства", **decimal_usdt, default=Decimal("0.0")
-    )
-    profit = models.DecimalField(
-        "Суммарный доход", **decimal_usdt, default=Decimal("0.0")
-    )
+    # funds = models.DecimalField(
+    #     "Текущие торговые средства", **decimal_usdt, default=Decimal("0.0")
+    # )
+    # profit = models.DecimalField(
+    #     "Суммарный доход", **decimal_usdt, default=Decimal("0.0")
+    # )
 
     # для уникальности программ во время парсинга из внешней базы
     created_at = models.DateTimeField(default=timezone.now, null=True)
@@ -97,6 +93,16 @@ class UserProgram(models.Model):
 
     def __str__(self):
         return str(self.name)
+
+    @property
+    def profit(self):
+        return self.accruals.aggregate(total=models.Sum("amount"))["total"] or 0
+
+    @property
+    def funds(self):
+        if self.end_date:
+            return self.deposit + self.profit
+        return self.deposit + min(self.profit, 0)
 
     @property
     def profit_percent(self):
@@ -136,11 +142,11 @@ class UserProgram(models.Model):
         if not self.end_date and (duration := self.program.duration):
             self.end_date = self.start_date + relativedelta(months=duration)
 
-    def _update_funds(self):
-        if self.end_date:
-            self.funds = self.deposit + self.profit
-        else:
-            self.funds = self.deposit + min(self.profit, 0)
+    # def _update_funds(self):
+    #     if self.end_date:
+    #         self.funds = self.deposit + self.profit
+    #     else:
+    #         self.funds = self.deposit + min(self.profit, 0)
 
     def start(self):
         self.status = self.Status.RUNNING
@@ -225,7 +231,7 @@ class UserProgramReplenishment(models.Model):
             message_type=MessageType.PROGRAM_REPLENISHED,
             target_name=self.program.name,
             amount=self.amount,
-            insertion_data={"program_name": self.program.name}
+            insertion_data={"program_name": self.program.name},
         )
         self.apply_date = now().date()
         self.done = True
