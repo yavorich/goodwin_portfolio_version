@@ -123,7 +123,8 @@ class Operation(models.Model):
             self.wallet, "commission_on_replenish"
         )
         self.commission = self.amount * commission_pct / 100
-        self.amount_net = self.amount - self.commission
+        self.amount_net = self.amount
+        self.amount = self.amount_net + self.commission
         self.save()
         return False
 
