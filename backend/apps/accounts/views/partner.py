@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.db.models import Sum, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from rest_framework.generics import RetrieveAPIView, ListAPIView, get_object_or_404
+from rest_framework.response import Response
 
 from apps.accounts.models.user import Partner, VerificationStatus
 from apps.accounts.permissions import IsPartner
@@ -116,6 +117,16 @@ class PartnerInvestmentGraph(ListAPIView):
         ]
 
         return final_results
+
+    def list(self, request, *args, **kwargs):
+        response_data = super().list(request, *args, **kwargs).data
+        total_funds_list = list(
+            filter(lambda x: x["total_sum"] is not None, response_data)
+        )
+        total_funds = (
+            total_funds_list[-1]["total_sum"] if len(total_funds_list) > 0 else 0
+        )
+        return Response(data={"total_funds": total_funds, "results": response_data})
 
 
 class PartnerList(ListAPIView):
