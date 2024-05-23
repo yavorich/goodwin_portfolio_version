@@ -734,7 +734,17 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
     fieldsets = (
         (
             "Основная информация",
-            {"fields": ("id", "email", "fio", "date_joined", "status", "funds_total")},
+            {
+                "fields": (
+                    "id",
+                    "email",
+                    "fio",
+                    "date_joined",
+                    "status",
+                    "funds_total",
+                    "partner",
+                )
+            },
         ),
     )
 
