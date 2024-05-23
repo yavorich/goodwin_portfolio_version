@@ -1,3 +1,4 @@
+from django.utils.translation import gettext as _
 from rest_framework.serializers import (
     ModelSerializer,
     DecimalField,
@@ -5,8 +6,8 @@ from rest_framework.serializers import (
     CharField,
     SerializerMethodField,
 )
-from rest_framework.exceptions import ValidationError
 
+from apps.accounts.models.errors import ErrorType
 from apps.finance.models import (
     Program,
     UserProgram,
@@ -15,6 +16,7 @@ from apps.finance.models import (
 )
 from apps.finance.services import get_wallet_settings_attr
 from core.utils import decimal_usdt
+from core.utils.error import get_error
 
 
 class ProgramSerializer(ModelSerializer):
@@ -87,9 +89,15 @@ class UserProgramCreateSerializer(ModelSerializer):
     def validate(self, attrs):
         wallet = Wallet.objects.get(pk=attrs["wallet"])
         if wallet.free < attrs["amount_free"]:
-            raise ValidationError("Insufficient free funds.")
+            get_error(
+                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                insertions={"section": _("available")},
+            )
         if wallet.frozen < attrs["amount_frozen"]:
-            raise ValidationError("Insufficient frozen funds.")
+            get_error(
+                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                insertions={"section": _("frozen")},
+            )
         return attrs
 
     def create(self, validated_data):

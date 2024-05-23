@@ -842,3 +842,21 @@ class CountryAdmin(admin.ModelAdmin):
     list_display = ["name", "is_active"]
     list_editable = ["is_active"]
     search_fields = ["name"]
+
+
+@admin.register(models.ErrorMessage)
+class ErrorMessageAdmin(admin.ModelAdmin):
+    fields = ("error_type", "data_insertions_pretty", "text")
+    readonly_fields = ("error_type", "data_insertions_pretty")
+    list_display = ("error_type",)
+    list_display_links = ("error_type",)
+
+    @admin.display(description="Параметры для вставки")
+    def data_insertions_pretty(self, obj):
+        return obj.data_insertions_pretty
+
+    def has_add_permission(self, request, *args, **kwargs):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

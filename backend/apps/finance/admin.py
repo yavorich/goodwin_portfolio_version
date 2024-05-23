@@ -155,6 +155,7 @@ class ProgramAdmin(ExportInlineModelAdminMixin, admin.ModelAdmin):
                     "duration",
                     "exp_profit",
                     "min_deposit",
+                    "min_replenishment",
                     "accrual_type",
                     "withdrawal_type",
                     "max_risk",

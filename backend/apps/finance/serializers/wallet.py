@@ -6,11 +6,10 @@ from rest_framework.serializers import (
     FloatField,
     Serializer,
 )
-from rest_framework.exceptions import ValidationError
-from django.utils.translation import gettext as _
 
 from apps.finance.models import Wallet, FrozenItem, WalletSettings
-from apps.accounts.models import User
+from apps.accounts.models import User, ErrorType
+from core.utils.error import get_error
 
 
 class WalletSerializer(ModelSerializer):
@@ -40,11 +39,11 @@ class WalletTransferUserSerializer(Serializer):
         try:
             user = User.objects.get(id=attrs["id"])
         except User.DoesNotExist:
-            raise ValidationError(_("WALLET ID does not exist"))
+            get_error(error_type=ErrorType.USER_NOT_FOUND)
         if user.email != attrs["email"]:
-            raise ValidationError(_("Incorrect email"))
+            get_error(error_type=ErrorType.USER_EMAIL_MISMATCH)
         if user == self.context["user"]:
-            raise ValidationError(_("Recipient and sender must be different"))
+            get_error(error_type=ErrorType.SELF_TRANSFER)
         return attrs
 
     def to_representation(self, instance):

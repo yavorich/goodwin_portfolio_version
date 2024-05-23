@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
-from apps.accounts.models import User
+from apps.accounts.models import User, ErrorType
+from core.utils.error import get_error
 
 
 class RecoverPasswordSerializer(serializers.Serializer):
@@ -12,7 +12,7 @@ class RecoverPasswordSerializer(serializers.Serializer):
         password = data.get("password")
         password2 = data.get("password2")
         if password != password2:
-            raise ValidationError("Passwords do not match")
+            get_error(error_type=ErrorType.PASSWORD_MISMATCH)
         return data
 
 
@@ -26,6 +26,6 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate(self, attrs):
         user = User.objects.filter(email=attrs["email"]).first()
         if user is None:
-            raise ValidationError({"email": "Пользователя с таким email не существует"})
+            get_error(error_type=ErrorType.INVALID_EMAIL)
         attrs["user"] = user
         return attrs

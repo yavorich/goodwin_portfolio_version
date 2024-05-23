@@ -22,6 +22,9 @@ class Program(models.Model):
     duration = models.IntegerField("Продолжительность (мес)", **blank_and_null)
     exp_profit = models.FloatField("Ожидаемая доходность (%)")
     min_deposit = models.DecimalField("Минимальный депозит", **decimal_usdt)
+    min_replenishment = models.DecimalField(
+        "Минимальная сумма пополнения", **decimal_usdt, default=Decimal("100.00")
+    )
     accrual_type = models.CharField("Начисление прибыли", choices=AccrualType.choices)
     withdrawal_type = models.CharField("Вывод прибыли", choices=WithdrawalType.choices)
     max_risk = models.FloatField("Максимальный риск (%)")
