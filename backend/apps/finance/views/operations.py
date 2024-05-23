@@ -12,6 +12,7 @@ from rest_framework.generics import (
     GenericAPIView,
     RetrieveAPIView,
 )
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK
@@ -32,6 +33,7 @@ from apps.finance.models import (
     OperationConfirmation,
     DestinationType,
 )
+from apps.finance.models.operation_type import OperationType
 from apps.finance.serializers import OperationHistorySerializer
 from apps.finance.serializers.operations import (
     OperationReplenishmentConfirmSerializer,
@@ -173,3 +175,11 @@ class OperationReplenishmentStatusView(RetrieveAPIView):
             "message": message,
             "done": operation.done,
         }
+
+
+class OperationTypeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        types = [e for e in OperationType]
+        return Response(data=types)
