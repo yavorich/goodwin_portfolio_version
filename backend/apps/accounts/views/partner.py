@@ -1,7 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Sum, Q
+from django.db.models import Sum, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from rest_framework.generics import RetrieveAPIView, ListAPIView, get_object_or_404
 
@@ -14,7 +14,7 @@ from apps.accounts.serializers.partner import (
     PartnerInvestmentGraphSerializer,
     PartnerListSerializer,
 )
-from apps.finance.models import UserProgram, WalletHistory
+from apps.finance.models import UserProgram, WalletHistory, UserProgramAccrual
 from apps.accounts.services.statistics import get_branch_general_statistics
 from core.pagination import PageNumberSetPagination
 from core.utils.get_dates_range import get_dates_range
@@ -45,20 +45,27 @@ class PartnerInvestorsList(ListAPIView):
             address_verification__status=VerificationStatus.APPROVED,
         ).all()
 
-        queryset = queryset.annotate(
-            total_funds=Coalesce(
-                Sum(
-                    "wallet__programs__funds",
-                    filter=Q(wallet__programs__status=UserProgram.Status.RUNNING),
-                ),
-                Decimal(0.0),
-            ),
+        total_funds_subquery = Subquery(
+            UserProgram.objects.filter(
+                wallet=OuterRef("wallet"), status=UserProgram.Status.RUNNING
+            )
+            .values("wallet")
+            .annotate(total_funds=Sum("funds"))
+            .values("total_funds"),
+        )
+        total_accruals_subquery = Subquery(
+            UserProgramAccrual.objects.filter(
+                program__wallet=OuterRef("wallet"),
+                program__status=UserProgram.Status.RUNNING,
+            )
+            .values("program__wallet")
+            .annotate(total_amount=Sum("amount"))
+            .values("total_amount"),
         )
 
         queryset = queryset.annotate(
-            total_net_profit=Coalesce(
-                Sum("wallet__programs__accruals__amount"), Decimal(0.0)
-            )
+            total_funds=Coalesce(total_funds_subquery, Decimal("0.0")),
+            total_net_profit=Coalesce(total_accruals_subquery, Decimal("0.0")),
         )
 
         return queryset
