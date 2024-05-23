@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-23 14:54+0000\n"
+"POT-Creation-Date: 2024-05-23 15:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -287,6 +287,18 @@ msgstr "Daily"
 msgid "По окончанию срока программы"
 msgstr "Upon completion of the program"
 
+#: apps/finance/models/program.py:59 apps/finance/models/stats.py:25
+msgid "Ожидает запуска"
+msgstr "Awaiting launch"
+
+#: apps/finance/models/program.py:60
+msgid "Запущена"
+msgstr "Running"
+
+#: apps/finance/models/program.py:61
+msgid "Завершена"
+msgstr "Finished"
+
 #: apps/finance/models/stats.py:20
 msgid "Сумма в кошельках"
 msgstr ""
@@ -305,10 +317,6 @@ msgstr ""
 
 #: apps/finance/models/stats.py:24
 msgid "Поставлено на вывод (ожидает рассмотрения)"
-msgstr ""
-
-#: apps/finance/models/stats.py:25
-msgid "Ожидает запуска"
 msgstr ""
 
 #: apps/finance/models/stats.py:26

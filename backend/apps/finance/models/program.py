@@ -56,9 +56,9 @@ class ProgramResult(models.Model):
 
 class UserProgram(models.Model):
     class Status(models.TextChoices):
-        INITIAL = "initial", "Ожидает запуска"
-        RUNNING = "running", "Запущена"
-        FINISHED = "finished", "Завершена"
+        INITIAL = "initial", _("Ожидает запуска")
+        RUNNING = "running", _("Запущена")
+        FINISHED = "finished", _("Завершена")
 
     name = models.CharField("Название", max_length=31, **blank_and_null)
     wallet = models.ForeignKey(
