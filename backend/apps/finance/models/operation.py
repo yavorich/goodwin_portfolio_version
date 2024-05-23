@@ -104,7 +104,9 @@ class Operation(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return Operation.Type(self.type).label
+        if self.type:
+            return str(OperationType(self.type).label)
+        return "-"
 
     @property
     def confirmed(self):
@@ -172,8 +174,8 @@ class Operation(models.Model):
         commission_free = self.amount_free * commission_pct / 100
         commission_frozen = self.amount_frozen * commission_pct / 100
 
-        amount_free_net = self.amount_free - commission_free
-        amount_frozen_net = self.amount_frozen - commission_frozen
+        amount_free_net = self.amount_free + commission_free
+        amount_frozen_net = self.amount_frozen + commission_frozen
 
         self.receiver.update_balance(
             free=amount_free_net,
@@ -189,14 +191,14 @@ class Operation(models.Model):
                 message_type=MessageType.TRANSFER_SENT,
                 insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
-                amount=-self.amount_free,
+                amount=-amount_free_net,
             )
             self.add_history(
                 type=OperationHistory.Type.TRANSFER_FREE,
                 message_type=MessageType.TRANSFER_RECEIVED,
                 insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
-                amount=amount_free_net,
+                amount=self.amount_free,
                 wallet=self.receiver,
             )
             if telegram_id := self.receiver.user.telegram_id:
@@ -205,7 +207,7 @@ class Operation(models.Model):
                     message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
                     insertion_data={
                         "user_id": self.wallet.user.id,
-                        "amount": amount_free_net,
+                        "amount": self.amount_free,
                         "section": _("Free"),
                     },
                 )
@@ -215,14 +217,14 @@ class Operation(models.Model):
                 message_type=MessageType.TRANSFER_SENT,
                 insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
-                amount=-self.amount_frozen,
+                amount=-amount_frozen_net,
             )
             self.add_history(
                 type=OperationHistory.Type.TRANSFER_FROZEN,
                 message_type=MessageType.TRANSFER_RECEIVED,
                 insertion_data=dict(user_id=self.wallet.user.id),
                 target_name=self.receiver.name,
-                amount=amount_frozen_net,
+                amount=self.amount_frozen,
                 wallet=self.receiver,
             )
             if telegram_id := self.receiver.user.telegram_id:
@@ -231,7 +233,7 @@ class Operation(models.Model):
                     message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
                     insertion_data={
                         "user_id": self.wallet.user.id,
-                        "amount": amount_frozen_net,
+                        "amount": self.amount_frozen,
                         "section": _("Frozen"),
                     },
                 )
