@@ -168,8 +168,6 @@ class Operation(models.Model):
         return False
 
     def _apply_transfer(self):  # ready
-        self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
-
         commission_pct = get_wallet_settings_attr(self.wallet, "commission_on_transfer")
         commission_free = self.amount_free * commission_pct / 100
         commission_frozen = self.amount_frozen * commission_pct / 100
@@ -177,12 +175,10 @@ class Operation(models.Model):
         amount_free_net = self.amount_free + commission_free
         amount_frozen_net = self.amount_frozen + commission_frozen
 
-        self.receiver.update_balance(
-            free=amount_free_net,
-            frozen=amount_frozen_net,
-        )
+        self.wallet.update_balance(free=-amount_free_net, frozen=-amount_frozen_net)
+        self.receiver.update_balance(free=self.amount_free, frozen=self.amount_frozen)
         self.commission = commission_free + commission_frozen
-        self.amount_net = amount_free_net + amount_frozen_net
+        self.amount_net = self.amount_free + self.amount_frozen
         self.save()
 
         if self.amount_free:
