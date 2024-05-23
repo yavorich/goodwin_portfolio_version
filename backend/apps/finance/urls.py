@@ -5,6 +5,7 @@ from . import views
 from .views.operations import (
     OperationReplenishmentConfirmView,
     OperationReplenishmentStatusView,
+    OperationTypeListView,
 )
 
 router = DefaultRouter()
@@ -35,6 +36,7 @@ urlpatterns = [
         OperationReplenishmentStatusView.as_view(),
         name="operation-replenishment-status",
     ),
+    path("operations/types/", OperationTypeListView.as_view(), name="operation-types"),
     path("wallet/", views.WalletAPIView.as_view(), name="wallet-detail"),
     path(
         "wallet/transfer/to/",
