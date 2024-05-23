@@ -128,7 +128,7 @@ class ProgramReplenishmentSerializer(OperationCreateSerializer):
         min_replenishment = attrs["user_program"].program.min_replenishment
         if attrs["amount_free"] + attrs["amount_frozen"] < min_replenishment:
             get_error(
-                error_type=ErrorType.MIN_PROGRAM_DEPOSIT,
+                error_type=ErrorType.MIN_PROGRAM_REPLENISHMENT,
                 insertions={"amount": min_replenishment},
             )
         return attrs
