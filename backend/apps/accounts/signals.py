@@ -11,7 +11,7 @@ from apps.accounts.models import (
     VerificationStatus,
     AddressVerification,
     Settings,
-    Partner,
+    # Partner,
 )
 from apps.finance.models import Wallet, WalletSettings
 

@@ -12,8 +12,9 @@ from rest_framework.serializers import (
     FloatField,
     SerializerMethodField,
 )
-from rest_framework.exceptions import ValidationError
 
+from core.utils.error import get_error
+from apps.accounts.models import ErrorType
 from apps.finance.models import (
     Operation,
     OperationHistory,
@@ -62,9 +63,15 @@ class OperationCreateSerializer(ModelSerializer):
         free = free or attrs.get("amount_free")
         frozen = frozen or attrs.get("amount_frozen")
         if free and attrs["wallet"].free < free:
-            raise ValidationError(_("Insufficient free funds."))
+            get_error(
+                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                insertions={"section": _("available")},
+            )
         if frozen and attrs["wallet"].frozen < frozen:
-            raise ValidationError(_("Insufficient frozen funds."))
+            get_error(
+                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                insertions={"section": _("frozen")},
+            )
 
     def create(self, validated_data):
         OperationConfirmation.objects.all().delete()
@@ -96,9 +103,11 @@ class ProgramStartSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         self._validate_wallet(attrs)
-        if attrs["amount_free"] + attrs["amount_frozen"] < attrs["program"].min_deposit:
-            raise ValidationError(
-                _("Minimum program deposit") + f" = {attrs['program'].min_deposit}"
+        min_deposit = attrs["program"].min_deposit
+        if attrs["amount_free"] + attrs["amount_frozen"] < min_deposit:
+            get_error(
+                error_type=ErrorType.MIN_PROGRAM_DEPOSIT,
+                insertions={"amount": min_deposit},
             )
         return attrs
 
@@ -116,8 +125,12 @@ class ProgramReplenishmentSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         self._validate_wallet(attrs)
-        if attrs["amount_free"] + attrs["amount_frozen"] < 100:
-            raise ValidationError(_("Minimum program replenishment") + " = 100")
+        min_replenishment = attrs["user_program"].program.min_replenishment
+        if attrs["amount_free"] + attrs["amount_frozen"] < min_replenishment:
+            get_error(
+                error_type=ErrorType.MIN_PROGRAM_DEPOSIT,
+                insertions={"amount": min_replenishment},
+            )
         return attrs
 
 
@@ -133,12 +146,14 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
 
     def validate(self, attrs):
         remainder = attrs["replenishment"].amount - attrs["amount"]
-        if 0 < remainder < 100:
-            raise ValidationError(
-                _("Minimum replenishment amount after cancellation") + " - 100 USDT"
+        min_remainder = attrs["replenishment"].user_program.program.min_replenishment
+        if 0 < remainder < min_remainder:
+            get_error(
+                error_type=ErrorType.MIN_CANCEL_REPLENISHMENT,
+                insertions={"amount": min_remainder},
             )
         if remainder < 0:
-            raise ValidationError(_("Insufficient funds to cancel"))
+            get_error(error_type=ErrorType.INSUFFICIENT_CANCEL_AMOUNT)
         return attrs
 
     def create(self, validated_data):
@@ -164,12 +179,12 @@ class ProgramClosureSerializer(OperationCreateSerializer):
         min_deposit = attrs["user_program"].program.min_deposit
         remainder = attrs["user_program"].deposit - attrs["amount"]
         if 0 < remainder < min_deposit:
-            raise ValidationError(
-                _("Minimum program deposit after cancellation")
-                + f" - {min_deposit} USDT"
+            get_error(
+                error_type=ErrorType.MIN_CANCEL_PROGRAM_DEPOSIT,
+                insertions={"amount": min_deposit},
             )
         if remainder < 0:
-            raise ValidationError(_("Insufficient program deposit"))
+            get_error(error_type=ErrorType.INSUFFICIENT_DEPOSIT)
         return attrs
 
     def create(self, validated_data):
@@ -207,7 +222,7 @@ class WalletTransferSerializer(OperationCreateSerializer):
     def validate(self, attrs):
         self._validate_wallet(attrs)
         if attrs["wallet"] == attrs["receiver"]:
-            raise ValidationError(_("Recipient and sender must be different"))
+            get_error(error_type=ErrorType.SELF_TRANSFER)
         return attrs
 
     def create(self, validated_data: dict):

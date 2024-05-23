@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-23 09:09+0000\n"
+"POT-Creation-Date: 2024-05-23 14:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -194,11 +194,11 @@ msgstr "Fri"
 msgid "Сб"
 msgstr "Sat"
 
-#: apps/finance/models/operation.py:209
+#: apps/finance/models/operation.py:208
 msgid "Free"
 msgstr "Free"
 
-#: apps/finance/models/operation.py:235
+#: apps/finance/models/operation.py:234
 msgid "Frozen"
 msgstr "Frozen"
 
@@ -369,50 +369,21 @@ msgstr ""
 msgid "Кол-во активных пользователей"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:69
-msgid "Insufficient frozen funds."
-msgstr ""
+#: apps/finance/serializers/operations.py:68
+#: apps/finance/serializers/programs.py:94
+msgid "available"
+msgstr "available"
 
-#: apps/finance/serializers/operations.py:103
-msgid "Minimum program deposit"
-msgstr ""
+#: apps/finance/serializers/operations.py:73
+#: apps/finance/serializers/programs.py:99
+#, fuzzy
+#| msgid "Frozen"
+msgid "frozen"
+msgstr "frozen"
 
-#: apps/finance/serializers/operations.py:122
-msgid "Minimum program replenishment"
-msgstr ""
-
-#: apps/finance/serializers/operations.py:140
-msgid "Minimum replenishment amount after cancellation"
-msgstr ""
-
-#: apps/finance/serializers/operations.py:143
-msgid "Insufficient funds to cancel"
-msgstr ""
-
-#: apps/finance/serializers/operations.py:170
-msgid "Minimum program deposit after cancellation"
-msgstr ""
-
-#: apps/finance/serializers/operations.py:174
-msgid "Insufficient program deposit"
-msgstr ""
-
-#: apps/finance/serializers/operations.py:212
-#: apps/finance/serializers/wallet.py:47
-msgid "Recipient and sender must be different"
-msgstr "Recipient and sender must be different"
-
-#: apps/finance/serializers/operations.py:231
+#: apps/finance/serializers/operations.py:244
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr ""
-
-#: apps/finance/serializers/wallet.py:43
-msgid "WALLET ID does not exist"
-msgstr "WALLET ID does not exist"
-
-#: apps/finance/serializers/wallet.py:45
-msgid "Incorrect email"
-msgstr "Incorrect email"
 
 #: apps/finance/services/operation_replenishment_confirmation.py:12
 msgid "Operation already done"
@@ -506,6 +477,3 @@ msgstr ""
 #: templates/admin/app_list.html:45
 msgid "You don’t have permission to view or edit anything."
 msgstr ""
-
-#~ msgid "Пользователь с данной почтой уже существует"
-#~ msgstr "A user with this email already exists"

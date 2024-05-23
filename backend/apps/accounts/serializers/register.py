@@ -1,12 +1,11 @@
-from django.utils.translation import gettext_lazy as _
-from rest_framework.exceptions import ValidationError
 from rest_framework.serializers import (
     ModelSerializer,
     EmailField,
     CharField,
 )
 
-from apps.accounts.models import User, RegisterConfirmation
+from apps.accounts.models import User, RegisterConfirmation, ErrorType
+from core.utils.error import get_error
 
 
 class RegisterUserSerializer(ModelSerializer):
@@ -28,14 +27,14 @@ class RegisterUserSerializer(ModelSerializer):
     @staticmethod
     def validate_email(value):
         if User.objects.filter(email=value).exists():
-            raise ValidationError(_("Пользователь с данной почтой уже существует"))
+            get_error(error_type=ErrorType.SAME_EMAIL)
         return value
 
     def validate(self, data):
         password = data.get("password")
         password2 = data.pop("password2")
         if password != password2:
-            raise ValidationError("Пароли не совпадают")
+            get_error(error_type=ErrorType.PASSWORD_MISMATCH)
         return data
 
     def create(self, validated_data):

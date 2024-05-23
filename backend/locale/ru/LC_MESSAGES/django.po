@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-23 09:09+0000\n"
+"POT-Creation-Date: 2024-05-23 14:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -183,11 +183,11 @@ msgstr ""
 msgid "Сб"
 msgstr ""
 
-#: apps/finance/models/operation.py:209
+#: apps/finance/models/operation.py:208
 msgid "Free"
 msgstr "Доступно"
 
-#: apps/finance/models/operation.py:235
+#: apps/finance/models/operation.py:234
 msgid "Frozen"
 msgstr "Заморожено"
 
@@ -360,50 +360,19 @@ msgstr ""
 msgid "Кол-во активных пользователей"
 msgstr ""
 
-#: apps/finance/serializers/operations.py:69
-msgid "Insufficient frozen funds."
-msgstr "Недостаточно замороженных средств"
+#: apps/finance/serializers/operations.py:68
+#: apps/finance/serializers/programs.py:94
+msgid "available"
+msgstr "доступных"
 
-#: apps/finance/serializers/operations.py:103
-msgid "Minimum program deposit"
-msgstr "Минимальный депозит программы"
+#: apps/finance/serializers/operations.py:73
+#: apps/finance/serializers/programs.py:99
+msgid "frozen"
+msgstr "замороженных"
 
-#: apps/finance/serializers/operations.py:122
-msgid "Minimum program replenishment"
-msgstr "Минимальная сумма пополнения программы"
-
-#: apps/finance/serializers/operations.py:140
-msgid "Minimum replenishment amount after cancellation"
-msgstr "Минимальная остаток суммы пополнения программы"
-
-#: apps/finance/serializers/operations.py:143
-msgid "Insufficient funds to cancel"
-msgstr "Указанная сумма больше текущей суммы пополнения"
-
-#: apps/finance/serializers/operations.py:170
-msgid "Minimum program deposit after cancellation"
-msgstr "Минимальный остаток депозита программы"
-
-#: apps/finance/serializers/operations.py:174
-msgid "Insufficient program deposit"
-msgstr "Указанная сумма больше текущего депозита программы"
-
-#: apps/finance/serializers/operations.py:212
-#: apps/finance/serializers/wallet.py:47
-msgid "Recipient and sender must be different"
-msgstr "Получатель и отправитель должны отличаться"
-
-#: apps/finance/serializers/operations.py:231
+#: apps/finance/serializers/operations.py:244
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
 msgstr "Сервис эквайринга временно не доступен, повторите попытку позже"
-
-#: apps/finance/serializers/wallet.py:43
-msgid "WALLET ID does not exist"
-msgstr "WALLET ID не найден"
-
-#: apps/finance/serializers/wallet.py:45
-msgid "Incorrect email"
-msgstr "Неверный email"
 
 #: apps/finance/services/operation_replenishment_confirmation.py:12
 msgid "Operation already done"
@@ -485,9 +454,3 @@ msgstr ""
 #: templates/admin/app_list.html:45
 msgid "You don’t have permission to view or edit anything."
 msgstr ""
-
-#~ msgid "Insufficient free funds."
-#~ msgstr "Недостаточно свободных средств"
-
-#~ msgid "Region"
-#~ msgstr "Регион"
