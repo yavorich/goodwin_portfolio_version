@@ -86,7 +86,7 @@ def get_table_total_statistics(
 ):
     accrual_results = get_table_statistics(start_date, end_date, user_program)
 
-    last_program_status = user_program.status
+    last_program_status = UserProgram.Status(user_program.status).label
     total_funds = user_program.deposit
 
     # Агрегация результатов
