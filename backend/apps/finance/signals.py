@@ -1,6 +1,6 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
@@ -28,7 +28,7 @@ from apps.telegram.models import MessageType as TelegramMessageType
 
 @receiver(post_save, sender=Operation)
 def handle_operation(sender, instance: Operation, created, **kwargs):
-    if created:
+    if created and instance.created_at > now() - timedelta(hours=1):
         is_withdrawal = instance.type in [
             Operation.Type.WITHDRAWAL,
             Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
