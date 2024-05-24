@@ -28,6 +28,7 @@ class MessageType(TextChoices):
     )
     PROGRAM_PROFIT = "program_profit", "Прибыль по программе"
     PROGRAM_LOSS = "program_loss", "Убыток по программе"
+    OPERATION_CONFIRM = "operation_confirm", "Подтверждение операции"
 
 
 DATA_INSERTION = {
@@ -117,6 +118,9 @@ DATA_INSERTION = {
         "underlying_asset": "Размер базового актива (USDT)",
         "email": "Почта пользователя",
     },
+    MessageType.OPERATION_CONFIRM: {
+        "code": "Код подтверждения",
+    }
 }
 
 
@@ -466,5 +470,10 @@ INITIAL_MESSAGE_TYPES = {
             "登录: {email} \n"
             "(如果交易期间出现亏损，则从标的资产中冲销减额)"
         ),
+    },
+    MessageType.OPERATION_CONFIRM: {
+        "ru": "Подтверждение операции\nВаш код для подтверждения операции: {code}",
+        "en": "Operation confirmation\nYour operation confirmation code: {code}",
+        "cn": "",
     },
 }

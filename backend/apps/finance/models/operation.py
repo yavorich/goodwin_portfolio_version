@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from django.db import models, transaction
 from django.core.validators import RegexValidator
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.timezone import now, timedelta
 from django.utils.translation import gettext as _
 
@@ -164,6 +164,7 @@ class Operation(models.Model):
                     "transfer address": withdrawal_request.address,
                     "email": self.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
 
         return False
@@ -207,6 +208,7 @@ class Operation(models.Model):
                         "amount": self.amount_free,
                         "section": _("Free"),
                     },
+                    language=translation.get_language(),
                 )
         if self.amount_frozen:
             self.add_history(
@@ -233,6 +235,7 @@ class Operation(models.Model):
                         "amount": self.amount_frozen,
                         "section": _("Frozen"),
                     },
+                    language=translation.get_language(),
                 )
 
         if telegram_id := self.wallet.user.telegram_id:
@@ -244,6 +247,7 @@ class Operation(models.Model):
                     "amount": self.amount_net,
                     "email": self.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
         return True
 
@@ -292,6 +296,7 @@ class Operation(models.Model):
                     "underlying_asset": self.user_program.deposit,
                     "email": self.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
         return True
 
@@ -346,6 +351,7 @@ class Operation(models.Model):
                     "extra_fee_percent": extra_fee,
                     "email": self.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
         return True
 
@@ -405,6 +411,7 @@ class Operation(models.Model):
                     "extra_fee_percent": extra_fee,
                     "email": self.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
         return True
 
@@ -425,6 +432,7 @@ class Operation(models.Model):
                         "frozen_date": self.frozen_item.frost_date,
                         "frozen_amount": self.frozen_item.amount,
                     },
+                    language=translation.get_language(),
                 )
         else:
             message_type = MessageType.FORCE_DEFROST
@@ -449,6 +457,7 @@ class Operation(models.Model):
                         "extra_fee_amount": extra_fee_amount,
                         "amount_with_extra_fee": self.amount - extra_fee_amount,
                     },
+                    language=translation.get_language(),
                 )
 
         self.wallet.update_balance(free=self.amount)
@@ -509,6 +518,7 @@ class Operation(models.Model):
                     "underlying_asset": self.user_program.deposit,
                     "email": self.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
 
         return True

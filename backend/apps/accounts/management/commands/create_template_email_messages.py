@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from apps.accounts.models.errors import (
-    ErrorMessageType,
-    ErrorMessage,
-    INITIAL_MESSAGE_TYPES,
+from apps.accounts.models.email_message import (
+    EmailMessageType,
+    EmailMessage,
+    TEMPLATE_TEXT,
+    TEMPLATE_TITLE,
 )
 
 
@@ -23,26 +24,29 @@ class Command(BaseCommand):
         force_update = bool(options["force"])
 
         template_message_list = []
-        for template_message_type in ErrorMessageType.values:
-            template_message_text = INITIAL_MESSAGE_TYPES.get(template_message_type)
+        for template_message_type in EmailMessageType.values:
+            template_message_text = TEMPLATE_TEXT.get(template_message_type)
+            template_message_title = TEMPLATE_TITLE.get(template_message_type)
             if template_message_text is None:
                 template_message_text = {
                     code: "Заполните это поле" for code, _ in settings.LANGUAGES
                 }
 
-            template_message = ErrorMessage.objects.filter(
-                error_type=template_message_type
+            template_message = EmailMessage.objects.filter(
+                message_type=template_message_type
             ).first()
             if template_message is None:
-                template_message = ErrorMessage.objects.create(
-                    error_type=template_message_type,
+                template_message = EmailMessage.objects.create(
+                    message_type=template_message_type,
+                    title=template_message_title,
                     text=template_message_text,
                 )
             elif force_update:
                 template_message.text = template_message_text
+                template_message.title = template_message_title
                 template_message.save()
 
             template_message_list.append(template_message.pk)
 
-        ErrorMessage.objects.exclude(pk__in=template_message_list).delete()
+        EmailMessage.objects.exclude(pk__in=template_message_list).delete()
         print("Success")

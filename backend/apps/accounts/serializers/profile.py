@@ -13,7 +13,7 @@ from apps.accounts.models import (
     SettingsAuthCodes,
     PasswordChangeConfirmation,
     EmailChangeConfirmation,
-    ErrorType,
+    ErrorMessageType,
 )
 from core.serializers import HttpsFileField
 from core.utils.error import get_error
@@ -91,7 +91,7 @@ class ProfileUpdateSerializer(ModelSerializer):
             .exclude(pk=self.context["user"].pk)
             .exists()
         ):
-            get_error(error_type=ErrorType.SAME_EMAIL)
+            get_error(error_type=ErrorMessageType.SAME_EMAIL)
 
         if "full_name" in attrs and len(attrs["full_name"].split()) != 2:
             raise ValidationError(
@@ -127,9 +127,9 @@ class PasswordChangeSerializer(Serializer):
     def validate(self, attrs):
         user: User = self.context["user"]
         if not user.check_password(attrs["old_password"]):
-            get_error(error_type=ErrorType.INVALID_PASSWORD)
+            get_error(error_type=ErrorMessageType.INVALID_PASSWORD)
         if attrs["new_password"] != attrs["new_password2"]:
-            get_error(error_type=ErrorType.PASSWORD_MISMATCH)
+            get_error(error_type=ErrorMessageType.PASSWORD_MISMATCH)
         return attrs
 
 

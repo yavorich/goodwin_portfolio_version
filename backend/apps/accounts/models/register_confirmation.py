@@ -17,10 +17,12 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ParseError
 
+from apps.accounts.services.email import send_confirmation_code_email
 from config.settings import REGISTER_CONFIRMATION_EXPIRES, DEBUG
 from core.utils import blank_and_null
 from . import Partner
 from .user import User
+from .email_message import EmailMessageType
 
 
 class RegisterConfirmationManager(Manager):
@@ -89,21 +91,8 @@ class RegisterConfirmation(Model):
         }
 
     def send(self):
-        from apps.accounts.tasks import send_email_msg
-
         self.code = self.generate_code()
-        email_data = self.get_email_message_data()
-        send_email_msg.delay(
-            self.email,
-            email_data["title"],
-            email_data["description"].format(code=self.code),
-            "GOODWIN",
+        send_confirmation_code_email(
+            self.email, self.code, EmailMessageType.AUTH_CONFIRM
         )
         self.save()
-
-    @staticmethod
-    def get_email_message_data():
-        return {
-            "title": _("Код подтверждения регистрации"),
-            "description": _("Код подтверждения для регистрации: {code}"),
-        }

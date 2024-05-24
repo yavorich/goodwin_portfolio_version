@@ -4,7 +4,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.serializers import UserEmailConfirmSerializer
-from apps.accounts.models import ErrorType
+from apps.accounts.models import ErrorMessageType
 from core.utils.error import get_error
 
 
@@ -19,7 +19,7 @@ class EmailConfirmAPIView(GenericAPIView):
         user = request.user
 
         if code != request.user.temp.email_verify_code:
-            get_error(error_type=ErrorType.INVALID_CODE)
+            get_error(error_type=ErrorMessageType.INVALID_CODE)
 
         user.temp.email_verify_code = None
         user.temp.save()

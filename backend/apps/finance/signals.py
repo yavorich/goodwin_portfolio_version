@@ -1,7 +1,7 @@
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
 from django.utils.timezone import now, timedelta
-from django.utils.translation import gettext_lazy as _
+from django.utils import translation
 from rest_framework.exceptions import ValidationError
 
 from config.celery import celery_app
@@ -21,7 +21,6 @@ from apps.finance.services.send_operation_confirm_email import (
     send_operation_confirm_email,
 )
 from apps.finance.tasks import make_daily_programs_accruals
-from apps.telegram.utils import send_telegram_message
 from apps.telegram.tasks import send_template_telegram_message_task
 from apps.telegram.models import MessageType as TelegramMessageType
 
@@ -60,12 +59,11 @@ def handle_operation(sender, instance: Operation, created, **kwargs):
                 if confirmation.destination == DestinationType.EMAIL:
                     send_operation_confirm_email(confirmation)
                 elif confirmation.destination == DestinationType.TELEGRAM:
-                    send_telegram_message(
+                    send_template_telegram_message_task.delay(
                         telegram_id=confirmation.operation.wallet.user.telegram_id,
-                        text=_(
-                            "Подтверждение операции\nВаш код для подтверждения операции"
-                        )
-                        + f": {confirmation.code}",
+                        message_type=TelegramMessageType.OPERATION_CONFIRM,
+                        insertion_data={"code": confirmation.code},
+                        language=translation.get_language(),
                     )
 
 
@@ -88,6 +86,7 @@ def save_user_program(sender, instance: UserProgram, **kwargs):
                         "underlying_asset": instance.deposit,
                         "email": instance.wallet.user.email,
                     },
+                    language=translation.get_language(),
                 )
     except UserProgram.DoesNotExist:
         pass
@@ -109,6 +108,7 @@ def save_user_program_replenishment(
                 insertion_data={
                     "program_name": instance.program.name,
                 },
+                language=translation.get_language(),
             )
 
 
@@ -171,6 +171,7 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
                     "transfer address": instance.address,
                     "email": instance.wallet.user.email,
                 },
+                language=translation.get_language(),
             )
         instance.done = True
         instance.save()

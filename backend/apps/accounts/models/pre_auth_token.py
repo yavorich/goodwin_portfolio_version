@@ -121,6 +121,9 @@ class PreAuthToken(Model):
             return self.user.email
 
     def send(self):
+        from apps.accounts.services.email import send_confirmation_code_email
+        from apps.accounts.models import EmailMessageType
+
         if not self.telegram_verify:
             self.telegram_code = self.generate_code()
             text = PRE_AUTH_TOKEN_TELEGRAM_TEXT[self.verify_type].format(
@@ -129,15 +132,9 @@ class PreAuthToken(Model):
             send_telegram_message_task.delay(self.user.telegram_id, text)
 
         if not self.email_verify:
-            from apps.accounts.tasks import send_email_msg
-
             self.email_code = self.generate_code()
-            email_data = PRE_AUTH_TOKEN_EMAIL_DATA[self.verify_type]
-            send_email_msg.delay(
-                self.user.email,
-                email_data["title"],
-                email_data["description"].format(code=self.email_code),
-                "GOODWIN",
+            send_confirmation_code_email(
+                self.user.email, self.email_code, EmailMessageType.AUTH_CONFIRM
             )
 
         self.save()

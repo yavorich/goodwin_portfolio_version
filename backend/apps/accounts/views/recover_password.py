@@ -23,7 +23,7 @@ class ResetPasswordAPIView(CreateAPIView):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
-        send_email_recover_password(user, request)
+        send_email_recover_password(user)
         return Response({"success": "Сообщение отправлено"})
 
 

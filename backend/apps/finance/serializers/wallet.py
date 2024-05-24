@@ -8,7 +8,7 @@ from rest_framework.serializers import (
 )
 
 from apps.finance.models import Wallet, FrozenItem, WalletSettings
-from apps.accounts.models import User, ErrorType
+from apps.accounts.models import User, ErrorMessageType
 from core.utils.error import get_error
 
 
@@ -39,11 +39,11 @@ class WalletTransferUserSerializer(Serializer):
         try:
             user = User.objects.get(id=attrs["id"])
         except User.DoesNotExist:
-            get_error(error_type=ErrorType.USER_NOT_FOUND)
+            get_error(error_type=ErrorMessageType.USER_NOT_FOUND)
         if user.email != attrs["email"]:
-            get_error(error_type=ErrorType.USER_EMAIL_MISMATCH)
+            get_error(error_type=ErrorMessageType.USER_EMAIL_MISMATCH)
         if user == self.context["user"]:
-            get_error(error_type=ErrorType.SELF_TRANSFER)
+            get_error(error_type=ErrorMessageType.SELF_TRANSFER)
         return attrs
 
     def to_representation(self, instance):

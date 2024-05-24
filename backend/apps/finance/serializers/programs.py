@@ -7,7 +7,7 @@ from rest_framework.serializers import (
     SerializerMethodField,
 )
 
-from apps.accounts.models.errors import ErrorType
+from apps.accounts.models.errors import ErrorMessageType
 from apps.finance.models import (
     Program,
     UserProgram,
@@ -90,12 +90,12 @@ class UserProgramCreateSerializer(ModelSerializer):
         wallet = Wallet.objects.get(pk=attrs["wallet"])
         if wallet.free < attrs["amount_free"]:
             get_error(
-                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                error_type=ErrorMessageType.INSUFFICIENT_FUNDS,
                 insertions={"section": _("available")},
             )
         if wallet.frozen < attrs["amount_frozen"]:
             get_error(
-                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                error_type=ErrorMessageType.INSUFFICIENT_FUNDS,
                 insertions={"section": _("frozen")},
             )
         return attrs

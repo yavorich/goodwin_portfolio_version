@@ -14,7 +14,7 @@ from rest_framework.serializers import (
 )
 
 from core.utils.error import get_error
-from apps.accounts.models import ErrorType
+from apps.accounts.models import ErrorMessageType
 from apps.finance.models import (
     Operation,
     OperationHistory,
@@ -64,12 +64,12 @@ class OperationCreateSerializer(ModelSerializer):
         frozen = frozen or attrs.get("amount_frozen")
         if free and attrs["wallet"].free < free:
             get_error(
-                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                error_type=ErrorMessageType.INSUFFICIENT_FUNDS,
                 insertions={"section": _("available")},
             )
         if frozen and attrs["wallet"].frozen < frozen:
             get_error(
-                error_type=ErrorType.INSUFFICIENT_FUNDS,
+                error_type=ErrorMessageType.INSUFFICIENT_FUNDS,
                 insertions={"section": _("frozen")},
             )
 
@@ -106,7 +106,7 @@ class ProgramStartSerializer(OperationCreateSerializer):
         min_deposit = attrs["program"].min_deposit
         if attrs["amount_free"] + attrs["amount_frozen"] < min_deposit:
             get_error(
-                error_type=ErrorType.MIN_PROGRAM_DEPOSIT,
+                error_type=ErrorMessageType.MIN_PROGRAM_DEPOSIT,
                 insertions={"amount": min_deposit},
             )
         return attrs
@@ -128,7 +128,7 @@ class ProgramReplenishmentSerializer(OperationCreateSerializer):
         min_replenishment = attrs["user_program"].program.min_replenishment
         if attrs["amount_free"] + attrs["amount_frozen"] < min_replenishment:
             get_error(
-                error_type=ErrorType.MIN_PROGRAM_REPLENISHMENT,
+                error_type=ErrorMessageType.MIN_PROGRAM_REPLENISHMENT,
                 insertions={"amount": min_replenishment},
             )
         return attrs
@@ -149,11 +149,11 @@ class ProgramReplenishmentCancelSerializer(OperationCreateSerializer):
         min_remainder = attrs["replenishment"].program.program.min_replenishment
         if 0 < remainder < min_remainder:
             get_error(
-                error_type=ErrorType.MIN_CANCEL_REPLENISHMENT,
+                error_type=ErrorMessageType.MIN_CANCEL_REPLENISHMENT,
                 insertions={"amount": min_remainder},
             )
         if remainder < 0:
-            get_error(error_type=ErrorType.INSUFFICIENT_CANCEL_AMOUNT)
+            get_error(error_type=ErrorMessageType.INSUFFICIENT_CANCEL_AMOUNT)
         return attrs
 
     def create(self, validated_data):
@@ -180,11 +180,11 @@ class ProgramClosureSerializer(OperationCreateSerializer):
         remainder = attrs["user_program"].deposit - attrs["amount"]
         if 0 < remainder < min_deposit:
             get_error(
-                error_type=ErrorType.MIN_CANCEL_PROGRAM_DEPOSIT,
+                error_type=ErrorMessageType.MIN_CANCEL_PROGRAM_DEPOSIT,
                 insertions={"amount": min_deposit},
             )
         if remainder < 0:
-            get_error(error_type=ErrorType.INSUFFICIENT_DEPOSIT)
+            get_error(error_type=ErrorMessageType.INSUFFICIENT_DEPOSIT)
         return attrs
 
     def create(self, validated_data):
@@ -222,7 +222,7 @@ class WalletTransferSerializer(OperationCreateSerializer):
     def validate(self, attrs):
         self._validate_wallet(attrs)
         if attrs["wallet"] == attrs["receiver"]:
-            get_error(error_type=ErrorType.SELF_TRANSFER)
+            get_error(error_type=ErrorMessageType.SELF_TRANSFER)
         return attrs
 
     def create(self, validated_data: dict):
