@@ -1,6 +1,8 @@
 from datetime import date
 from decimal import Decimal
 
+from django.utils import translation
+
 from apps.telegram.models import MessageType, TemplateTelegramMessage
 from apps.telegram.utils import asend_telegram_message, aiogram_async_to_sync
 
@@ -28,6 +30,7 @@ async def asend_template_telegram_message(
     template_message = await TemplateTelegramMessage.objects.aget(
         message_type=message_type
     )
+    language = language or translation.get_language()
     text = template_message.text.get(language)
 
     for field in template_message.insertion_iter():

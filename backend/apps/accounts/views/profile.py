@@ -12,6 +12,7 @@ from apps.accounts.models import (
     SettingsAuthCodes,
     PasswordChangeConfirmation,
     EmailChangeConfirmation,
+    EmailMessageType,
 )
 from apps.accounts.models.settings_auth_codes import DestinationType
 from apps.accounts.permissions import IsAuthenticatedAndVerified
@@ -26,11 +27,7 @@ from apps.accounts.serializers.profile import (
     PasswordAuthCodeSerializer,
     EmailAuthCodeSerializer,
 )
-from apps.accounts.services.email import (
-    send_email_change_settings,
-    send_email_change_password,
-    send_email_change_email,
-)
+from apps.accounts.services.email import send_confirmation_code_email
 from apps.telegram.utils import (
     send_telegram_message,
 )
@@ -73,7 +70,11 @@ class ProfileAPIView(RetrieveUpdateAPIView):
                 auth_code=EmailChangeConfirmation.generate_code(),
                 email=email,
             )
-            send_email_change_email(email=email, code=confirmation.auth_code)
+            send_confirmation_code_email(
+                email=email,
+                code=confirmation.auth_code,
+                message_type=EmailMessageType.EMAIL_CHANGE,
+            )
             return Response({"token": confirmation.token})
         return Response(serializer.data)
 
@@ -130,7 +131,11 @@ class PasswordChangeAPIView(GenericAPIView):
             new_password=make_password(serializer.data["new_password"]),
             auth_code=PasswordChangeConfirmation.generate_code(),
         )
-        send_email_change_password(user=request.user, code=confirmation.auth_code)
+        send_confirmation_code_email(
+            email=request.user.email,
+            code=confirmation.auth_code,
+            message_type=EmailMessageType.PASSWORD_CHANGE,
+        )
         return Response({"token": confirmation.token}, status=status.HTTP_200_OK)
 
 
@@ -211,8 +216,10 @@ class SettingsAPIView(RetrieveUpdateAPIView):
                 )
 
                 if new_auth_code.destination == DestinationType.EMAIL:
-                    send_email_change_settings(
-                        user=request.user, code=new_auth_code.auth_code
+                    send_confirmation_code_email(
+                        email=request.user.email,
+                        code=new_auth_code.auth_code,
+                        message_type=EmailMessageType.SETTINGS_CHANGE,
                     )
                     tokens[DestinationType.EMAIL] = new_auth_code.token
                 elif new_auth_code.destination == DestinationType.TELEGRAM:

@@ -3,7 +3,7 @@ from django.db.models import TextChoices, Model, CharField
 from core.localized.fields import LocalizedTextField
 
 
-class ErrorType(TextChoices):
+class ErrorMessageType(TextChoices):
     INCORRECT_VALUE = "incorrect_value", "Неверное значение"
     FILL_REQUIRED = "fill_required", "Обязательно к заполнению"
     INSUFFICIENT_FUNDS = "insufficient_funds", "Недостаточно средств"
@@ -44,76 +44,76 @@ class ErrorType(TextChoices):
 
 
 DATA_INSERTION = {
-    ErrorType.INSUFFICIENT_FUNDS: {"section": "Раздел кошелька"},
-    ErrorType.MIN_PROGRAM_DEPOSIT: {"amount": "Cумма в USDT"},
-    ErrorType.MIN_PROGRAM_REPLENISHMENT: {"amount": "Cумма в USDT"},
-    ErrorType.MIN_CANCEL_REPLENISHMENT: {"amount": "Cумма в USDT"},
-    ErrorType.MIN_CANCEL_PROGRAM_DEPOSIT: {"amount": "Cумма в USDT"},
+    ErrorMessageType.INSUFFICIENT_FUNDS: {"section": "Раздел кошелька"},
+    ErrorMessageType.MIN_PROGRAM_DEPOSIT: {"amount": "Cумма в USDT"},
+    ErrorMessageType.MIN_PROGRAM_REPLENISHMENT: {"amount": "Cумма в USDT"},
+    ErrorMessageType.MIN_CANCEL_REPLENISHMENT: {"amount": "Cумма в USDT"},
+    ErrorMessageType.MIN_CANCEL_PROGRAM_DEPOSIT: {"amount": "Cумма в USDT"},
 }
 
 
 INITIAL_MESSAGE_TYPES = {
-    ErrorType.INCORRECT_VALUE: dict(
+    ErrorMessageType.INCORRECT_VALUE: dict(
         ru="Введите правильное значение",
         en="Enter the correct value",
         cn="",
     ),
-    ErrorType.FILL_REQUIRED: dict(
+    ErrorMessageType.FILL_REQUIRED: dict(
         ru="Обязательно к заполнению",
         en="Required to fill out",
         cn="",
     ),
-    ErrorType.INSUFFICIENT_FUNDS: dict(
+    ErrorMessageType.INSUFFICIENT_FUNDS: dict(
         ru="Недостаточно {section} средств",
         en="Not enough {section} funds",
         cn="",
     ),
-    ErrorType.USER_EMAIL_MISMATCH: dict(
+    ErrorMessageType.USER_EMAIL_MISMATCH: dict(
         ru="Привязанный адрес не совпадает с введённым",
         en="Linked and entered email addresses don't match",
         cn="",
     ),
-    ErrorType.INVALID_EMAIL: dict(
+    ErrorMessageType.INVALID_EMAIL: dict(
         ru="Введите правильный адрес электронной почты",
         en="Enter a valid email address",
         cn="",
     ),
-    ErrorType.INVALID_PASSWORD: dict(
+    ErrorMessageType.INVALID_PASSWORD: dict(
         ru="Неверный пароль",
         en="Invalid password",
         cn="",
     ),
-    ErrorType.SAME_EMAIL: dict(
+    ErrorMessageType.SAME_EMAIL: dict(
         ru="Профиль с такой электронной почтой уже существует",
         en="A profile with the same email already exists",
         cn="",
     ),
-    ErrorType.PASSWORD_MISMATCH: dict(
+    ErrorMessageType.PASSWORD_MISMATCH: dict(
         ru="Пароли не совпадают",
         en="Passwords don't match",
         cn="",
     ),
-    ErrorType.INVALID_CODE: dict(
+    ErrorMessageType.INVALID_CODE: dict(
         ru="Неверный код",
         en="Invalid code",
         cn="",
     ),
-    ErrorType.USER_NOT_FOUND: dict(
+    ErrorMessageType.USER_NOT_FOUND: dict(
         ru="Пользователь не найден",
         en="User not found",
         cn="",
     ),
-    ErrorType.STRONG_PASSWORD: dict(
+    ErrorMessageType.STRONG_PASSWORD: dict(
         ru="Надёжный пароль",
         en="Strong password",
         cn="",
     ),
-    ErrorType.WEAK_PASSWORD: dict(
+    ErrorMessageType.WEAK_PASSWORD: dict(
         ru="Слабый пароль",
         en="Weak password",
         cn="",
     ),
-    ErrorType.EMAIL_AT_SIGN: dict(
+    ErrorMessageType.EMAIL_AT_SIGN: dict(
         ru=(
             'Адрес электронной почты должен содержать символ "@". '
             '- В адресе "{email}" отсутствует символ "@".'
@@ -124,7 +124,7 @@ INITIAL_MESSAGE_TYPES = {
         ),
         cn="",
     ),
-    ErrorType.EMAIL_AT_AFTER: dict(
+    ErrorMessageType.EMAIL_AT_AFTER: dict(
         ru="Введите часть адреса после символа «@». Адрес «{email}» неполный.",
         en=(
             'Enter the part of the address after the "@" symbol. '
@@ -132,42 +132,42 @@ INITIAL_MESSAGE_TYPES = {
         ),
         cn="",
     ),
-    ErrorType.FILL_IN_FIELD: dict(
+    ErrorMessageType.FILL_IN_FIELD: dict(
         ru="Заполните это поле",
         en="Fill in this field",
         cn="",
     ),
-    ErrorType.MIN_PROGRAM_DEPOSIT: dict(
+    ErrorMessageType.MIN_PROGRAM_DEPOSIT: dict(
         ru="Минимальный депозит программы - {amount} USDT",
         en="Minimum program deposit - {amount} USDT",
         cn="",
     ),
-    ErrorType.MIN_PROGRAM_REPLENISHMENT: dict(
+    ErrorMessageType.MIN_PROGRAM_REPLENISHMENT: dict(
         ru="Минимальная сумма пополнения программы - {amount} USDT",
         en="Minimum program replenishment amount - {amount} USDT",
         cn="",
     ),
-    ErrorType.MIN_CANCEL_REPLENISHMENT: dict(
+    ErrorMessageType.MIN_CANCEL_REPLENISHMENT: dict(
         ru="Минимальный остаток пополнения программы - {amount} USDT",
         en="Minimum program replenishment amount after cancellation - {amount} USDT",
         cn="",
     ),
-    ErrorType.MIN_CANCEL_PROGRAM_DEPOSIT: dict(
+    ErrorMessageType.MIN_CANCEL_PROGRAM_DEPOSIT: dict(
         ru="Минимальный депозит программы после частичного закрытия - {amount} USDT",
         en="Minimum program deposit after partial closure - {amount} USDT",
         cn="",
     ),
-    ErrorType.INSUFFICIENT_DEPOSIT: dict(
+    ErrorMessageType.INSUFFICIENT_DEPOSIT: dict(
         ru="Недостаточно средств для вывода из программы",
         en="Insufficient program funds to withdraw",
         cn="",
     ),
-    ErrorType.INSUFFICIENT_CANCEL_AMOUNT: dict(
+    ErrorMessageType.INSUFFICIENT_CANCEL_AMOUNT: dict(
         ru="Сумма отмены превышает сумму пополнения",
         en="The cancellation amount exceeds the replenishment amount",
         cn="",
     ),
-    ErrorType.SELF_TRANSFER: dict(
+    ErrorMessageType.SELF_TRANSFER: dict(
         ru="Отправитель и получатель должны отличаться",
         en="Sender and recipient must be different",
         cn="",
@@ -176,7 +176,7 @@ INITIAL_MESSAGE_TYPES = {
 
 
 class ErrorMessage(Model):
-    error_type = CharField(choices=ErrorType.choices)
+    error_type = CharField(choices=ErrorMessageType.choices)
 
     text = LocalizedTextField("Основной текст")
 

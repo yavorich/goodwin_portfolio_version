@@ -4,7 +4,7 @@ from rest_framework.serializers import (
     CharField,
 )
 
-from apps.accounts.models import User, RegisterConfirmation, ErrorType
+from apps.accounts.models import User, RegisterConfirmation, ErrorMessageType
 from core.utils.error import get_error
 
 
@@ -27,14 +27,14 @@ class RegisterUserSerializer(ModelSerializer):
     @staticmethod
     def validate_email(value):
         if User.objects.filter(email=value).exists():
-            get_error(error_type=ErrorType.SAME_EMAIL)
+            get_error(error_type=ErrorMessageType.SAME_EMAIL)
         return value
 
     def validate(self, data):
         password = data.get("password")
         password2 = data.pop("password2")
         if password != password2:
-            get_error(error_type=ErrorType.PASSWORD_MISMATCH)
+            get_error(error_type=ErrorMessageType.PASSWORD_MISMATCH)
         return data
 
     def create(self, validated_data):
