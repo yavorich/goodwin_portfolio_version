@@ -1,7 +1,7 @@
 from celery import shared_task
 from django.db import transaction
 from django.db.models import Sum
-from django.utils.timezone import now
+from django.utils.timezone import now, timedelta
 
 from apps.accounts.models import User
 from apps.finance.models import (
@@ -74,7 +74,10 @@ def apply_program_finish():
 @shared_task
 def make_daily_programs_accruals():
     with transaction.atomic():
-        if Holidays.objects.filter(start_date__lte=now(), end_date__gte=now()).exists():
+        yesterday = now() - timedelta(days=1)
+        if Holidays.objects.filter(
+            start_date__lte=yesterday, end_date__gte=yesterday
+        ).exists():
             return "No accruals because of holiday"
         result = ProgramResult.objects.first()
         if not result:
