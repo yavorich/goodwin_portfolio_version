@@ -24,6 +24,7 @@ class Stats(Model):
         TO_WITHDRAW = "to_withdraw", _("Поставлено на вывод (ожидает рассмотрения)")
         TO_START = "to_start", _("Ожидает запуска")
         TO_REPLENISH = "to_replenish", _("Ожидает пополнения")
+        TOTAL_FUND_BALANCE = "total_fund_balance", _("ИТОГО БАЛАНС ФОНДА")
         BRANCH_RU = "branch_ru", _("Доход филиала Россия")
         BRANCH_CN = "branch_cn", _("Доход филиала Китай")
         BRANCH_US = "branch_us", _("Доход филиала США")
@@ -35,7 +36,6 @@ class Stats(Model):
         )
         EXTRA_FEE = "extra_fee", _("Удержано Extra Fee")
         MANAGEMENT_FEE = "management_fee", _("Удержано Management Fee")
-        TOTAL_FUND_BALANCE = "total_fund_balance", _("ИТОГО БАЛАНС ФОНДА")
         USERS_TOTAL = "users_total", _("Кол-во зарегистрированных пользователей")
         USERS_ACTIVE = "users_active", _("Кол-во активных пользователей")
 

@@ -357,37 +357,27 @@ class ReplenishmentInline(TotalStatisticInlineMixin, NestedTabularInline):
 
     def get_amount(self, obj: Operation):
         if self.is_total_obj(obj):
-            return self.get_total_amount()
-
-        try:
-            return obj.amount or 0
-        except TypeError:
-            return 0
+            return self.get_total_field("amount")
+        return obj.amount
 
     get_amount.short_description = "Сумма перевода"
 
     def get_commission(self, obj: Operation):
-        if obj.commission is not None:
-            return obj.commission
-        try:
-            return round(self.get_amount(obj) * Decimal("0.015"), 2)
-        except TypeError:
-            return 0
+        if self.is_total_obj(obj):
+            return self.get_total_field("commission")
+        return obj.commission
 
     get_commission.short_description = "Удержанная комиссия"
 
     def get_amount_net(self, obj: Operation):
-        if obj.amount_net is not None:
-            return obj.amount_net
-        try:
-            return round(self.get_amount(obj) * Decimal("0.985"), 2)
-        except TypeError:
-            return 0
+        if self.is_total_obj(obj):
+            return self.get_total_field("amount_net")
+        return obj.amount_net
 
     get_amount_net.short_description = "Зачислено в кошелек"
 
-    def get_total_amount(self):
-        return self.get_all_objects().aggregate(total=Sum("amount"))["total"] or 0
+    def get_total_field(self, field):
+        return self.get_all_objects().aggregate(total=Sum(field))["total"] or 0
 
 
 class WithdrawalInline(TotalStatisticInlineMixin, NestedTabularInline):
@@ -675,7 +665,7 @@ class WalletInline(NestedTabularInline):
     verbose_name_plural = "Кошелёк"
     model = Wallet
     fields = ["free", "frozen"]
-    readonly_fields = fields
+    readonly_fields = ["frozen"]
     can_delete = False
     # classes = ["collapse"]
     max_num = 0
