@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, date
+from datetime import datetime, date, time
 from decimal import Decimal
 from math import ceil
 
@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from sqlite3 import connect
 
-from django.db.models import Sum, F
+from django.db.models import Sum
 from django.db.models.signals import post_save, pre_save
 from django.utils import timezone
 
@@ -30,6 +30,9 @@ from apps.finance.models import (
     Operation,
     FrozenItem,
     UserProgramHistory,
+    Stats,
+    WalletSettings,
+    ProgramResult,
 )
 from apps.finance.models.operation_type import MessageType, OperationType
 from apps.finance.signals import (
@@ -58,13 +61,16 @@ class Command(BaseCommand):
                 update_wallet_frozen,
                 create_user_program_accruals,
                 create_operation_history_withdraw,
+                create_general_stats_admin,
+                create_general_settings_admin,
+                create_accruals_settings,
                 create_operation_history_partner,
                 create_operation_history_program_replenishment,
                 create_operation_history_replenishment,
                 create_operation_history_extra_fee,
-                # update_user_program_profit,
+                # # # update_user_program_profit,
                 create_operation_history_start_close_program,
-                # imitation_working_app,  # no work
+                # # imitation_working_app,  # no work
             ]
 
             stages = len(functions)
@@ -181,14 +187,14 @@ def create_user_settings(cursor):
 def update_refer(cursor):
     cursor.execute(
         "SELECT parent_user.email AS parent_email, child_user.email as child_email, "
-        "inviter_id "
+        "refer.id AS partner_id "
         "FROM refer "
         "JOIN user AS parent_user ON refer.inviter_id = parent_user.id "
         "JOIN user AS child_user ON refer.invited_id = child_user.id "
     )
 
     region = Region.objects.get_or_create(name="Russia")[0]
-    for parent_email, child_email, inviter_id in cursor.fetchall():
+    for parent_email, child_email, partner_id in cursor.fetchall():
         parent_user = User.objects.get(email=parent_email)
         child_user = User.objects.get(email=child_email)
 
@@ -197,7 +203,7 @@ def update_refer(cursor):
         else:
             partner = Partner.objects.create(
                 user=parent_user,
-                partner_id=inviter_id,
+                partner_id=partner_id,
                 region=region,
             )
 
@@ -290,9 +296,6 @@ def create_programs(cursor):
                 else Program.WithdrawalType.AFTER_FINISH
             ),
             "max_risk": 0,
-            "success_fee": success_fee,
-            "management_fee": 0.004,
-            "withdrawal_terms": withdrawn_timeout,
         }
         Program.objects.update_or_create(name=name, defaults=update_data)
 
@@ -344,19 +347,19 @@ def create_user_programs(cursor):
         if user_program is None:
             user_program = UserProgram(**default_data)
 
+        start_date = get_datetime_from_iso(start)
+
         update_data = {
             "deposit": Decimal(deposit),
-            # "profit": Decimal(0),
-            "start_date": get_datetime_from_iso(start),
+            "start_date": start_date,
             "status": STATUS_NUMBER[status],
         }
-
         if status == 3:
             if finish:
                 update_data["close_date"] = get_datetime_from_iso(finish)
             else:
                 close_date = get_close_date(cursor, user_program_id)
-                update_data["close_date"] = close_date if close_date else created_at
+                update_data["close_date"] = close_date if close_date else start_date
 
         for attr, value in update_data.items():
             setattr(user_program, attr, value)
@@ -423,7 +426,7 @@ def create_user_program_accruals(cursor):
 def create_operation_history_withdraw(cursor):
     cursor.execute(
         "SELECT email, withdraw.status AS status, amount, amount_final, address, "
-        "created, finished "
+        "created, finished, comment "
         "FROM withdraw "
         "JOIN user ON withdraw.user_id = user.id "
     )
@@ -437,6 +440,7 @@ def create_operation_history_withdraw(cursor):
                 address,
                 created,
                 finished,
+                comment,
             ) in cursor.fetchall():
                 user = User.objects.get(email=email)
                 wallet = user.wallet
@@ -483,6 +487,9 @@ def create_operation_history_withdraw(cursor):
                         "amount": amount_final,
                         "commission": operation.commission,
                         "done_at": finished_at,
+                        "reject_message": (
+                            comment or "no message" if status != 3 else ""
+                        ),
                     },
                 )[0]
 
@@ -501,8 +508,6 @@ def create_operation_history_withdraw(cursor):
                             },
                         },
                     )
-                    operation.done = True
-
                 else:
                     OperationHistory.objects.update_or_create(
                         wallet=wallet,
@@ -518,8 +523,8 @@ def create_operation_history_withdraw(cursor):
                             },
                         },
                     )
-                    operation.done = False
 
+                operation.done = True
                 operation.save()
 
 
@@ -638,8 +643,8 @@ def create_operation_history_replenishment(cursor):
                 wallet=wallet,
                 type=Operation.Type.REPLENISHMENT,
                 defaults={
-                    "amount": amount_gc,
-                    "amount_net": amount_gc_fee,
+                    "amount": amount_gc_fee,
+                    "amount_net": amount_gc,
                     "commission": amount_gc_fee - amount_gc,
                     "done": True,
                 },
@@ -866,6 +871,37 @@ def update_user_program_profit(cursor):
             user_program.accruals.aggregate(total=Sum("amount"))["total"] or 0
         )
         user_program.save()
+
+
+def create_general_stats_admin(cursor):
+    Stats.objects.all().delete()
+    for name in Stats.Name.values[::-1]:
+        Stats.objects.get_or_create(name=name)
+
+
+def create_general_settings_admin(cursor):
+    WalletSettings.objects.filter(wallet__isnull=True).delete()
+    WalletSettings.objects.get_or_create(
+        wallet__isnull=True,
+        defaults=dict(
+            defrost_days=30,
+            commission_on_replenish=1.5,
+            commission_on_withdraw=1.5,
+            commission_on_transfer=0.5,
+            success_fee=30,
+            management_fee=0.004,
+            extra_fee=10,
+        ),
+    )
+
+
+def create_accruals_settings(cursor):
+    accruals_settings, _ = ProgramResult.objects.get_or_create(defaults=dict(
+        result=Decimal("1.00"),
+        until=timezone.now().date() + timezone.timedelta(days=7),
+        apply_time=time(12, 00),
+    ))
+    accruals_settings.save()
 
 
 def imitation_working_app(cursor):

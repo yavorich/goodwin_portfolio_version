@@ -610,14 +610,14 @@ class StatsAdmin(admin.ModelAdmin):
         super().__init__(model, admin_site)
         self.opts.verbose_name_plural = "Общая статистика"
 
-    # def has_add_permission(self, request: HttpRequest) -> bool:
-    #     return False
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
 
-    # def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
-    #     return False
+    def has_change_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
 
-    # def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
-    #     return False
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
 
     @admin.display(description="Показатель")
     def get_name(self, obj: Stats):
