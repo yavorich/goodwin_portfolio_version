@@ -1254,4 +1254,5 @@ NAME_TO_GENDER = {
     "Ростислав": PersonalVerification.Gender.MALE,
     "Светлана": PersonalVerification.Gender.FEMALE,
     "Vvv": PersonalVerification.Gender.MALE,
+    "Анна": PersonalVerification.Gender.FEMALE,
 }
