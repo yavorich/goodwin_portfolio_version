@@ -350,6 +350,7 @@ def create_user_programs(cursor):
         start_date = get_datetime_from_iso(start)
 
         update_data = {
+            "name": name,
             "deposit": Decimal(deposit),
             "start_date": start_date,
             "status": STATUS_NUMBER[status],
