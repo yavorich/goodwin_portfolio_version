@@ -20,27 +20,39 @@ class OperationType(TextChoices):
 
 
 class MessageType(TextChoices):
-    WITHDRAWAL_REQUEST_CREATED = "withdrawal_request_created"
-    WITHDRAWAL_REQUEST_APPROVED = "withdrawal_request_approved"
-    WITHDRAWAL_REQUEST_REJECTED = "withdrawal_request_rejected"
-    TRANSFER_SENT = "transfer_sent"
-    TRANSFER_RECEIVED = "transfer_received"
-    TRANSFER_TO_PROGRAM = "transfer_to_program"
-    PROGRAM_START = "program_start"
-    PROGRAM_REPLENISHED = "program_replenished"
-    PROGRAM_REPLENISHMENT_CANCEL = "program_replenishment_cancel"
-    PROGRAM_REPLENISHMENT_CANCEL_PARTIAL = "program_replenishment_cancel_partial"
-    PROGRAM_CLOSURE = "program_closed"
-    PROGRAM_CLOSURE_EARLY = "program_closed_early"
-    PROGRAM_CLOSURE_PARTIAL = "program_closure_partial"
-    PROGRAM_ACCRUAL_PROFIT = "program_accrual_profit"
-    PROGRAM_ACCRUAL_LOSS = "program_accrual_loss"
-    BRANCH_INCOME = "branch_income"
-    DEPOSIT_TRANSFER = "deposit_transfer"
-    FROZEN_AVAILABLE = "frozen_available"
-    FORCE_DEFROST = "force_defrost"
-    EXTRA_FEE = "extra_fee"
-    REPLENISHMENT = "replenishment"
+    WITHDRAWAL_REQUEST_CREATED = "withdrawal_request_created", "Заявка на вывод создана"
+    WITHDRAWAL_REQUEST_APPROVED = (
+        "withdrawal_request_approved",
+        "Заявка на вывод подтверждена",
+    )
+    WITHDRAWAL_REQUEST_REJECTED = (
+        "withdrawal_request_rejected",
+        "Заявка на вывод отклонена",
+    )
+    TRANSFER_SENT = "transfer_sent", "Внутренний перевод отправлен"
+    TRANSFER_RECEIVED = "transfer_received", "Внутренний перевод получен"
+    TRANSFER_TO_PROGRAM = "transfer_to_program", "Перевод в программу"
+    PROGRAM_START = "program_start", "Запуск программы"
+    PROGRAM_REPLENISHED = "program_replenished", "Программа пополнена"
+    PROGRAM_REPLENISHMENT_CANCEL = (
+        "program_replenishment_cancel",
+        "Отмена пополнения программы",
+    )
+    PROGRAM_REPLENISHMENT_CANCEL_PARTIAL = (
+        "program_replenishment_cancel_partial",
+        "Частичная отмена пополнения программы",
+    )
+    PROGRAM_CLOSURE = "program_closed", "Закрытие программы"
+    PROGRAM_CLOSURE_EARLY = "program_closed_early", "Досрочное закрытие программы"
+    PROGRAM_CLOSURE_PARTIAL = "program_closure_partial", "Частичное закрытие программы"
+    PROGRAM_ACCRUAL_PROFIT = "program_accrual_profit", "Прибыль по программе"
+    PROGRAM_ACCRUAL_LOSS = "program_accrual_loss", "Отрицательная прибыль по программе"
+    BRANCH_INCOME = "branch_income", "Доход филиала"
+    DEPOSIT_TRANSFER = "deposit_transfer", "Вывод депозита из программы"
+    FROZEN_AVAILABLE = "frozen_available", "Разморозка средств"
+    FORCE_DEFROST = "force_defrost", "Досрочная разморозка средств"
+    EXTRA_FEE = "extra_fee", "Списание Extra Fee"
+    REPLENISHMENT = "replenishment", "Пополнение кошелька"
 
 
 DATA_INSERTION = {
@@ -196,5 +208,5 @@ INITIAL_MESSAGE_TYPES = {
         ru="Депозит",
         en="Deposit",
         cn="",
-    )
+    ),
 }
