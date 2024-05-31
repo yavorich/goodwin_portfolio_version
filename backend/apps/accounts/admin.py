@@ -746,9 +746,6 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
-        return False
-
     def get_form(self, request, obj=None, **kwargs):
         # Убедитесь, что не упоминается поле 'username'
         self.exclude = ("username",)
