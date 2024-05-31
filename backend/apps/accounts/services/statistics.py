@@ -136,7 +136,7 @@ def get_branch_general_statistics(partner_profile):
         ).aggregate(total_success_fee=Sum("user_total_success_fee"))
     )["total_success_fee"] or 0
 
-    total_partner_fee = total_success_fee * partner_profile.partner_fee / 100
+    total_partner_fee = round(total_success_fee * partner_profile.partner_fee / 100, 2)
 
     data = {
         "total_success_fee": total_success_fee or 0,
