@@ -325,6 +325,7 @@ class UserProgramAdmin(NoConfirmExportMixin, admin.ModelAdmin):
 
     list_editable = ["status"]
     inlines = [UserProgramReplenishmentInline, UserProgramAccrualInline]
+    actions = None
 
     def __init__(self, model: type, admin_site: admin.AdminSite | None) -> None:
         super().__init__(model, admin_site)
@@ -354,10 +355,10 @@ class UserProgramAdmin(NoConfirmExportMixin, admin.ModelAdmin):
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def has_delete_permission(
-        self, request: HttpRequest, obj: Any | None = ...
-    ) -> bool:
-        return False
+    # def has_delete_permission(
+    #     self, request: HttpRequest, obj: Any | None = ...
+    # ) -> bool:
+    #     return False
 
 
 class TypeFilter(admin.SimpleListFilter):
@@ -712,16 +713,12 @@ class WalletSettingsAdmin(admin.ModelAdmin):
     ]
     list_display_links = None
     list_editable = list_display
+    actions = None
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
         return super().get_queryset(request).filter(wallet__isnull=True)
 
     def has_add_permission(self, request: HttpRequest) -> bool:
-        return False
-
-    def has_delete_permission(
-        self, request: HttpRequest, obj: Any | None = ...
-    ) -> bool:
         return False
 
 
