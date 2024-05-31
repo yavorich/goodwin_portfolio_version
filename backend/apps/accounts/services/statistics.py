@@ -141,7 +141,7 @@ def get_branch_general_statistics(partner_profile):
     data = {
         "total_success_fee": total_success_fee or 0,
         "total_partner_fee": total_partner_fee or 0,
-        "success_fee_percent": 0.3,  # TODO добавить обращение к Success fee
+        # "success_fee_percent": None,
         "partner_fee_percent": partner_profile.partner_fee or 0,
     }
 

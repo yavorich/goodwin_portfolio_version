@@ -768,14 +768,14 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
         return (
             super()
             .get_queryset(request)
-            .filter(is_active=True, is_staff=False, partner_profile__isnull=True)
+            .filter(is_active=True, is_staff=False)
         )
 
     @admin.display(description="ФИО")
     def fio(self, obj: User):
         return obj.full_name
 
-    @admin.display(description="Филиал")
+    @admin.display(description="Регион")
     def region(self, obj: User):
         user_region = getattr(obj.partner, "region", None)
         if not user_region:
@@ -785,6 +785,8 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
 
     @admin.display(description="Статус")
     def status(self, obj: User):
+        if Partner.objects.filter(user=obj).exists():
+            return "Филиал"
         if obj.verified():
             if obj.wallet.balance > 0:
                 return "Инвестор"

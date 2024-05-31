@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
@@ -268,6 +269,13 @@ class TempData(models.Model):
         return f"{self.user}"
 
 
+def get_partner_id():
+    partner_ids = Partner.objects.values_list("partner_id", flat=True)
+    for partner_id in range(1, max(partner_ids) + 2):
+        if partner_id not in partner_ids:
+            return partner_id
+
+
 class Partner(models.Model):
     user = models.OneToOneField(
         User,
@@ -279,6 +287,7 @@ class Partner(models.Model):
         unique=True,
         validators=[MinValueValidator(0)],
         verbose_name="ID филиала",
+        default=get_partner_id,
     )
     region = models.ForeignKey(
         Region,
@@ -287,10 +296,10 @@ class Partner(models.Model):
         on_delete=models.CASCADE,
     )
     partner_fee = models.DecimalField(
-        max_digits=3,
+        max_digits=5,
         decimal_places=2,
-        default=0.27,
-        validators=[MinValueValidator(0), MaxValueValidator(1)],
+        default=Decimal("27.0"),
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
         verbose_name="Комиссия филиала/партнёра",
     )
 
