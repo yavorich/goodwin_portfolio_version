@@ -89,12 +89,6 @@ class User(AbstractUser):
     def full_name(self):
         return f"{self.first_name.capitalize()} {self.last_name.capitalize()}"
 
-    def clean(self) -> None:
-        if getattr(self, "partner_profile", None) and self.partner:
-            raise ValidationError(
-                "Пользователя со статусом партнёра нельзя привязать к другому партнёру."
-            )
-
     def verified(self) -> bool:
         personal = getattr(self, "personal_verification", None)
         address = getattr(self, "address_verification", None)
