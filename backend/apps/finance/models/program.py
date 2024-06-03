@@ -127,7 +127,7 @@ class UserProgram(models.Model):
                 wallet=self.wallet, program=self.program
             ).count()
             if count == 0:
-                self.name == self.program.name
+                self.name = self.program.name
             else:
                 self.name = self.program.name + f"/{count + 1}"
 
