@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db.models import Model, CharField, TextChoices, F, Sum, Q
 from django.db.models.functions import Coalesce
 from django.utils.translation import gettext_lazy as _
@@ -154,15 +156,21 @@ class Stats(Model):
             created_at__gte=start_date,
             created_at__lte=end_date,
         )
-        query = Sum(
+        query = (
             F("success_fee")
             * Coalesce(
                 F("program__wallet__user__partner__partner_fee"),
                 F("program__wallet__user__partner_profile__partner_fee"),
+                Decimal("27"),
             )
+            / Decimal("100")
         )
-        total_partner_fee = (
-            accruals.aggregate(total_partner_fee=query)["total_partner_fee"] or 0
+
+        total_partner_fee = round(
+            accruals.annotate(partner_fee=query).aggregate(
+                total_partner_fee=Sum("partner_fee")
+            )["total_partner_fee"]
+            or 0, 2
         )
         return total_partner_fee
 
