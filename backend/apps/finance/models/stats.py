@@ -170,7 +170,8 @@ class Stats(Model):
             accruals.annotate(partner_fee=query).aggregate(
                 total_partner_fee=Sum("partner_fee")
             )["total_partner_fee"]
-            or 0, 2
+            or 0,
+            2,
         )
         return total_partner_fee
 
@@ -194,7 +195,9 @@ class Stats(Model):
                 - Coalesce(
                     F("program__wallet__user__partner__partner_fee"),
                     F("program__wallet__user__partner_profile__partner_fee"),
+                    Decimal("27"),
                 )
+                / Decimal("100")
             )
         )
         return self.sum_accrual(start_date, end_date, query)
@@ -230,7 +233,7 @@ class Stats(Model):
             ).aggregate(total=query)["total"]
             or 0
         )
-        return total
+        return round(total, 2)
 
     def sum_total_fund_balance(self, start_date, end_date):
         return (
