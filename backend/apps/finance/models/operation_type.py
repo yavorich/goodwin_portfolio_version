@@ -19,9 +19,9 @@ class OperationType(TextChoices):
     PROGRAM_ACCRUAL = "program_accrual", _("Начисление по программе")
 
     # Операции начисления комиссий для бизнес-аккаунта
-    REPLENISHMENT_FEE = "replenishment_fee", _("Комиссия с пополнений")
-    WITHDRAWAL_FEE = "withdrawal_fee", _("Комиссия со снятий")
-    TRANSFER_FEE = "transfer_fee", _("Комиссия с внутренних переводов")
+    REPLENISHMENT_FEE = "replenishment_fee", _("Комиссия за пополнения")
+    WITHDRAWAL_FEE = "withdrawal_fee", _("Комиссия за вывод средств")
+    TRANSFER_FEE = "transfer_fee", _("Комиссия за внутренние переводы")
     SUCCESS_FEE = "success_fee", _("Success fee")
     MANAGEMENT_FEE = "management_fee", _("Management fee")
     EXTRA_FEE = "extra_fee", _("Extra fee")

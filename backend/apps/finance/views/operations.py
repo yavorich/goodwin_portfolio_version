@@ -181,5 +181,14 @@ class OperationTypeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        data = [{"name": str(e), "verbose_name": e.label} for e in OperationType]
+        fee_types = [e for e in OperationType if e.endswith("fee")]
+        if request.user.business_account:
+            operation_types = fee_types + [
+                OperationType.REPLENISHMENT,
+                OperationType.WITHDRAWAL,
+                OperationType.TRANSFER,
+            ]
+        else:
+            operation_types = [e for e in OperationType if e not in fee_types]
+        data = [{"name": str(e), "verbose_name": e.label} for e in operation_types]
         return Response(data=data)
