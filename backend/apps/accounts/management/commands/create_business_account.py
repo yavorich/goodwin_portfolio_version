@@ -16,5 +16,7 @@ class Command(BaseCommand):
             business_account=True,
         )
         WalletSettings.objects.filter(wallet=commission_account.wallet).update(
-            commission_on_withdraw=Decimal("0.0")
+            commission_on_withdraw=Decimal("0.0"),
+            commission_on_replenish=Decimal("0.0"),
+            commission_on_transfer=Decimal("0.0"),
         )
