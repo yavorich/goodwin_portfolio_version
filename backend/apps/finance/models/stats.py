@@ -205,7 +205,7 @@ class Stats(Model):
     def sum_extra_fee(self, start_date, end_date):
         total = (
             Operation.objects.filter(
-                type=Operation.Type.EXTRA_FEE,
+                type=Operation.Type.EXTRA_FEE_WRITEOFF,
                 created_at__gte=start_date,
                 created_at__lte=end_date,
             ).aggregate(total=Sum("amount"))["total"]

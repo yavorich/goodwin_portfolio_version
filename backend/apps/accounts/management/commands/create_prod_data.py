@@ -678,7 +678,7 @@ def create_operation_history_extra_fee(cursor):
             type=OperationHistory.Type.SYSTEM_MESSAGE,
             created_at=get_datetime_from_iso(created_at),
             defaults={
-                "operation_type": OperationType.EXTRA_FEE,
+                "operation_type": OperationType.EXTRA_FEE_WRITEOFF,
                 "message_type": MessageType.EXTRA_FEE,
                 "target_name": wallet.name,
                 "amount": -fee,

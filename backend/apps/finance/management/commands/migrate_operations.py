@@ -30,7 +30,7 @@ class Command(BaseCommand):
             o.message_type = MessageType.REPLENISHMENT
             o.save()
         for o in history.filter(description__ru="Списание комиссии Extra Fee"):
-            o.operation_type = OperationType.EXTRA_FEE
+            o.operation_type = OperationType.EXTRA_FEE_WRITEOFF
             o.message_type = MessageType.EXTRA_FEE
             o.save()
         for o in history.filter(

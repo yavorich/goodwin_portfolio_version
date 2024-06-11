@@ -59,7 +59,7 @@ class OperationHistoryFilterSet(FilterSet):
         return queryset.annotate(abs_amount=Abs("amount")).filter(abs_amount__lte=value)
 
 
-class OperationAPIView(ListAPIView):
+class OperationHistoryAPIView(ListAPIView):
     serializer_class = OperationHistorySerializer
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberSetPagination

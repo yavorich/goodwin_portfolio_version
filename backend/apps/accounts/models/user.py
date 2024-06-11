@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
 from django.core.validators import (
     MinValueValidator,
     MaxValueValidator,
@@ -31,7 +30,7 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_staff", False)
         extra_fields.setdefault("is_superuser", False)
         user = self._create_user(email, password, **extra_fields)
-        Settings.objects.create(user=user)
+        Settings.objects.get_or_create(user=user)
         return user
 
     def create_superuser(self, email, password, **extra_fields):
@@ -56,9 +55,6 @@ class User(AbstractUser):
     avatar = models.ImageField(
         verbose_name="Аватар", upload_to=get_upload_path, **blank_and_null
     )
-    # email_is_confirmed = models.BooleanField(
-    #     default=False, verbose_name="Электронная почта подтверждена"
-    # )
     agreement_date = models.DateTimeField(
         verbose_name="Дата и время принятия лицензионного соглашения", **blank_and_null
     )
@@ -73,6 +69,7 @@ class User(AbstractUser):
         max_length=127, verbose_name="Телеграм", blank=True, null=True
     )
     telegram_id = models.IntegerField(**blank_and_null, verbose_name="Телеграмм ID")
+    business_account = models.BooleanField(default=False)
     objects = UserManager()
 
     USERNAME_FIELD = "email"
@@ -313,3 +310,10 @@ class UserCountHistory(models.Model):
     class Meta:
         verbose_name = "Запись"
         verbose_name_plural = "История пользователей"
+
+
+class BusinessAccount(User):
+    class Meta:
+        proxy = True
+        verbose_name = "Бизнес-аккаунт"
+        verbose_name_plural = "Бизнес-аккаунт"

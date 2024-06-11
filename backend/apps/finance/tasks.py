@@ -14,9 +14,11 @@ from apps.finance.models import (
     WalletHistory,
     Wallet,
     Holidays,
+    UserProgramAccrual,
 )
 from apps.finance.models.program import UserProgramHistory
 from apps.finance.utils import create_accrual
+from apps.finance.services.commissions import add_commission_to_history
 
 
 @shared_task
@@ -86,6 +88,21 @@ def make_daily_programs_accruals():
         for program in programs:
             make_program_accruals(program, result)
         result.save()
+
+        total_success_fee, total_management_fee = (
+            UserProgramAccrual.objects.filter(created_at=now().date())
+            .aggregate(
+                total_success_fee=Sum("success_fee"),
+                total_management_fee=Sum("management_fee"),
+            )
+            .values()
+        )
+        add_commission_to_history(
+            commission_type=Operation.Type.SUCCESS_FEE, amount=total_success_fee
+        )
+        add_commission_to_history(
+            commission_type=Operation.Type.MANAGEMENT_FEE, amount=total_management_fee
+        )
 
 
 def make_program_accruals(program: Program, result: ProgramResult):

@@ -10,6 +10,7 @@ from apps.finance.services import (
     get_wallet_settings_attr,
     send_admin_withdrawal_notifications,
 )
+from apps.finance.services.commissions import add_commission_to_history
 from apps.telegram.tasks import send_template_telegram_message_task
 from apps.telegram.models import MessageType as TelegramMessageType
 from core.utils import blank_and_null, decimal_usdt
@@ -182,6 +183,10 @@ class Operation(models.Model):
         self.commission = commission_free + commission_frozen
         self.amount_net = self.amount_free + self.amount_frozen
         self.save()
+
+        add_commission_to_history(
+            commission_type=OperationType.TRANSFER_FEE, amount=self.commission
+        )
 
         if self.amount_free:
             self.add_history(
@@ -443,7 +448,7 @@ class Operation(models.Model):
             extra_fee = get_wallet_settings_attr(self.wallet, "extra_fee")
             extra_fee_amount = self.amount * extra_fee / 100
             Operation.objects.create(
-                type=Operation.Type.EXTRA_FEE,
+                type=Operation.Type.EXTRA_FEE_WRITEOFF,
                 wallet=self.wallet,
                 amount=extra_fee_amount,
             )
@@ -470,7 +475,7 @@ class Operation(models.Model):
         )
         return True
 
-    def _apply_extra_fee(self):  # ready
+    def _apply_extra_fee_writeoff(self):  # ready
         self.wallet.update_balance(free=-self.amount)
         self.add_history(
             type=OperationHistory.Type.SYSTEM_MESSAGE,
@@ -478,7 +483,9 @@ class Operation(models.Model):
             target_name=self.wallet.name,
             amount=-self.amount,
         )
-        return True
+        add_commission_to_history(
+            commission_type=OperationType.EXTRA_FEE, amount=self.amount
+        )
 
     def _apply_program_accrual(self):  # ready
         withdrawal_type = self.user_program.program.withdrawal_type

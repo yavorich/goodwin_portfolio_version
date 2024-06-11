@@ -19,6 +19,7 @@ from apps.finance.models import (
     Operation,
     WithdrawalRequest,
     UserProgramAccrual,
+    OperationHistory,
 )
 from config.settings import LOGIN_AS_USER_TOKEN
 from core.import_export.admin import NoConfirmExportMixin
@@ -762,11 +763,7 @@ class UserAdmin(NoConfirmExportMixin, NestedModelAdmin):
         )
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
-        return (
-            super()
-            .get_queryset(request)
-            .filter(is_active=True, is_staff=False)
-        )
+        return super().get_queryset(request).filter(is_active=True, is_staff=False)
 
     @admin.display(description="ФИО")
     def fio(self, obj: User):
@@ -867,3 +864,102 @@ class EmailMessageAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+class BusinessWalletCommissionsInline(NestedTabularInline):
+    verbose_name_plural = "Начисления"
+    model = OperationHistory
+    fields = ["created_at", "get_operation_type", "amount"]
+    readonly_fields = fields
+    max_num = 0
+    can_delete = False
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return super().get_queryset(request).filter(is_commission=True)
+
+    def get_operation_type(self, obj: OperationHistory):
+        return Operation.Type(obj.operation_type).label
+
+    get_operation_type.short_description = "Тип комиссии"
+
+
+class BusinessWalletWithdrawalsInline(NestedTabularInline):
+    verbose_name_plural = "Снятия"
+    model = OperationHistory
+    fields = ["created_at", "amount"]
+    readonly_fields = fields
+    max_num = 0
+    can_delete = False
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return (
+            super()
+            .get_queryset(request)
+            .filter(operation_type=Operation.Type.WITHDRAWAL)
+        )
+
+
+class BusinessWalletInline(NestedTabularInline):
+    inlines = [BusinessWalletCommissionsInline, BusinessWalletWithdrawalsInline]
+    verbose_name_plural = "Кошелёк"
+    model = Wallet
+    fields = ["total_income", "free"]
+    readonly_fields = ["total_income", "free"]
+    can_delete = False
+    max_num = 0
+
+    def total_income(self, obj: Wallet):
+        return (
+            obj.operations_history.filter(is_commission=True).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or 0
+        )
+
+    total_income.short_description = "Суммарный доход"
+
+
+@admin.register(models.BusinessAccount)
+class BusinessAccountAdmin(NestedModelAdmin):
+    class Media:
+        css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
+
+    list_display = [
+        "email",
+        "first_name",
+        "last_name",
+        "total_income",
+        "current_balance",
+    ]
+    readonly_fields = ["id"]
+    inlines = [BusinessWalletInline]
+
+    fieldsets = (
+        (
+            "Основная информация",
+            {
+                "fields": (
+                    "id",
+                    "email",
+                    "first_name",
+                    "last_name",
+                )
+            },
+        ),
+    )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return models.BusinessAccount.objects.filter(business_account=True)
+
+    @admin.display(description="Суммарный доход")
+    def total_income(self, obj: models.BusinessAccount):
+        return (
+            obj.wallet.operations_history.filter(is_commission=True).aggregate(
+                total=Sum("amount")
+            )["total"]
+            or 0
+        )
+
+    @admin.display(description="Доступно для вывода")
+    def current_balance(self, obj: models.BusinessAccount):
+        return obj.wallet.free
