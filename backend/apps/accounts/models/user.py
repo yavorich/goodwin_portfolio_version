@@ -317,3 +317,7 @@ class BusinessAccount(User):
         proxy = True
         verbose_name = "Бизнес-аккаунт"
         verbose_name_plural = "Бизнес-аккаунт"
+
+    @classmethod
+    def notify_count(cls):
+        return None
