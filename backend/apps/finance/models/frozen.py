@@ -3,7 +3,7 @@ from django.db import models
 from django.utils.timezone import now, timedelta
 
 
-from apps.finance.services import get_wallet_settings_attr
+from apps.finance.services.wallet_settings_attr import get_wallet_settings_attr
 from core.utils import blank_and_null, decimal_usdt
 
 

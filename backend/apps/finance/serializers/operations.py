@@ -46,7 +46,7 @@ class OperationHistorySerializer(ModelSerializer):
         language = translation.get_language()
         if obj.message_type is not None:
             return obj.get_description(language=language)
-        return obj.description.get(language)
+        return obj.description.get(language) or Operation.Type(obj.operation_type).label
 
 
 class OperationCreateSerializer(ModelSerializer):

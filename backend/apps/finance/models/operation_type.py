@@ -15,8 +15,16 @@ class OperationType(TextChoices):
         _("Отмена пополнения программы"),
     )
     DEFROST = "defrost", _("Разморозка активов")
-    EXTRA_FEE = "extra_fee", _("Списание комиссии Extra Fee")
+    EXTRA_FEE_WRITEOFF = "extra_fee_writeoff", _("Списание комиссии Extra Fee")
     PROGRAM_ACCRUAL = "program_accrual", _("Начисление по программе")
+
+    # Операции начисления комиссий для бизнес-аккаунта
+    REPLENISHMENT_FEE = "replenishment_fee", _("Комиссия с пополнений")
+    WITHDRAWAL_FEE = "withdrawal_fee", _("Комиссия со снятий")
+    TRANSFER_FEE = "transfer_fee", _("Комиссия с внутренних переводов")
+    SUCCESS_FEE = "success_fee", _("Success fee")
+    MANAGEMENT_FEE = "management_fee", _("Management fee")
+    EXTRA_FEE = "extra_fee", _("Extra fee")
 
 
 class MessageType(TextChoices):

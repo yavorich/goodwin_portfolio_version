@@ -51,6 +51,7 @@ class OperationHistory(models.Model):
         "Дата и время", default=timezone.now  # для парсинга внешней базы
     )
     amount = models.DecimalField("Сумма", **decimal_usdt, **blank_and_null)
+    is_commission = models.BooleanField(default=False)
 
     objects = OperationHistoryQuerySet.as_manager()
 
@@ -60,6 +61,9 @@ class OperationHistory(models.Model):
         ordering = ["-created_at"]
 
     def get_description(self, language=None):
+        if not self.message_type:
+            return OperationType(self.operation_type).label
+
         insertion_data = self.insertion_data or {}
 
         template_message = OperationMessage.objects.get(message_type=self.message_type)

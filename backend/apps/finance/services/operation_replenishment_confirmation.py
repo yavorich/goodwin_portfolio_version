@@ -1,8 +1,10 @@
 from django.utils.translation import gettext_lazy as _
 
 from apps.finance.models.operation_history import OperationHistory
-from apps.finance.models.operation_type import MessageType
+from apps.finance.models.operation_type import MessageType, OperationType
 from config.settings import DEBUG
+
+from .commissions import add_commission_to_history
 
 
 def operation_replenishment_confirmation(operation, amount):
@@ -38,6 +40,10 @@ def operation_replenishment_confirmation(operation, amount):
         message_type=MessageType.REPLENISHMENT,
         target_name=operation.wallet.name,
         amount=operation.amount_net,
+    )
+
+    add_commission_to_history(
+        commission_type=OperationType.REPLENISHMENT_FEE, amount=operation.commission
     )
 
     return message

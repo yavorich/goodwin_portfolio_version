@@ -9,6 +9,7 @@ from .user import (
     Settings,
     Partner,
     UserCountHistory,
+    BusinessAccount,
 )
 from .docs import Docs
 from .region import Region, Country

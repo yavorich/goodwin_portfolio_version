@@ -6,7 +6,7 @@ from apps.finance.models.operation_confirmation import OperationConfirmation
 
 def send_operation_confirm_email(confirmation: OperationConfirmation):
     title, text = get_template_message(
-        message_type=EmailMessageType.SETTINGS_CHANGE,
+        message_type=EmailMessageType.OPERATION_CONFIRM,
         insertion_data={"code": confirmation.code},
     )
     send_email_msg.delay(

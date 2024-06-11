@@ -16,10 +16,11 @@ from apps.finance.models import (
     DestinationType,
     ProgramResult,
 )
-from apps.finance.models.operation_type import MessageType
+from apps.finance.models.operation_type import MessageType, OperationType
 from apps.finance.services.send_operation_confirm_email import (
     send_operation_confirm_email,
 )
+from apps.finance.services.commissions import add_commission_to_history
 from apps.finance.tasks import make_daily_programs_accruals
 from apps.telegram.tasks import send_template_telegram_message_task
 from apps.telegram.models import MessageType as TelegramMessageType
@@ -142,6 +143,9 @@ def handle_withdrawal_request(sender, instance: WithdrawalRequest, **kwargs):
             )
             telegram_message_type = TelegramMessageType.SUCCESSFUL_TRANSFER
             instance.done_at = now().date()
+            add_commission_to_history(
+                commission_type=OperationType.WITHDRAWAL_FEE, amount=instance.commission
+            )
 
         elif instance.status == WithdrawalRequest.Status.REJECTED:
             if instance.reject_message == "":

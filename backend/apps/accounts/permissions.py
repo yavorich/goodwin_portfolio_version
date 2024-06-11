@@ -14,9 +14,8 @@ class IsAuthenticatedAndAcceptedOfferAgreement(IsAuthenticated):
     }
 
     def has_permission(self, request, view):
-        return (
-            super().has_permission(request, view)
-            and request.user.agreement_date is not None
+        return super().has_permission(request, view) and (
+            request.user.agreement_date is not None or request.user.business_account
         )
 
 
@@ -32,7 +31,9 @@ class IsAuthenticatedAndVerified(IsAuthenticatedAndAcceptedOfferAgreement):
         user: User = request.user
         self.message = super().message
 
-        return super().has_permission(request, view) and user.verified()
+        return super().has_permission(request, view) and (
+            user.verified() or request.user.business_account
+        )
 
 
 class IsPartner(IsAuthenticatedAndVerified):
