@@ -12,6 +12,7 @@ def add_commission_to_history(commission_type: OperationType, amount):
     ).first()
     if commission:
         commission.amount += amount
+        commission.created_at = now()
         commission.save()
     else:
         commission = OperationHistory.objects.create(
