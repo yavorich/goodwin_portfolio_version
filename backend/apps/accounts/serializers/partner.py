@@ -1,5 +1,5 @@
 from rest_framework.fields import DateField, FloatField
-from rest_framework.serializers import ModelSerializer, Serializer
+from rest_framework.serializers import ModelSerializer, Serializer, FloatField
 
 from apps.accounts.models import Region
 from apps.accounts.models.user import Partner, User
@@ -13,6 +13,7 @@ class RegionSerializer(ModelSerializer):
 
 class PartnerSerializer(ModelSerializer):
     region = RegionSerializer()
+    partner_fee = FloatField()
 
     class Meta:
         model = Partner
