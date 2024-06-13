@@ -20,6 +20,7 @@ from apps.finance.models import (
     OperationHistory,
     OperationConfirmation,
 )
+from apps.finance.services.wallet_settings_attr import get_wallet_settings_attr
 from config import settings
 from core.exceptions import ServiceUnavailable
 from core.utils import decimal_usdt
@@ -220,7 +221,14 @@ class WalletTransferSerializer(OperationCreateSerializer):
         extra_kwargs = {f: {"required": True} for f in fields}
 
     def validate(self, attrs):
-        self._validate_wallet(attrs)
+        commission_pct = get_wallet_settings_attr(
+            attrs["wallet"], "commission_on_transfer"
+        )
+        self._validate_wallet(
+            attrs,
+            free=attrs["amount_free"] * (1 + commission_pct / 100),
+            frozen=attrs["amount_frozen"] * (1 + commission_pct / 100),
+        )
         if attrs["wallet"] == attrs["receiver"]:
             get_error(error_type=ErrorMessageType.SELF_TRANSFER)
         return attrs
