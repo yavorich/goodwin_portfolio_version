@@ -391,7 +391,7 @@ msgstr "frozen"
 
 #: apps/finance/serializers/operations.py:244
 msgid "Сервис эквайринга временно не доступен, повторите попытку позже"
-msgstr ""
+msgstr "The acquiring service is temporarily unavailable, please try again later"
 
 #: apps/finance/services/operation_replenishment_confirmation.py:12
 msgid "Operation already done"
