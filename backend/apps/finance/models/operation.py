@@ -195,7 +195,7 @@ class Operation(models.Model):
                 self.add_history(
                     type=getattr(OperationHistory.Type, f"TRANSFER_{section.upper()}"),
                     message_type=MessageType.TRANSFER_SENT,
-                    insertion_data=dict(user_id=self.wallet.user.id),
+                    insertion_data=dict(user_id=self.receiver.user.id),
                     target_name=self.receiver.name,
                     amount=-amount,
                 )
