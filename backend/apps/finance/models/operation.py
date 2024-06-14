@@ -1,4 +1,5 @@
 from uuid import uuid4
+from decimal import Decimal
 
 from django.db import models, transaction
 from django.core.validators import RegexValidator
@@ -120,22 +121,12 @@ class Operation(models.Model):
             self.save()
 
     def _apply_replenishment(self):  # ready
-        commission_pct = get_wallet_settings_attr(
-            self.wallet, "commission_on_replenish"
-        )
-        self.commission = self.amount * commission_pct / 100
-        self.amount_net = self.amount
-        self.amount = round(self.amount_net + self.commission, 2)
-        self.save()
+        self._apply_commission(attr="commission_on_replenish", included=False)
         return False
 
     def _apply_withdrawal(self):  # ready
+        self._apply_commission(attr="commission_on_withdraw", included=True)
         self.wallet.update_balance(free=-self.amount)
-
-        commission_pct = get_wallet_settings_attr(self.wallet, "commission_on_withdraw")
-        self.commission = self.amount * commission_pct / 100
-        self.amount_net = self.amount - self.commission
-        self.save()
 
         withdrawal_request = WithdrawalRequest.objects.create(
             operation=self,
@@ -162,7 +153,7 @@ class Operation(models.Model):
                     "amount": withdrawal_request.original_amount,
                     "commission_amount": withdrawal_request.commission,
                     "amount_with_commission": withdrawal_request.amount,
-                    "transfer address": withdrawal_request.address,
+                    "transfer_address": withdrawal_request.address,
                     "email": self.wallet.user.email,
                 },
                 language=translation.get_language(),
@@ -171,76 +162,42 @@ class Operation(models.Model):
         return False
 
     def _apply_transfer(self):  # ready
-        commission_pct = get_wallet_settings_attr(self.wallet, "commission_on_transfer")
-        commission_free = self.amount_free * commission_pct / 100
-        commission_frozen = self.amount_frozen * commission_pct / 100
+        # в таком порядке чтобы не пересчитывать атрибуты
+        self._apply_transfer_receive()
+        self._apply_transfer_send()
+        return True
 
-        amount_free_net = self.amount_free + commission_free
-        amount_frozen_net = self.amount_frozen + commission_frozen
+    def _apply_commission(self, attr, included=True):
+        commission_rate = get_wallet_settings_attr(self.wallet, attr) / 100
 
-        self.wallet.update_balance(free=-amount_free_net, frozen=-amount_frozen_net)
-        self.receiver.update_balance(free=self.amount_free, frozen=self.amount_frozen)
-        self.commission = commission_free + commission_frozen
-        self.amount_net = self.amount_free + self.amount_frozen
+        sum_amount = Decimal("0.0")
+        for section in [None, "free", "frozen"]:
+            amount_attr = f"amount_{section}" if section else "amount"
+            if amount := getattr(self, amount_attr):
+                if not included:
+                    setattr(self, amount_attr, amount * (1 + commission_rate))
+                sum_amount += amount
+
+        self.commission = sum_amount * commission_rate
+        self.amount_net = sum_amount - self.commission if included else sum_amount
         self.save()
 
+    def _apply_transfer_send(self):
+        self._apply_commission(attr="commission_on_transfer", included=False)
         add_commission_to_history(
             commission_type=OperationType.TRANSFER_FEE, amount=self.commission
         )
 
-        if self.amount_free:
-            self.add_history(
-                type=OperationHistory.Type.TRANSFER_FREE,
-                message_type=MessageType.TRANSFER_SENT,
-                insertion_data=dict(user_id=self.wallet.user.id),
-                target_name=self.receiver.name,
-                amount=-amount_free_net,
-            )
-            self.add_history(
-                type=OperationHistory.Type.TRANSFER_FREE,
-                message_type=MessageType.TRANSFER_RECEIVED,
-                insertion_data=dict(user_id=self.wallet.user.id),
-                target_name=self.receiver.name,
-                amount=self.amount_free,
-                wallet=self.receiver,
-            )
-            if telegram_id := self.receiver.user.telegram_id:
-                send_template_telegram_message_task.delay(
-                    telegram_id,
-                    message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
-                    insertion_data={
-                        "user_id": self.wallet.user.id,
-                        "amount": self.amount_free,
-                        "section": _("Free"),
-                    },
-                    language=translation.get_language(),
-                )
-        if self.amount_frozen:
-            self.add_history(
-                type=OperationHistory.Type.TRANSFER_FROZEN,
-                message_type=MessageType.TRANSFER_SENT,
-                insertion_data=dict(user_id=self.wallet.user.id),
-                target_name=self.receiver.name,
-                amount=-amount_frozen_net,
-            )
-            self.add_history(
-                type=OperationHistory.Type.TRANSFER_FROZEN,
-                message_type=MessageType.TRANSFER_RECEIVED,
-                insertion_data=dict(user_id=self.wallet.user.id),
-                target_name=self.receiver.name,
-                amount=self.amount_frozen,
-                wallet=self.receiver,
-            )
-            if telegram_id := self.receiver.user.telegram_id:
-                send_template_telegram_message_task.delay(
-                    telegram_id,
-                    message_type=TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT,
-                    insertion_data={
-                        "user_id": self.wallet.user.id,
-                        "amount": self.amount_frozen,
-                        "section": _("Frozen"),
-                    },
-                    language=translation.get_language(),
+        self.wallet.update_balance(free=-self.amount_free, frozen=-self.amount_frozen)
+
+        for section in ["free", "frozen"]:
+            if amount := getattr(self, f"amount_{section}"):
+                self.add_history(
+                    type=getattr(OperationHistory.Type, f"TRANSFER_{section.upper()}"),
+                    message_type=MessageType.TRANSFER_SENT,
+                    insertion_data=dict(user_id=self.wallet.user.id),
+                    target_name=self.receiver.name,
+                    amount=-amount,
                 )
 
         if telegram_id := self.wallet.user.telegram_id:
@@ -254,7 +211,33 @@ class Operation(models.Model):
                 },
                 language=translation.get_language(),
             )
-        return True
+
+    def _apply_transfer_receive(self):
+        self.receiver.update_balance(free=self.amount_free, frozen=self.amount_frozen)
+
+        for section in ["free", "frozen"]:
+            if amount := getattr(self, f"amount_{section}"):
+                self.add_history(
+                    type=getattr(OperationHistory.Type, f"TRANSFER_{section.upper()}"),
+                    message_type=MessageType.TRANSFER_RECEIVED,
+                    insertion_data=dict(user_id=self.wallet.user.id),
+                    target_name=self.receiver.name,
+                    amount=amount,
+                    wallet=self.receiver,
+                )
+                if telegram_id := self.receiver.user.telegram_id:
+                    send_template_telegram_message_task.delay(
+                        telegram_id,
+                        message_type=(
+                            TelegramMessageType.INTERNAL_TRANSFER_FOR_RECIPIENT
+                        ),
+                        insertion_data={
+                            "user_id": self.wallet.user.id,
+                            "amount": amount,
+                            "section": _(section.capitalize()),
+                        },
+                        language=translation.get_language(),
+                    )
 
     def _apply_branch_income(self):  # ready
         self.wallet.update_balance(amount_free=self.amount)

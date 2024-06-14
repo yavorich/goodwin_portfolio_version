@@ -895,7 +895,7 @@ class BusinessWalletWithdrawalsInline(NestedTabularInline):
         return (
             super()
             .get_queryset(request)
-            .filter(operation_type=Operation.Type.WITHDRAWAL)
+            .filter(operation_type=Operation.Type.WITHDRAWAL, amount__isnull=False)
         )
 
 

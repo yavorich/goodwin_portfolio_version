@@ -73,7 +73,7 @@ DATA_INSERTION = {
         "amount": "Сумма списания с Wallet (USDT)",
         "commission_amount": "Сумма транзакционной комиссии (USDT)",
         "amount_with_commission": "Сумма перевода (USDT)",
-        "transfer address": "Адрес перевода",
+        "transfer_address": "Адрес перевода",
         "email": "Почта пользователя",
     },
     MessageType.SUCCESSFUL_TRANSFER: {
