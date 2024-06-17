@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db.models import Sum, OuterRef, Subquery
@@ -92,6 +93,11 @@ class PartnerInvestmentGraph(ListAPIView):
 
         start_date, end_date = get_dates_range(WalletHistory, self.request.query_params)
 
+        all_dates = [
+            start_date + timedelta(days=x)
+            for x in range((end_date - start_date).days + 1)
+        ]
+
         results = (
             WalletHistory.objects.filter(
                 created_at__range=(start_date, end_date), user__in=investors
@@ -99,7 +105,18 @@ class PartnerInvestmentGraph(ListAPIView):
             .values("created_at")
             .annotate(total_sum=Sum("free") + Sum("frozen") + Sum("deposits"))
         )
-        return results
+        results_dict = {entry["created_at"]: entry for entry in results}
+        final_results = [
+            {
+                "created_at": date,
+                "total_sum": (
+                    results_dict[date]["total_sum"] if date in results_dict else None
+                ),
+            }
+            for date in all_dates
+        ]
+
+        return final_results
 
     def list(self, request, *args, **kwargs):
         response_data = super().list(request, *args, **kwargs).data
