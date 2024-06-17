@@ -1,4 +1,3 @@
-from datetime import timedelta
 import pandas as pd
 
 from django.db.models import (
@@ -42,11 +41,6 @@ class TotalProfitStatisticsGraph(ListAPIView):
             UserProgramAccrual, self.request.query_params
         )
 
-        all_dates = [
-            start_date + timedelta(days=x)
-            for x in range((end_date - start_date).days + 1)
-        ]
-
         results = (
             UserProgramAccrual.objects.filter(
                 created_at__range=(start_date, end_date), program=user_program
@@ -62,29 +56,7 @@ class TotalProfitStatisticsGraph(ListAPIView):
             )
         )
 
-        results_dict = {entry["created_at"]: entry for entry in results}
-
-        previous_total_amount = None
-        final_results = []
-
-        for date in all_dates:
-            if date in results_dict:
-                amount = results_dict[date]["amount"]
-                percent_amount = results_dict[date]["percent_amount"]
-                previous_total_amount = results_dict[date]["percent_total_amount"]
-            else:
-                amount = None
-                percent_amount = None
-            final_results.append(
-                {
-                    "created_at": date,
-                    "amount": amount,
-                    "percent_amount": percent_amount,
-                    "percent_total_amount": previous_total_amount,
-                }
-            )
-
-        return final_results
+        return results
 
 
 class GeneralInvestmentStatisticsView(RetrieveAPIView):
