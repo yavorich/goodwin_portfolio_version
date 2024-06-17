@@ -1,3 +1,4 @@
+from datetime import timedelta
 import pandas as pd
 
 from django.db.models import (
@@ -55,6 +56,9 @@ class TotalProfitStatisticsGraph(ListAPIView):
                 order_by=F("created_at").asc(),
             )
         )
+
+        for entry in results:
+            entry["created_at"] -= timedelta(days=1)
 
         return results
 
