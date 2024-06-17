@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 from decimal import Decimal
 
 import pandas as pd
@@ -68,7 +69,7 @@ def get_table_statistics(
                 expression=Sum("percent_amount"),
                 order_by=F("created_at").asc(),
             ),
-            day_of_week=ExtractWeekDay("created_at"),
+            day_of_week=ExtractWeekDay(F("created_at") - timedelta(days=1)),
             funds=Subquery(program_history_subquery.values("funds")),
             profitability=F("percent_amount"),
             withdrawal=Subquery(withdrawal_subquery),
@@ -77,6 +78,9 @@ def get_table_statistics(
         )
         .order_by("created_at")
     )
+
+    for result in accrual_results:
+        result["created_at"] -= timedelta(days=1)
 
     return accrual_results
 
