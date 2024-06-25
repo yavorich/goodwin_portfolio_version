@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now, timedelta, datetime
 
-from apps.gdw_site.models import FundProfitStats, Program, FundTotalStats
+from apps.gdw_site.models import FundProfitStats, Program, FundTotalStats, SiteAnswer
 
 
 class Command(BaseCommand):
@@ -42,3 +42,14 @@ class Command(BaseCommand):
                 FundTotalStats.objects.update_or_create(
                     year=year, month=month, defaults=dict(total=Decimal(total))
                 )
+
+        for i in range(1, 6):
+            SiteAnswer.objects.all().delete()
+            SiteAnswer.objects.create(
+                title=dict(ru=f"Вопрос {i}", en=f"Question {i}", cn=f"問題 {1}"),
+                text=dict(
+                    ru="Ответ на вопрос",
+                    en="Answer to the question",
+                    cn="回答問題",
+                ),
+            )
