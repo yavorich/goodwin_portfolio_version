@@ -5,6 +5,7 @@ from apps.gdw_site.views import (
     FundStatsAPIView,
     TopupPeriodListAPIView,
     SiteAnswerAPIView,
+    SiteContactsAPIView,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path("graph/", FundStatsAPIView.as_view(), name="fund-graph"),
     path("topup-periods/", TopupPeriodListAPIView.as_view(), name="topup-periods"),
     path("faq/", SiteAnswerAPIView.as_view(), name="faq"),
+    path("contacts/", SiteContactsAPIView.as_view(), name="site-contacts"),
 ]
