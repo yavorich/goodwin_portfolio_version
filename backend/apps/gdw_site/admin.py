@@ -1,7 +1,12 @@
 from django.contrib import admin
 from django.http import HttpRequest
 
-from apps.gdw_site.models import SiteProgram, FundProfitStats, FundTotalStats
+from apps.gdw_site.models import (
+    SiteProgram,
+    FundProfitStats,
+    FundTotalStats,
+    SiteAnswer,
+)
 
 
 class FundProfitStatsInline(admin.TabularInline):
@@ -34,3 +39,8 @@ class FundTotalStatsAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+
+
+@admin.register(SiteAnswer)
+class SiteAnswerAdmin(admin.ModelAdmin):
+    pass

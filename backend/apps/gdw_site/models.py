@@ -9,8 +9,11 @@ from django.db.models import (
 )
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.timezone import datetime
-from apps.finance.models import Program
+
+from core.localized.fields import LocalizedCharField, LocalizedTextField
 from core.utils import decimal_pct
+
+from apps.finance.models import Program
 
 
 class SiteProgram(Program):
@@ -51,3 +54,17 @@ class FundTotalStats(Model):
     class Meta:
         unique_together = ("year", "month")
         ordering = ["year", "month"]
+        verbose_name = "значение"
+        verbose_name_plural = "Статистика фонда"
+
+
+class SiteAnswer(Model):
+    title = LocalizedCharField(max_length=255)
+    text = LocalizedTextField()
+
+    class Meta:
+        verbose_name = "Вопрос-ответ для сайта"
+        verbose_name_plural = verbose_name
+
+    def __str__(self):
+        return self.title.translate()

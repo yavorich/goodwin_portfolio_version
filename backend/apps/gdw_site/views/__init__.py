@@ -2,3 +2,4 @@
 from .programs import SiteProgramsAPIView
 from .calculator import CalculatorAPIView, TopupPeriodListAPIView
 from .stats import FundStatsAPIView
+from .faq import SiteAnswerAPIView
