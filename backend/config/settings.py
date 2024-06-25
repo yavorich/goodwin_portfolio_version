@@ -53,6 +53,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "nested_admin",
     "import_export",
+    "django_admin_geomap",
 ]
 
 INSTALLED_APPS = (
