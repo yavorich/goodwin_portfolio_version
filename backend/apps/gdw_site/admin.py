@@ -1,23 +1,36 @@
 from django.contrib import admin
+from django.forms import ModelForm
 from django.http import HttpRequest
 from django_admin_geomap import ModelAdmin as GeoModelAdmin
 
 from apps.gdw_site.models import (
     SiteProgram,
-    FundProfitStats,
-    FundTotalStats,
+    FundDailyStats,
+    FundMonthlyStats,
     SiteAnswer,
     SiteContact,
 )
 
 
-class FundProfitStatsInline(admin.TabularInline):
-    model = FundProfitStats
-    fields = ["date", "percent"]
-    readonly_fields = ["date"]
-    sortable_by = ["date"]
-    verbose_name_plural = "Статистика"
-    can_delete = False
+@admin.register(FundDailyStats)
+class FundDailyStatsAdmin(admin.ModelAdmin):
+    list_display = ["date", "percent"]
+    list_editable = ["percent"]
+
+
+class FundMonthlyStatsAdminForm(ModelForm):
+    class Meta:
+        model = FundMonthlyStats
+        help_texts = {
+            "year": "Укажите значение от 2021 до 2030",
+            "month": 'Пара значений "Год" и "Месяц" должна быть уникальной',
+        }
+        exclude = ()
+
+    def clean(self):
+        super().clean()
+        if self.cleaned_data.get("year") < 2021 or self.cleaned_data.get("year") > 2030:
+            self.add_error("year", "Указанный год не входит в интервал от 2021 до 2030")
 
 
 @admin.register(SiteProgram)
@@ -26,21 +39,33 @@ class SiteProgramAdmin(admin.ModelAdmin):
         css = {"all": ("remove_inline_subtitles.css",)}  # Include extra css
 
     list_display = ["name", "annual_profit", "description"]
-    inlines = [FundProfitStatsInline]
+    # inlines = [FundProfitStatsInline]
 
-
-@admin.register(FundTotalStats)
-class FundTotalStatsAdmin(admin.ModelAdmin):
-    list_display = ["year", "month", "total"]
-    ordering = ["year", "month"]
-    list_editable = ["total"]
-    readonly_fields = ["year", "month"]
+    fieldsets = (
+        (
+            "ПАРАМЕТРЫ ДЛЯ САЙТА",
+            {
+                "fields": [
+                    "annual_profit",
+                    "description",
+                ],
+            },
+        ),
+    )
 
     def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
         return False
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
+
+
+@admin.register(FundMonthlyStats)
+class FundMonthlyStatsAdmin(admin.ModelAdmin):
+    list_display = ["year", "month", "total"]
+    ordering = ["year", "month"]
+    list_editable = ["total"]
+    form = FundMonthlyStatsAdminForm
 
 
 @admin.register(SiteAnswer)

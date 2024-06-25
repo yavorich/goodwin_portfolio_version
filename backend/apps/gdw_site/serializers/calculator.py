@@ -1,4 +1,3 @@
-from decimal import Decimal
 from rest_framework.serializers import (
     Serializer,
     IntegerField,
@@ -12,7 +11,7 @@ from django.utils.timezone import timedelta
 from django.utils.translation import gettext_lazy as _
 from dateutil.relativedelta import relativedelta
 
-from apps.gdw_site.models import SiteProgram
+from apps.gdw_site.models import SiteProgram, FundDailyStats
 from apps.finance.services.wallet_settings_attr import get_wallet_settings_attr
 from core.utils import decimal_usdt
 from core.utils.error import get_error, ErrorMessageType
@@ -43,8 +42,25 @@ class CalculatorSerializer(Serializer):
     topup = DecimalField(**decimal_usdt, required=False)
     topup_period = CharField(required=False)
 
+    def validate_start_date(self, value):
+        min_date = FundDailyStats.objects.first().date
+        if value < min_date:
+            raise ValidationError("Недостаточно данных за указанный период")
+        return value
+
+    def validate_end_date(self, value):
+        max_date = FundDailyStats.objects.last().date
+        if value > max_date:
+            raise ValidationError("Недостаточно данных за указанный период")
+        return value
+
     def validate(self, attrs):
         program = SiteProgram.objects.filter(pk=attrs["program"]).first()
+        if months := program.duration:
+            if attrs["end_date"] > attrs["start_date"] + relativedelta(months=months):
+                raise ValidationError(
+                    f"Выбранная программа длится не более {months} месяцев"
+                )
         deposit = attrs["deposit"]
         if deposit < program.min_deposit:
             get_error(
@@ -74,7 +90,6 @@ class CalculatorSerializer(Serializer):
 
 
 def calculate_program_result(attrs, program: SiteProgram):
-    annual_profit = program.annual_profit
     current_date = attrs["start_date"]
     end_date = attrs["end_date"]
     deposit = attrs["deposit"]
@@ -84,8 +99,6 @@ def calculate_program_result(attrs, program: SiteProgram):
         topup_interval = relativedelta(months=topup_period) if topup_period else None
         next_topup_date = current_date + topup_interval
 
-    daily_profit_pct = Decimal(annual_profit / 365)
-
     success_fee_pct = get_wallet_settings_attr(None, "success_fee")
     management_fee_pct = get_wallet_settings_attr(None, "management_fee")
 
@@ -93,12 +106,13 @@ def calculate_program_result(attrs, program: SiteProgram):
     topups = 0
 
     while current_date <= end_date:
+        daily_profit_pct = FundDailyStats.objects.get(date=current_date).percent
         today_profit = deposit * daily_profit_pct / 100
         management_fee = deposit * management_fee_pct / 100
         success_fee = max(0, today_profit * success_fee_pct / 100)
         today_profit -= success_fee + management_fee
         result += today_profit
-        if program.duration is None:
+        if program.duration is not None:
             deposit += today_profit
         if topup and current_date == next_topup_date:
             topups += topup

@@ -1,41 +1,42 @@
 from django.db.models import (
     Model,
-    ForeignKey,
     DateField,
     DecimalField,
     IntegerChoices,
     IntegerField,
-    CASCADE,
 )
 from django.utils.timezone import datetime
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator
 
 from core.utils import decimal_pct
 
-from .program import SiteProgram
 
-
-class FundProfitStats(Model):
-    program = ForeignKey(SiteProgram, on_delete=CASCADE)
-    date = DateField()
-    percent = DecimalField(**decimal_pct)
+class FundDailyStats(Model):
+    date = DateField("Дата", unique=True)
+    percent = DecimalField("Прибыль (%)", **decimal_pct)
 
     class Meta:
-        unique_together = ("program", "date")
+        verbose_name = "значение"
+        verbose_name_plural = "Статистика по дням (для калькулятора)"
+        ordering = ["date"]
 
 
-class FundTotalStats(Model):
+class FundMonthlyStats(Model):
     class Month(IntegerChoices):
         JAN = 1, "Январь"
+        FEB = 2, "Февраль"
         MAR = 3, "Март"
+        APR = 4, "Апрель"
         MAY = 5, "Май"
+        JUN = 6, "Июнь"
         JUL = 7, "Июль"
+        AUG = 8, "Август"
         SEP = 9, "Сентябрь"
+        OCT = 10, "Октябрь"
         NOV = 11, "Ноябрь"
+        DEC = 12, "Декабрь"
 
-    year = IntegerField(
-        "Год", validators=[MinValueValidator(2021), MaxValueValidator(2024)]
-    )
+    year = IntegerField("Год", validators=[MinValueValidator(2021)])
     month = IntegerField("Месяц", choices=Month.choices)
     total = DecimalField("Суммарный доход (%)", **decimal_pct)
 
@@ -47,4 +48,4 @@ class FundTotalStats(Model):
         unique_together = ("year", "month")
         ordering = ["year", "month"]
         verbose_name = "значение"
-        verbose_name_plural = "Статистика фонда"
+        verbose_name_plural = "Статистика по месяцам (для графика)"
