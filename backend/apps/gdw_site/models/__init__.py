@@ -3,4 +3,4 @@
 from .contacts import SiteContact
 from .faq import SiteAnswer
 from .program import SiteProgram
-from .stats import FundProfitStats, FundTotalStats
+from .stats import FundDailyStats, FundMonthlyStats

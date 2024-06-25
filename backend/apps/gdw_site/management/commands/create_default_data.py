@@ -1,11 +1,16 @@
+import csv
+import os
 from decimal import Decimal
 from django.core.management.base import BaseCommand
-from django.utils.timezone import now, timedelta, datetime
+from django.utils.timezone import datetime
+from django.db.models import Sum
+
+from config.settings import BASE_DIR
 
 from apps.gdw_site.models import (
-    FundProfitStats,
+    FundDailyStats,
     SiteProgram,
-    FundTotalStats,
+    FundMonthlyStats,
     SiteAnswer,
     SiteContact,
 )
@@ -24,30 +29,36 @@ class Command(BaseCommand):
             program.description = descriptions[i]
             program.save()
 
-        start_date = datetime(2021, 1, 1).date()
-        end_date = now().date()
+        FundDailyStats.objects.all().delete()
+        FundMonthlyStats.objects.all().delete()
 
-        all_dates = [
-            start_date + timedelta(days=x)
-            for x in range((end_date - start_date).days + 1)
-        ]
+        fieldnames = ("weekday", "date", "percent")
+        filepath = os.path.join(BASE_DIR, "apps/gdw_site/src/profits.csv")
 
-        for date in all_dates:
-            for program in SiteProgram.objects.all():
-                daily_profit = program.annual_profit / (365 + (date.year % 4 == 0))
-                FundProfitStats.objects.update_or_create(
-                    program=program,
-                    date=date,
-                    defaults=dict(percent=daily_profit),
-                )
+        with open(filepath, "r") as f:
+            reader = csv.DictReader(f, fieldnames=fieldnames)
+            for row in reader:
+                date = datetime.strptime(row["date"], "%d.%m.%y").date()
+                if row["percent"]:
+                    percent = Decimal(row["percent"].replace(",", ".").strip("%"))
+                else:
+                    percent = Decimal("0.00")
+                FundDailyStats.objects.create(date=date, percent=percent)
 
-        total = 0
-        for year in range(2021, 2025):
-            for month in FundTotalStats.Month.values:
-                total += 1
-                FundTotalStats.objects.update_or_create(
-                    year=year, month=month, defaults=dict(total=Decimal(total))
-                )
+        dates = FundDailyStats.objects.values_list("date", flat=True)
+        start_year, end_year = [dates[i].year for i in [0, len(dates)-1]]
+
+        for year in range(start_year, end_year + 1):
+            start_month = 1 if year != start_year else dates[0].month
+            end_month = 12 if year != end_year else dates[len(dates)-1].month
+
+            for month in range(start_month, end_month + 1):
+                next_month = month + 1 if month != 12 else 1
+                next_month_first_day = datetime(year + (month == 12), next_month, 1)
+                total = FundDailyStats.objects.filter(
+                    date__lt=next_month_first_day
+                ).aggregate(total=Sum("percent"))["total"] or Decimal("0.0")
+                FundMonthlyStats.objects.create(year=year, month=month, total=total)
 
         SiteAnswer.objects.all().delete()
         for i in range(1, 6):

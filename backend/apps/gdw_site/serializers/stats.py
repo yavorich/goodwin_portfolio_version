@@ -1,9 +1,9 @@
 from rest_framework.serializers import ModelSerializer
 
-from apps.gdw_site.models import FundTotalStats
+from apps.gdw_site.models import FundMonthlyStats
 
 
 class FundTotalStatsSerializer(ModelSerializer):
     class Meta:
-        model = FundTotalStats
+        model = FundMonthlyStats
         fields = ["date", "total"]
