@@ -49,8 +49,8 @@ class Command(BaseCommand):
                     year=year, month=month, defaults=dict(total=Decimal(total))
                 )
 
+        SiteAnswer.objects.all().delete()
         for i in range(1, 6):
-            SiteAnswer.objects.all().delete()
             SiteAnswer.objects.create(
                 title=dict(ru=f"Вопрос {i}", en=f"Question {i}", cn=f"問題 {1}"),
                 text=dict(
