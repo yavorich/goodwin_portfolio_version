@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now, timedelta, datetime
 
-from apps.gdw_site.models import FundProfitStats, Program
+from apps.gdw_site.models import FundProfitStats, Program, FundTotalStats
 
 
 class Command(BaseCommand):
@@ -33,4 +33,12 @@ class Command(BaseCommand):
                     program=program,
                     date=date,
                     defaults=dict(percent=daily_profit),
+                )
+
+        total = 0
+        for year in range(2021, 2025):
+            for month in FundTotalStats.Month.values:
+                total += 1
+                FundTotalStats.objects.update_or_create(
+                    year=year, month=month, defaults=dict(total=Decimal(total))
                 )
