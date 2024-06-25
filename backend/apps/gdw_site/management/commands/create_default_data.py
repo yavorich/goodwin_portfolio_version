@@ -7,6 +7,11 @@ from apps.gdw_site.models import FundProfitStats, Program
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        annual_profit_values = ["29.64", "31.02", "32.10"]
+        for i, program in enumerate(Program.objects.all()):
+            program.annual_profit = Decimal(annual_profit_values[i])
+            program.save()
+
         start_date = datetime(2021, 1, 1).date()
         end_date = now().date()
 
