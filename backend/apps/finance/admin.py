@@ -165,6 +165,15 @@ class ProgramAdmin(ExportInlineModelAdminMixin, admin.ModelAdmin):
                 ],
             },
         ),
+        (
+            "ДЛЯ САЙТА",
+            {
+                "fields": [
+                    "annual_profit",
+                    "description",
+                ]
+            },
+        ),
     )
 
     def has_add_permission(self, request: HttpRequest) -> bool:
