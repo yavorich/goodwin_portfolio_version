@@ -1,26 +1,18 @@
 from django.db.models import (
     Model,
     ForeignKey,
-    CASCADE,
     DateField,
     DecimalField,
-    IntegerField,
     IntegerChoices,
+    IntegerField,
+    CASCADE,
 )
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.timezone import datetime
+from django.core.validators import MinValueValidator, MaxValueValidator
 
-from core.localized.fields import LocalizedCharField, LocalizedTextField
 from core.utils import decimal_pct
 
-from apps.finance.models import Program
-
-
-class SiteProgram(Program):
-    class Meta:
-        proxy = True
-        verbose_name_plural = "Программы на GDW-сайте"
-        verbose_name = "Программа"
+from .program import SiteProgram
 
 
 class FundProfitStats(Model):
@@ -56,15 +48,3 @@ class FundTotalStats(Model):
         ordering = ["year", "month"]
         verbose_name = "значение"
         verbose_name_plural = "Статистика фонда"
-
-
-class SiteAnswer(Model):
-    title = LocalizedCharField(max_length=255)
-    text = LocalizedTextField()
-
-    class Meta:
-        verbose_name = "Вопрос-ответ для сайта"
-        verbose_name_plural = verbose_name
-
-    def __str__(self):
-        return self.title.translate()

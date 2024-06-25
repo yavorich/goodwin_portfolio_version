@@ -1,11 +1,13 @@
 from django.contrib import admin
 from django.http import HttpRequest
+from django_admin_geomap import ModelAdmin as GeoModelAdmin
 
 from apps.gdw_site.models import (
     SiteProgram,
     FundProfitStats,
     FundTotalStats,
     SiteAnswer,
+    SiteContact,
 )
 
 
@@ -44,3 +46,21 @@ class FundTotalStatsAdmin(admin.ModelAdmin):
 @admin.register(SiteAnswer)
 class SiteAnswerAdmin(admin.ModelAdmin):
     pass
+
+
+class ContactsAdmin(GeoModelAdmin):
+    geomap_field_longitude = "id_longitude"
+    geomap_field_latitude = "id_latitude"
+    geomap_default_latitude = "45.75583"
+    geomap_default_longitude = "37.6173"
+    geomap_autozoom = "10"
+    list_display = ["address", "certificate", "email"]
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
+
+
+admin.site.register(SiteContact, ContactsAdmin)
