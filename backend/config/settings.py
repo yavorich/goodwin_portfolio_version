@@ -37,10 +37,11 @@ CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ORIGINS", "http://localhost:8000").s
 LOCAL_APPS = [
     "core",
     "apps.accounts",
-    "apps.finance",
     "apps.faq",
-    "apps.telegram",
+    "apps.finance",
+    "apps.gdw_site",
     "apps.support",
+    "apps.telegram",
 ]
 
 THIRD_PARTY_APPS = [

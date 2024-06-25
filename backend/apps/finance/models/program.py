@@ -28,6 +28,12 @@ class Program(models.Model):
     accrual_type = models.CharField("Начисление прибыли", choices=AccrualType.choices)
     withdrawal_type = models.CharField("Вывод прибыли", choices=WithdrawalType.choices)
     max_risk = models.FloatField("Максимальный риск (%)")
+    annual_profit = models.DecimalField(
+        "Годовая доходность, %", **blank_and_null, **decimal_pct
+    )
+    description = models.CharField(
+        "Описание программы", max_length=63, **blank_and_null
+    )
 
     class Meta:
         verbose_name = "Программа"

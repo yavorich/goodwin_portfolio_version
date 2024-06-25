@@ -5,3 +5,7 @@
 .original {
     display: none;
 }
+
+.timezonewarning {
+    display: none;
+  }
