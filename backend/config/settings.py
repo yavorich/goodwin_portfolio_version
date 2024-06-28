@@ -6,6 +6,8 @@ from django.utils.timezone import timedelta
 from django.utils.translation import gettext_lazy as _
 from import_export.formats.base_formats import XLSX
 from tablib.formats import registry
+from telethon import TelegramClient
+from telethon.sessions import StringSession
 
 from core.import_export.formats import DimensionXLSXFormat
 
@@ -260,3 +262,14 @@ LOGIN_AS_USER_TOKEN = os.environ.get("LOGIN_AS_USER_TOKEN")
 # import, export
 IMPORT_EXPORT_FORMATS = [XLSX]
 registry.register("xlsx", DimensionXLSXFormat)
+
+# telegram api settings
+TELEGRAM_API_ID = os.environ.get("TELEGRAM_API_ID")
+TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH")
+TELEGRAM_NEWS_CHANNEL = os.environ.get("TELEGRAM_NEWS_CHANNEL")
+TELEGRAM_PHONE_NUMBER = os.environ.get("TELEGRAM_PHONE_NUMBER")
+TELEGRAM_SESSION = os.environ.get("TELEGRAM_SESSION")
+
+NEWS_BOT = TelegramClient(
+    StringSession(TELEGRAM_SESSION), TELEGRAM_API_ID, TELEGRAM_API_HASH
+)
