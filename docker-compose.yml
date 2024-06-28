@@ -124,6 +124,20 @@ services:
     networks:
       - goodwin_back_default
 
+  news_bot:
+    command: python3 news_bot.py
+    container_name: goodwin_news_bot
+    stdin_open: true
+    env_file:
+      - .env
+    build:
+      dockerfile: Dockerfile
+      context: .
+    volumes:
+      - ./backend:/backend
+    networks:
+      - goodwin_back_default
+
 networks:
   goodwin_back_default:
 

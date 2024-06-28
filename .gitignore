@@ -165,3 +165,5 @@ data/db/
 actions-runner/
 
 *.sqlite3
+*.sql
+*.session*
