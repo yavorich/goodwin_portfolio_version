@@ -18,6 +18,7 @@ async def find_and_sync_message_async(message_id):
 
 
 async def sync_message(message):
+    date = message.date
     text = message.text
     if text:
         title, text, tag = find_text_patterns(text)
@@ -28,6 +29,7 @@ async def sync_message(message):
             title=title,
             text=text,
             tag=tag_object,
+            date=date,
             is_sync=True,
             show_on_site=False,
         )

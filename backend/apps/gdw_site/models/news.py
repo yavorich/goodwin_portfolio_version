@@ -6,6 +6,7 @@ from django.db.models import (
     PositiveIntegerField,
     BooleanField,
     CharField,
+    DateField,
     ForeignKey,
     SET_NULL,
 )
@@ -37,6 +38,7 @@ class SiteNews(Model):
         on_delete=SET_NULL,
         **blank_and_null,
     )
+    date = DateField("Дата публикации", **blank_and_null)
     is_sync = BooleanField("Синхронизирован", default=True)
     show_on_site = BooleanField("Показывать на сайте", default=True)
     sync_with_tg = BooleanField("Синхронизировать с Telegram", default=False)
