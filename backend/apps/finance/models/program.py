@@ -248,6 +248,9 @@ class UserProgramAccrual(models.Model):
     )
     success_fee = models.DecimalField("Сумма Success Fee", **decimal_usdt)
     management_fee = models.DecimalField("Сумма Management Fee", **decimal_usdt)
+    percent_total = models.DecimalField(
+        "Доходность без учета комиссий", **decimal_pct, **blank_and_null
+    )
     created_at = models.DateField("Дата")
 
     def __str__(self):

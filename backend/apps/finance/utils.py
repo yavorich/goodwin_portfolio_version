@@ -26,4 +26,5 @@ def create_accrual(
         percent_amount=percent_amount,
         success_fee=success_fee,
         management_fee=management_fee,
+        percent_total=result.result,
     )
