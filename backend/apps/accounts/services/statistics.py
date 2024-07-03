@@ -63,6 +63,7 @@ def get_table_statistics(
             "percent_amount",
             "success_fee",
             "management_fee",
+            "percent_total"
         )
         .annotate(
             percent_total_amount=Window(
@@ -71,7 +72,7 @@ def get_table_statistics(
             ),
             day_of_week=ExtractWeekDay(F("created_at") - timedelta(days=1)),
             funds=Subquery(program_history_subquery.values("funds")),
-            profitability=F("percent_amount"),
+            profitability=F("percent_total"),
             withdrawal=Subquery(withdrawal_subquery),
             replenishment=Subquery(replenishment_subquery),
             status=Subquery(program_history_subquery.values("status_display")),
