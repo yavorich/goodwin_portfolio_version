@@ -548,9 +548,10 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
     form = WithdrawalRequestForm
     list_display = [
         "get_done",
-        "created_at",
+        "created_at_datetime",
         "done_at",
         "wallet_id",
+        "get_fio",
         "original_amount",
         "amount",
         "commission",
@@ -558,11 +559,13 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
         "status",
         "reject_message",
     ]
+    list_display_links = ["created_at_datetime", "wallet_id", "get_fio"]
     list_editable = ("status", "reject_message")
     readonly_fields = (
         "get_done",
         "done_at",
-        "created_at",
+        "created_at_datetime",
+        "get_fio",
         "address",
         "original_amount",
         "amount",
@@ -587,6 +590,10 @@ class WithdrawalRequestAdmin(NoConfirmExportMixin, admin.ModelAdmin):
             return True
         elif obj.status == WithdrawalRequest.Status.REJECTED:
             return False
+
+    @admin.display(description="ФИО")
+    def get_fio(self, obj: WithdrawalRequest):
+        return obj.wallet.user.full_name
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
