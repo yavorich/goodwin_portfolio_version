@@ -563,6 +563,9 @@ class WithdrawalRequest(models.Model):
         verbose_name="Статус",
     )
     created_at = models.DateField("Поставлено на вывод", default=timezone.now)
+    created_at_datetime = models.DateTimeField(
+        "Дата и время создания заявки", default=timezone.now
+    )
     reject_message = models.TextField("Причина отказа", blank=True)
     done = models.BooleanField("Выполнено", default=False)
     done_at = models.DateField("Дата выполнения", **blank_and_null)
