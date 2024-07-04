@@ -10,6 +10,7 @@ from django.db.models import (
     ForeignKey,
     SET_NULL,
 )
+from django.utils.timezone import now
 from model_utils.tracker import FieldTracker
 
 from core.utils import blank_and_null
@@ -54,3 +55,8 @@ class SiteNews(Model):
     def same(self, field: str):
         previous = self.tracker.previous
         return previous(field) == getattr(self, field)
+
+    def save(self, *args, **kwargs):
+        if not self.date:
+            self.date = now().date()
+        super().save(*args, **kwargs)
