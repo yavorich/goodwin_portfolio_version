@@ -109,6 +109,7 @@ class SiteNewsChangeForm(ModelForm):
 class NewsAdmin(admin.ModelAdmin):
     list_display = [
         "message_id",
+        "date",
         "title",
         "show_on_site",
         "sync_with_tg",
@@ -144,7 +145,7 @@ class NewsAdmin(admin.ModelAdmin):
             obj.delete()
 
     def get_form(self, request, obj=None, **kwargs):
-        fields = ["show_on_site", "tag", "image", "title", "text"]
+        fields = ["show_on_site", "date", "tag", "image", "title", "text"]
         if obj:
             kwargs["fields"] = ["sync_with_tg"] + fields
         else:
