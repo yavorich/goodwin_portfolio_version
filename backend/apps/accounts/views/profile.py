@@ -31,7 +31,7 @@ from apps.accounts.services.email import send_confirmation_code_email
 from apps.telegram.utils import (
     send_telegram_message,
 )
-from config.settings import DEBUG
+from config.settings import PRODUCTION
 
 
 class ProfileAPIView(RetrieveUpdateAPIView):
@@ -87,7 +87,7 @@ class EmailChangeConfirmAPIView(CreateAPIView):
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        if DEBUG:
+        if PRODUCTION:
             email_confirmation_object = EmailChangeConfirmation.objects.filter(
                 user=self.request.user,
                 token=serializer.validated_data.get("token"),
@@ -147,7 +147,7 @@ class PasswordChangeConfirmAPIView(CreateAPIView):
         serializer = self.get_serializer(data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        if DEBUG:
+        if PRODUCTION:
             password_confirmation_object = PasswordChangeConfirmation.objects.filter(
                 user=self.request.user,
                 token=serializer.validated_data.get("token"),

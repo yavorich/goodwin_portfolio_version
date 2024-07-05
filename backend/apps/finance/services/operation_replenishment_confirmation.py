@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.finance.models.operation_history import OperationHistory
 from apps.finance.models.operation_type import MessageType, OperationType
-from config.settings import DEBUG
+from config.settings import PRODUCTION
 
 from .commissions import add_commission_to_history
 
@@ -12,10 +12,10 @@ def operation_replenishment_confirmation(operation, amount):
     на криптокошелёк goodwin"""
     if operation.done:
         return _("Operation already done")
-    if (operation.amount > amount) and not DEBUG:
+    if (operation.amount > amount) and not PRODUCTION:
         return _("Insufficient amount transferred")
 
-    if (operation.amount == amount) or DEBUG:
+    if (operation.amount == amount) or PRODUCTION:
         message = _(
             "The required amount has been transferred and credited to the account"
         )
