@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import NotFound, ParseError
 
 from apps.telegram.tasks import send_telegram_message_task
-from config.settings import PRE_AUTH_CODE_EXPIRES, DEBUG
+from config.settings import PRE_AUTH_CODE_EXPIRES, PRODUCTION
 from .user import User
 
 
@@ -39,7 +39,7 @@ class PreAuthTokenManager(Manager):
             code_field: code,
             "created_at__gt": timezone.now() - PRE_AUTH_CODE_EXPIRES,
         }
-        if DEBUG and code == "1" * 10:
+        if PRODUCTION and code == "1" * 10:
             filter_.pop(code_field)
 
         pre_auth_token = self.filter(**filter_).order_by("-created_at").first()
