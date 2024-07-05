@@ -1,23 +1,9 @@
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import sync_to_async
 from django.core.files.base import ContentFile
 from telethon.tl.types import MessageMediaPhoto
 from telethon.errors import TimeoutError
 
-from config.settings import NEWS_BOT, TELEGRAM_NEWS_CHANNEL, TELEGRAM_PHONE_NUMBER
 from apps.gdw_site.models import NewsTags, SiteNews
-
-
-def find_and_sync_message(message_id):
-    async_to_sync(find_and_sync_message_async)(message_id)
-
-
-async def find_and_sync_message_async(message_id):
-    await NEWS_BOT.start(phone=TELEGRAM_PHONE_NUMBER)
-    channel = await NEWS_BOT.get_entity(TELEGRAM_NEWS_CHANNEL)
-    async for message in NEWS_BOT.iter_messages(
-        channel, limit=None, min_id=message_id - 1, max_id=message_id + 1
-    ):
-        await sync_message(message)
 
 
 async def sync_message(message):
@@ -30,7 +16,7 @@ async def sync_message(message):
         try:
             image_bytes = await message.download_media(bytes)
             if image_bytes:
-                image_content = ContentFile(image_bytes, name=f"{message.id}.jpg")
+                image_content = ContentFile(image_bytes)
         except TimeoutError:
             print("Timeout while fetching image data from Telegram.")
         except Exception as e:
@@ -48,8 +34,6 @@ async def sync_message(message):
             date=date,
             is_sync=True,
         )
-        if image_content:
-            defaults["image"] = image_content
 
         try:
             post = await SiteNews.objects.aget(message_id=message.id)
@@ -62,9 +46,12 @@ async def sync_message(message):
             await post.asave()
 
         except SiteNews.DoesNotExist:
-            await SiteNews.objects.acreate(
+            post = await SiteNews.objects.acreate(
                 message_id=message.id, sync_with_tg=True, show_on_site=False, **defaults
             )
+        if image_content:
+            await sync_to_async(post.image.delete)()
+            await sync_to_async(post.image.save)(f"{message.id}.jpg", image_content)
 
 
 def find_text_patterns(text):

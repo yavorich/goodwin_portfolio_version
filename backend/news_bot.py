@@ -1,17 +1,12 @@
 import asyncio
 import django
 import os
-from asgiref.sync import sync_to_async
 from telethon import events
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from config.settings import (
-    TELEGRAM_NEWS_CHANNEL,
-    TELEGRAM_PHONE_NUMBER,
-    NEWS_BOT
-)
+from config.settings import TELEGRAM_NEWS_CHANNEL, TELEGRAM_PHONE_NUMBER, NEWS_BOT
 
 from apps.gdw_site.models import SiteNews
 from apps.gdw_site.services.news import sync_message
@@ -40,20 +35,9 @@ async def edit_message_handler(event):
 
 
 async def main():
-    # NEWS_BOT.parse_mode = "markdown"
     await NEWS_BOT.start(phone=TELEGRAM_PHONE_NUMBER)
-    channel = await NEWS_BOT.get_entity(TELEGRAM_NEWS_CHANNEL)
-
-    async for message in NEWS_BOT.iter_messages(channel, limit=None):
-        await sync_message(message)
-
-    deleted_news = await sync_to_async(SiteNews.objects.filter)(
-        is_sync=False, sync_with_tg=True
-    )
-    await deleted_news.aupdate(sync_with_tg=False, message_id=None)
     # with open("session.txt", "w") as f:
-    #     f.write(client.session.save())
-    print("done")
+    #     f.write(NEWS_BOT.session.save())
     await NEWS_BOT.run_until_disconnected()
 
 
