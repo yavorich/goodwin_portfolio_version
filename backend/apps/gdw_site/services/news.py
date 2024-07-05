@@ -1,7 +1,7 @@
 from asgiref.sync import async_to_sync, sync_to_async
-# from django.core.files.base import ContentFile
-# from telethon.tl.types import MessageMediaPhoto
-# from telethon.errors import TimeoutError
+from django.core.files.base import ContentFile
+from telethon.tl.types import MessageMediaPhoto
+from telethon.errors import TimeoutError
 
 from config.settings import NEWS_BOT, TELEGRAM_NEWS_CHANNEL, TELEGRAM_PHONE_NUMBER
 from apps.gdw_site.models import NewsTags, SiteNews
@@ -23,17 +23,18 @@ async def find_and_sync_message_async(message_id):
 async def sync_message(message):
     date = message.date
     text = message.text
-    # image_content = None
+    image_content = None
 
-    # # Извлечение изображения из сообщения
-    # if message.media and isinstance(message.media, MessageMediaPhoto):
-    #     try:
-    #         image_bytes = await message.download_media(bytes)
-    #         if image_bytes:
-    #             image_content = ContentFile(image_bytes, name=f"{message.id}.jpg")
-    #         print("Timeout while fetching image data from Telegram.")
-    #     except Exception as e:
-    #         print(f"An error occurred while fetching image data: {e}")
+    # Извлечение изображения из сообщения
+    if message.media and isinstance(message.media, MessageMediaPhoto):
+        try:
+            image_bytes = await message.download_media(bytes)
+            if image_bytes:
+                image_content = ContentFile(image_bytes, name=f"{message.id}.jpg")
+        except TimeoutError:
+            print("Timeout while fetching image data from Telegram.")
+        except Exception as e:
+            print(f"An error occurred while fetching image data: {e}")
 
     if text:
         title, text, tag = find_text_patterns(text)
@@ -47,8 +48,8 @@ async def sync_message(message):
             date=date,
             is_sync=True,
         )
-        # if image_content:
-        #     defaults['image'] = image_content
+        if image_content:
+            defaults["image"] = image_content
 
         try:
             post = await SiteNews.objects.aget(message_id=message.id)
