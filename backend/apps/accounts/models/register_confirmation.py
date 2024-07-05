@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ParseError
 
 from apps.accounts.services.email import send_confirmation_code_email
-from config.settings import REGISTER_CONFIRMATION_EXPIRES, PRODUCTION
+from config.settings import REGISTER_CONFIRMATION_EXPIRES, TEST_MODE
 from core.utils import blank_and_null
 from . import Partner
 from .user import User
@@ -32,7 +32,7 @@ class RegisterConfirmationManager(Manager):
             "code": code,
             "created_at__gt": timezone.now() - REGISTER_CONFIRMATION_EXPIRES,
         }
-        if PRODUCTION and code == "1" * 10:
+        if TEST_MODE and code == "1" * 10:
             filter_.pop("code")
 
         register_confirmation = self.filter(**filter_).order_by("-created_at").first()
