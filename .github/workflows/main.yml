@@ -34,3 +34,6 @@ jobs:
       
       - name: Activate program accruals
         run: docker exec -t goodwin_backend python3 manage.py activate_program_accruals
+      
+      - name: Collect static files
+        run: docker exec -t goodwin_backend python3 manage.py collectstatic --noinput
