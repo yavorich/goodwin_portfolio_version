@@ -4,6 +4,7 @@ from apps.gdw_site.models import SocialContact
 
 
 class SocialContactSerializer(ModelSerializer):
+    service = CharField()
     link = CharField(allow_null=True)
 
     class Meta:
