@@ -6,7 +6,6 @@ from django_admin_geomap import ModelAdmin as GeoModelAdmin
 from apps.gdw_site.models import (
     SiteProgram,
     FundDailyStats,
-    FundMonthlyStats,
     SiteAnswer,
     SiteContact,
     SiteNews,
@@ -20,21 +19,6 @@ from apps.gdw_site.models import (
 class FundDailyStatsAdmin(admin.ModelAdmin):
     list_display = ["date", "percent"]
     list_editable = ["percent"]
-
-
-class FundMonthlyStatsAdminForm(ModelForm):
-    class Meta:
-        model = FundMonthlyStats
-        help_texts = {
-            "year": "Укажите значение от 2021 до 2030",
-            "month": 'Пара значений "Год" и "Месяц" должна быть уникальной',
-        }
-        exclude = ()
-
-    def clean(self):
-        super().clean()
-        if self.cleaned_data.get("year") < 2021 or self.cleaned_data.get("year") > 2030:
-            self.add_error("year", "Указанный год не входит в интервал от 2021 до 2030")
 
 
 @admin.register(SiteProgram)
@@ -62,14 +46,6 @@ class SiteProgramAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
-
-
-@admin.register(FundMonthlyStats)
-class FundMonthlyStatsAdmin(admin.ModelAdmin):
-    list_display = ["year", "month", "total"]
-    ordering = ["year", "month"]
-    list_editable = ["total"]
-    form = FundMonthlyStatsAdminForm
 
 
 @admin.register(SiteAnswer)
