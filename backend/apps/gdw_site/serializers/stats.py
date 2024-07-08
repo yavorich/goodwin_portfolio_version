@@ -7,4 +7,4 @@ class FundTotalStatsSerializer(ModelSerializer):
 
     class Meta:
         model = FundDailyStats
-        fields = ["date", "total"]
+        fields = ["date", "percent", "total"]
