@@ -1,14 +1,14 @@
-from django.db.models import Model, CharField
+from django.db.models import Model
 
 from core.localized.fields import LocalizedCharField
 
 
 class SocialContact(Model):
-    service = CharField("Сервис", max_length=15)
+    service = LocalizedCharField("Сервис", max_length=32)
     link = LocalizedCharField("Ссылка", blank=True)
 
     def __str__(self) -> str:
-        return self.service
+        return self.service.ru
 
     class Meta:
         verbose_name = "соцсеть"
