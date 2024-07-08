@@ -4,6 +4,7 @@ from django.db.models import (
     DecimalField,
     IntegerChoices,
     IntegerField,
+    Sum,
 )
 from django.utils.timezone import datetime
 from django.core.validators import MinValueValidator
@@ -15,9 +16,15 @@ class FundDailyStats(Model):
     date = DateField("Дата", unique=True)
     percent = DecimalField("Прибыль (%)", **decimal_pct)
 
+    @property
+    def total(self):
+        return FundDailyStats.objects.filter(date__lte=self.date).aggregate(
+            total=Sum("percent")
+        )["total"]
+
     class Meta:
         verbose_name = "значение"
-        verbose_name_plural = "Статистика по дням (для калькулятора)"
+        verbose_name_plural = "Ежедневная доходность фонда"
         ordering = ["date"]
 
 
