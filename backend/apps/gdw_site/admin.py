@@ -17,8 +17,9 @@ from apps.gdw_site.models import (
 
 @admin.register(FundDailyStats)
 class FundDailyStatsAdmin(admin.ModelAdmin):
-    list_display = ["date", "percent"]
+    list_display = ["date", "percent", "total"]
     list_editable = ["percent"]
+    date_hierarchy = "date"
 
 
 @admin.register(SiteProgram)
