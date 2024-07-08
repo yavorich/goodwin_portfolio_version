@@ -5,3 +5,5 @@ from .stats import FundStatsAPIView
 from .faq import SiteAnswerAPIView
 from .contacts import SiteContactsAPIView
 from .news import SiteNewsViewSet
+from .social import SocialContactsViewSet
+from .redirect import RedirectLinksAPIView

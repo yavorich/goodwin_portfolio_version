@@ -11,6 +11,8 @@ from apps.gdw_site.models import (
     SiteContact,
     SiteNews,
     NewsTags,
+    SocialContact,
+    RedirectLinks,
 )
 
 
@@ -186,3 +188,12 @@ class TagsAdmin(admin.ModelAdmin):
     @admin.display(description="Кол-во новостей")
     def news_count(self, obj: NewsTags):
         return obj.news.count()
+
+
+admin.site.register(SocialContact)
+
+
+@admin.register(RedirectLinks)
+class RedirectLinksAdmin(admin.ModelAdmin):
+    def has_delete_permission(self, request: HttpRequest, obj=...) -> bool:
+        return False
