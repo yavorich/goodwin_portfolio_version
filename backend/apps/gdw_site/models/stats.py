@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db.models import (
     Model,
     DateField,
@@ -14,7 +15,7 @@ from core.utils import decimal_pct
 
 class FundDailyStats(Model):
     date = DateField("Дата", unique=True)
-    percent = DecimalField("Прибыль (%)", **decimal_pct)
+    percent = DecimalField("Прибыль (%)", **decimal_pct, default=Decimal("0.0"))
 
     @property
     def total(self):
