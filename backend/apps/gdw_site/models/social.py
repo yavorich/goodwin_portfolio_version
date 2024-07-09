@@ -5,7 +5,7 @@ from core.localized.fields import LocalizedCharField
 
 
 def get_upload_path(instance, filename):
-    return os.path.join("social", instance.service, filename)
+    return os.path.join("social", str(instance.pk), filename)
 
 
 class SocialContact(Model):
