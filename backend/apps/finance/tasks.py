@@ -19,6 +19,7 @@ from apps.finance.models import (
 from apps.finance.models.program import UserProgramHistory
 from apps.finance.utils import create_accrual
 from apps.finance.services.commissions import add_commission_to_history
+from apps.gdw_site.models import FundDailyStats
 
 
 @shared_task
@@ -77,13 +78,16 @@ def apply_program_finish():
 def make_daily_programs_accruals():
     with transaction.atomic():
         yesterday = now() - timedelta(days=1)
-        if Holidays.objects.filter(
-            start_date__lte=yesterday, end_date__gte=yesterday
-        ).exists():
-            return "No accruals because of holiday"
         result = ProgramResult.objects.first()
-        if not result:
-            return "No program result found"
+        is_holiday = Holidays.objects.filter(
+            start_date__lte=yesterday, end_date__gte=yesterday
+        ).exists()
+        if is_holiday or not result:
+            FundDailyStats.objects.update_or_create(date=yesterday)
+            return "No accruals because of holiday or missing result"
+        FundDailyStats.objects.update_or_create(
+            date=yesterday, defaults={"percent": result.result}
+        )
         programs = Program.objects.filter(accrual_type=Program.AccrualType.DAILY)
         for program in programs:
             make_program_accruals(program, result)
