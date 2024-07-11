@@ -25,6 +25,11 @@ class NewsTags(Model):
 
     class Meta:
         verbose_name_plural = "Новостные теги"
+        verbose_name = "тег"
+        ordering = ["tag"]
+
+    def __str__(self) -> str:
+        return str(self.tag)
 
 
 class SiteNews(Model):

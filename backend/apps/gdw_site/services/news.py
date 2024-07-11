@@ -47,7 +47,7 @@ async def sync_message(message):
 
         except SiteNews.DoesNotExist:
             post = await SiteNews.objects.acreate(
-                message_id=message.id, sync_with_tg=True, show_on_site=False, **defaults
+                message_id=message.id, sync_with_tg=True, show_on_site=True, **defaults
             )
         if image_content:
             await sync_to_async(post.image.delete)()
