@@ -5,7 +5,7 @@ from core.serializers import HttpsFileField
 
 
 class SiteNewsSerializer(ModelSerializer):
-    tag = CharField(source="tag.tag")
+    tag = CharField(source="tag.tag", allow_null=True)
     image = HttpsFileField()
 
     class Meta:
