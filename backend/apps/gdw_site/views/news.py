@@ -15,4 +15,4 @@ class SiteNewsViewSet(ReadOnlyModelViewSet):
 
     def get_queryset(self):
         model = NEWS_MODELS[get_language()]
-        return model.objects.filter(show_on_site=True)
+        return model.objects.filter(show_on_site=True).order_by("-date")
