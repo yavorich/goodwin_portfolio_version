@@ -20,8 +20,6 @@ async def sync_all_telegram_news_async():
         channel = await NEWS_BOT.get_entity(TELEGRAM_NEWS_CHANNELS[lang])
 
         async for message in NEWS_BOT.iter_messages(channel, limit=None):
-            with open("log.txt", "a") as f:
-                f.write(f"{lang} {message.id}\n")
             await sync_message(message)
 
         model = NEWS_MODELS[lang]
