@@ -8,8 +8,10 @@ from apps.gdw_site.models import (
     FundDailyStats,
     SiteAnswer,
     SiteContact,
-    SiteNews,
-    NewsTags,
+    SiteNewsRus,
+    SiteNewsEng,
+    NewsTagsRus,
+    NewsTagsEng,
     SocialContact,
     RedirectLinks,
 )
@@ -72,19 +74,12 @@ class ContactsAdmin(GeoModelAdmin):
 admin.site.register(SiteContact, ContactsAdmin)
 
 
-class SiteNewsCreationForm(ModelForm):
-    class Meta:
-        model = SiteNews
-        fields = ["show_on_site", "tag", "image", "title", "text"]
-
-
 class SiteNewsChangeForm(ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.initial["sync_with_tg"] = False
 
 
-@admin.register(SiteNews)
 class NewsAdmin(admin.ModelAdmin):
     list_display = [
         "message_id",
@@ -107,7 +102,7 @@ class NewsAdmin(admin.ModelAdmin):
         # Разрешить удаление только на странице редактирования объекта
         return obj is not None
 
-    def delete_model(self, request, obj: SiteNews):
+    def delete_model(self, request, obj: SiteNewsRus):
         if obj.message_id:
             obj.sync_with_tg = False
             obj.show_on_site = False
@@ -138,7 +133,7 @@ class NewsAdmin(admin.ModelAdmin):
             return ("message_id",)
         return ()
 
-    def save_model(self, request, obj: SiteNews, form, change):
+    def save_model(self, request, obj: SiteNewsRus, form, change):
         if change:
             obj.edited_by_admin = True
             if not obj.message_id and obj.sync_with_tg:
@@ -151,21 +146,42 @@ class NewsAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class TagNewsInline(admin.TabularInline):
-    model = SiteNews
+admin.site.register(SiteNewsRus, NewsAdmin)
+admin.site.register(SiteNewsEng, NewsAdmin)
+
+
+class RusTagNewsInline(admin.TabularInline):
+    model = SiteNewsRus
     extra = 0
     fields = ["message_id", "title", "tag", "image", "text"]
 
 
-@admin.register(NewsTags)
-class TagsAdmin(admin.ModelAdmin):
+class EngTagNewsInline(admin.TabularInline):
+    model = SiteNewsEng
+    extra = 0
+    fields = ["message_id", "title", "tag", "image", "text"]
+
+
+class RusTagsAdmin(admin.ModelAdmin):
     list_display = ["tag", "news_count"]
-    inlines = [TagNewsInline]
+    inlines = [RusTagNewsInline]
 
     @admin.display(description="Кол-во новостей")
-    def news_count(self, obj: NewsTags):
+    def news_count(self, obj: NewsTagsRus):
         return obj.news.count()
 
+
+class EngTagsAdmin(admin.ModelAdmin):
+    list_display = ["tag", "news_count"]
+    inlines = [EngTagNewsInline]
+
+    @admin.display(description="Кол-во новостей")
+    def news_count(self, obj: NewsTagsRus):
+        return obj.news.count()
+
+
+admin.site.register(NewsTagsRus, RusTagsAdmin)
+admin.site.register(NewsTagsEng, EngTagsAdmin)
 
 admin.site.register(SocialContact)
 
