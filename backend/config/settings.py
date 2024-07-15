@@ -267,10 +267,14 @@ registry.register("xlsx", DimensionXLSXFormat)
 # telegram api settings
 TELEGRAM_API_ID = os.environ.get("TELEGRAM_API_ID")
 TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH")
-TELEGRAM_NEWS_CHANNEL = os.environ.get("TELEGRAM_NEWS_CHANNEL")
+TELEGRAM_NEWS_CHANNELS = {
+    "ru": os.environ.get("TELEGRAM_NEWS_CHANNEL_RU"),
+    "en": os.environ.get("TELEGRAM_NEWS_CHANNEL_EN"),
+}
 TELEGRAM_PHONE_NUMBER = os.environ.get("TELEGRAM_PHONE_NUMBER")
 TELEGRAM_SESSION = os.environ.get("TELEGRAM_SESSION")
 
 NEWS_BOT = TelegramClient(
     StringSession(TELEGRAM_SESSION), TELEGRAM_API_ID, TELEGRAM_API_HASH
 )
+NEWS_BOT.parse_mode = "html"

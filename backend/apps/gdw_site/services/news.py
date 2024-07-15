@@ -1,15 +1,49 @@
+import re
 from asgiref.sync import sync_to_async
+from bs4 import BeautifulSoup
 from django.core.files.base import ContentFile
 from telethon.tl.types import MessageMediaPhoto
 from telethon.errors import TimeoutError
 
-from apps.gdw_site.models import NewsTags, SiteNews
+from apps.gdw_site.models.news import NEWS_MODELS, TAGS_MODELS
+from config.settings import TELEGRAM_NEWS_CHANNELS
+
+
+def get_message_language(message):
+    language = [
+        k for k, v in TELEGRAM_NEWS_CHANNELS.items() if v == message.chat.username
+    ][0]
+    return language
+
+
+def find_text_patterns(text):
+    soup = BeautifulSoup(text, "html.parser")
+    title, tag = None, None
+    title_pattern = soup.find("strong")
+    tag_pattern = re.compile(r"#\w+")
+
+    if title_pattern and len(str(title_pattern)) < 128:
+        title = title_pattern.text
+        text = text.replace(str(title_pattern), "")
+
+    tag_matches = tag_pattern.findall(text)
+
+    for match in tag_matches:
+        if match not in ["#x27"]:
+            tag = match
+            text = text.replace(match, "")
+            break
+
+    return title, text, tag
 
 
 async def sync_message(message):
+    language = get_message_language(message)
     date = message.date
     text = message.text
     image_content = None
+    news_model = NEWS_MODELS[language]
+    tags_model = TAGS_MODELS[language]
 
     # Извлечение изображения из сообщения
     if message.media and isinstance(message.media, MessageMediaPhoto):
@@ -25,7 +59,7 @@ async def sync_message(message):
     if text:
         title, text, tag = find_text_patterns(text)
         tag_object, _ = (
-            await NewsTags.objects.aget_or_create(tag=tag) if tag else (None, None)
+            await tags_model.objects.aget_or_create(tag=tag) if tag else (None, None)
         )
         defaults = dict(
             title=title,
@@ -36,7 +70,7 @@ async def sync_message(message):
         )
 
         try:
-            post = await SiteNews.objects.aget(message_id=message.id)
+            post = await news_model.objects.aget(message_id=message.id)
 
             if await sync_to_async(getattr)(post, "sync_with_tg"):
                 for key, value in defaults.items():
@@ -45,8 +79,8 @@ async def sync_message(message):
                 await sync_to_async(setattr)(post, "is_sync", False)
             await post.asave()
 
-        except SiteNews.DoesNotExist:
-            post = await SiteNews.objects.acreate(
+        except news_model.DoesNotExist:
+            post = await news_model.objects.acreate(
                 message_id=message.id, sync_with_tg=True, show_on_site=True, **defaults
             )
         if image_content:
@@ -54,16 +88,11 @@ async def sync_message(message):
             await sync_to_async(post.image.save)(f"{message.id}.jpg", image_content)
 
 
-def find_text_patterns(text):
-    splitted_text = text.split("\n")
-    title, tag = None, None
-    for sample in splitted_text:
-        if "#" not in sample and title is None:
-            title_sample = sample.replace("**", "").strip()
-            if len(title_sample) < 128:
-                title = title_sample
-                text = text.replace(sample, "").strip()
-        if sample.startswith("#") and " " not in sample and tag is None:
-            tag = sample
-            text = text.replace(sample, "").strip()
-    return title, text, tag
+async def delete_message(message):
+    language = get_message_language(message)
+    news_model = NEWS_MODELS[language]
+    try:
+        post = await news_model.objects.aget(message_id=message.id, sync_with_tg=True)
+        await post.adelete()
+    except news_model.DoesNotExist:
+        pass
