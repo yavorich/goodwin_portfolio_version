@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.timezone import now, timedelta, datetime
 from django.utils.translation import gettext_lazy as _
 
+from core.localized.fields import LocalizedTextField
 from core.utils import blank_and_null, add_business_days, decimal_usdt, decimal_pct
 from .operation_history import OperationHistory
 from .operation_type import MessageType
@@ -31,7 +32,7 @@ class Program(models.Model):
     annual_profit = models.DecimalField(
         "Годовая доходность, %", **blank_and_null, **decimal_pct
     )
-    description = models.CharField(
+    description = LocalizedTextField(
         "Описание программы", max_length=63, **blank_and_null
     )
 

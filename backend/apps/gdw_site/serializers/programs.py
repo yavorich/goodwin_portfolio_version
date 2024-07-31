@@ -10,6 +10,7 @@ from apps.finance.services.wallet_settings_attr import get_wallet_settings_attr
 
 
 class SiteProgramSerializer(ModelSerializer):
+    description = CharField()
     min_deposit = FloatField()
     success_fee = SerializerMethodField()
     management_fee = SerializerMethodField()
