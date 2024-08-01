@@ -11,7 +11,9 @@ def forwards1(apps, _):
 
 def forwards2(apps, _):
     RedirectLinks = apps.get_model("gdw_site", "RedirectLinks")
-    RedirectLinks.objects.update(url={"ru": "url"})
+    for link in RedirectLinks.objects.iterator():
+        link.url.ru = "http://example.com"
+        link.save()
 
 
 def backwards(apps, _):
@@ -36,7 +38,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="redirectlinks",
             name="url",
-            field=core.localized.fields.LocalizedURLField(null=True, required=["ru"]),
+            field=core.localized.fields.LocalizedURLField(null=True, blank=True),
         ),
         migrations.RunPython(forwards2, backwards),
         migrations.AlterField(
