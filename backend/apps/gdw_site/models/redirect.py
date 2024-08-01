@@ -1,4 +1,6 @@
-from django.db.models import Model, URLField, TextChoices, CharField
+from django.db.models import Model, TextChoices, CharField
+
+from core.localized.fields import LocalizedURLField
 
 
 class RedirectLinks(Model):
@@ -7,7 +9,7 @@ class RedirectLinks(Model):
         LOGIN = "login", "Логин"
 
     link_type = CharField("Действие", choices=Type.choices, unique=True)
-    url = URLField()
+    url = LocalizedURLField()
 
     def __str__(self) -> str:
         return self.Type(self.link_type).label
