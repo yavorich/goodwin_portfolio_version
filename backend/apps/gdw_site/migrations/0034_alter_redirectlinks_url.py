@@ -4,9 +4,14 @@ import core.localized.fields
 from django.db import migrations, models
 
 
-def forwards(apps, _):
+def forwards1(apps, _):
     RedirectLinks = apps.get_model("gdw_site", "RedirectLinks")
     RedirectLinks.objects.update(url=None)
+
+
+def forwards2(apps, _):
+    RedirectLinks = apps.get_model("gdw_site", "RedirectLinks")
+    RedirectLinks.objects.update(url={"ru": "url"})
 
 
 def backwards(apps, _):
@@ -27,7 +32,13 @@ class Migration(migrations.Migration):
             name="url",
             field=models.URLField(null=True),
         ),
-        migrations.RunPython(forwards, backwards),
+        migrations.RunPython(forwards1, backwards),
+        migrations.AlterField(
+            model_name="redirectlinks",
+            name="url",
+            field=core.localized.fields.LocalizedURLField(null=True, required=["ru"]),
+        ),
+        migrations.RunPython(forwards2, backwards),
         migrations.AlterField(
             model_name="redirectlinks",
             name="url",
