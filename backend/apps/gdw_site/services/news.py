@@ -55,7 +55,8 @@ async def sync_message(message):
             print("Timeout while fetching image data from Telegram.")
         except Exception as e:
             print(f"An error occurred while fetching image data: {e}")
-
+    # Review добавил функции printl и aprintl в модуле core/loggers.
+    #  Они показывают время и место в коде, где был вызван принт. Довольно удобно
     if text:
         title, text, tag = find_text_patterns(text)
         tag_object, _ = (
