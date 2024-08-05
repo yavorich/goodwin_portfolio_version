@@ -17,6 +17,7 @@ def sync_all_telegram_news():
 async def sync_all_telegram_news_async():
     await NEWS_BOT.start(phone=TELEGRAM_PHONE_NUMBER)
     for lang in TELEGRAM_NEWS_CHANNELS:
+        # REVIEW можно пройтись через items
         channel = await NEWS_BOT.get_entity(TELEGRAM_NEWS_CHANNELS[lang])
 
         async for message in NEWS_BOT.iter_messages(channel, limit=None):
