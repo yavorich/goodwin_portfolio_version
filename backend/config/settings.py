@@ -24,6 +24,8 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ["DEBUG"].lower() == "true"
 TEST_MODE = os.environ["TEST_MODE"].lower() == "true"
 
+ADMINS = [("Andrew", "evilp1ranya@gmail.com")]
+
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
     ","
 )
