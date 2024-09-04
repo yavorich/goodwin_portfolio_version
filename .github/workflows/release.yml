@@ -1,23 +1,23 @@
-name: Prod CI/CD
+name: Release CI/CD
 
 on:
   workflow_dispatch:
     branches:
-      - main
+      - release
   push:
     branches:
-      - main
+      - release
 
 jobs:
   deploy:
-    runs-on: [ self-hosted, main-hosted ]
+    runs-on: [ self-hosted, release-hosted ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: 'Create env file'
         run: |
-          echo "${{ secrets.MAIN_ENV_FILE }}" > .env
+          echo "${{ secrets.RELEASE_ENV_FILE }}" > .env
 
       - name: Build and run
         run: |
@@ -26,7 +26,7 @@ jobs:
           docker-compose up --build -d
 
   database:
-    runs-on: [ self-hosted, main-hosted ]
+    runs-on: [ self-hosted, release-hosted ]
     needs: deploy
     steps:
       - name: Migrations
