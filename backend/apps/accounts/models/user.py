@@ -262,6 +262,8 @@ class TempData(models.Model):
 
 def get_partner_id():
     partner_ids = Partner.objects.values_list("partner_id", flat=True)
+    if not partner_ids:
+        return 1
     for partner_id in range(1, max(partner_ids) + 2):
         if partner_id not in partner_ids:
             return partner_id
