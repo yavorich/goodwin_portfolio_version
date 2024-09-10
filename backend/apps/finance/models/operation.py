@@ -99,6 +99,7 @@ class Operation(models.Model):
         validators=[RegexValidator(regex=r"T[A-Za-z1-9]{33}")],
         **blank_and_null,
     )
+    need_confirm = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "транзакцию"
@@ -308,6 +309,7 @@ class Operation(models.Model):
                     wallet=self.wallet,
                     replenishment=replenishment,
                     amount=replenishment.amount,
+                    need_confirm=False,
                 )
         self.wallet.update_balance(frozen=self.amount)
         self.add_history(
