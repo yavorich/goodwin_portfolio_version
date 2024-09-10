@@ -29,28 +29,29 @@ from apps.telegram.models import MessageType as TelegramMessageType
 @receiver(post_save, sender=Operation)
 def handle_operation(sender, instance: Operation, created, **kwargs):
     if created and instance.created_at > now() - timedelta(hours=1):
-        is_withdrawal = instance.type in [
-            Operation.Type.WITHDRAWAL,
-            Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
-            Operation.Type.PROGRAM_CLOSURE,
-        ]
-        is_transfer = instance.type == Operation.Type.TRANSFER
-        for destination in [DestinationType.EMAIL, DestinationType.TELEGRAM]:
-            if (
-                is_withdrawal
-                and getattr(
-                    instance.wallet.user.settings,
-                    f"{destination}_request_code_on_withdrawal",
-                )
-                or is_transfer
-                and getattr(
-                    instance.wallet.user.settings,
-                    f"{destination}_request_code_on_transfer",
-                )
-            ):
-                OperationConfirmation.objects.create(
-                    operation=instance, destination=destination
-                )
+        if instance.need_confirm:
+            is_withdrawal = instance.type in [
+                Operation.Type.WITHDRAWAL,
+                Operation.Type.PROGRAM_REPLENISHMENT_CANCEL,
+                Operation.Type.PROGRAM_CLOSURE,
+            ]
+            is_transfer = instance.type == Operation.Type.TRANSFER
+            for destination in [DestinationType.EMAIL, DestinationType.TELEGRAM]:
+                if (
+                    is_withdrawal
+                    and getattr(
+                        instance.wallet.user.settings,
+                        f"{destination}_request_code_on_withdrawal",
+                    )
+                    or is_transfer
+                    and getattr(
+                        instance.wallet.user.settings,
+                        f"{destination}_request_code_on_transfer",
+                    )
+                ):
+                    OperationConfirmation.objects.create(
+                        operation=instance, destination=destination
+                    )
         confirmations = instance.confirmations.all()
         if not confirmations:
             instance.apply()

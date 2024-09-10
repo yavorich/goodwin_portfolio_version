@@ -34,6 +34,7 @@ def defrost_funds():
                 wallet=item.wallet,
                 frozen_item=item,
                 amount=item.amount,
+                need_confirm=False,
             )
 
 
@@ -71,6 +72,7 @@ def apply_program_finish():
                 wallet=item.wallet,
                 user_program=item,
                 amount=item.funds,
+                need_confirm=False,
             )
 
 
@@ -121,6 +123,7 @@ def make_program_accruals(program: Program, result: ProgramResult):
                 wallet=user_program.wallet,
                 user_program=user_program,
                 amount=accrual.amount,
+                need_confirm=False,
             )
 
 
