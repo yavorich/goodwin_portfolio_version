@@ -23,7 +23,7 @@ def send_confirmation_code_email(email, code, message_type):
         email,
         title,
         text,
-        from_email="GOODWIN",
+        from_email="GDW Finance",
         html=False,
     )
 
@@ -50,6 +50,6 @@ def send_email_recover_password(user):
         user.email,
         message_template_context["title"],
         html_message,
-        from_email="GOODWIN",
+        from_email="GDW Finance",
         html=True,
     )
