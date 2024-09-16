@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework.serializers import (
     Serializer,
     IntegerField,
@@ -107,7 +108,7 @@ def calculate_program_result(attrs, program: SiteProgram):
 
     while current_date <= end_date:
         daily_stats = FundDailyStats.objects.filter(date=current_date).first()
-        daily_profit_pct = daily_stats.percent if daily_stats else 0.0
+        daily_profit_pct = daily_stats.percent if daily_stats else Decimal("0.0")
         today_profit = deposit * daily_profit_pct / 100
         management_fee = deposit * management_fee_pct / 100
         success_fee = max(0, today_profit * success_fee_pct / 100)
