@@ -13,6 +13,6 @@ def send_operation_confirm_email(confirmation: OperationConfirmation):
         confirmation.operation.wallet.user.email,
         title,
         text,
-        from_email="GOODWIN",
+        from_email="GDW Finance",
         html=False,
     )

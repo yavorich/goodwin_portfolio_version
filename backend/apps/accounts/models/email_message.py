@@ -23,33 +23,33 @@ DATA_INSERTION = {
 
 TEMPLATE_TITLE = {
     EmailMessageType.AUTH_CONFIRM: dict(
-        ru="GOODWIN - Подтверждение электронной почты",
-        en="GOODWIN - Email confirmation",
+        ru="GDW Finance - Подтверждение электронной почты",
+        en="GDW Finance - Email confirmation",
         cn="",
     ),
     EmailMessageType.PASSWORD_RECOVERY: dict(
-        ru="GOODWIN - Восстановление пароля",
-        en="GOODWIN - Password recovery",
+        ru="GDW Finance - Восстановление пароля",
+        en="GDW Finance - Password recovery",
         cn="",
     ),
     EmailMessageType.PASSWORD_CHANGE: dict(
-        ru="GOODWIN - Подтверждение изменения пароля",
-        en="GOODWIN - Password change confirmation",
+        ru="GDW Finance - Подтверждение изменения пароля",
+        en="GDW Finance - Password change confirmation",
         cn="",
     ),
     EmailMessageType.SETTINGS_CHANGE: dict(
-        ru="GOODWIN - Подтверждение изменения настроек профиля",
-        en="GOODWIN - Profile settings change confirmation",
+        ru="GDW Finance - Подтверждение изменения настроек профиля",
+        en="GDW Finance - Profile settings change confirmation",
         cn="",
     ),
     EmailMessageType.EMAIL_CHANGE: dict(
-        ru="GOODWIN - Подтверждение смены адреса электронной почты",
-        en="GOODWIN - Email address change confirmation",
+        ru="GDW Finance - Подтверждение смены адреса электронной почты",
+        en="GDW Finance - Email address change confirmation",
         cn="",
     ),
     EmailMessageType.OPERATION_CONFIRM: dict(
-        ru="GOODWIN - Подтверждение операции",
-        en="GOODWIN - Operation confirmation",
+        ru="GDW Finance - Подтверждение операции",
+        en="GDW Finance - Operation confirmation",
         cn="",
     ),
 }
